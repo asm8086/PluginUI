@@ -1,4 +1,4 @@
-# 2026/10/18 17:31:00 UTC - PluginUI
+# 2026/10/18 22:42:00 UTC - PluginUI
 # SPDX-FileCopyrightText: 2026 asm8086
 # SPDX-License-Identifier: MIT
 
@@ -113,10 +113,28 @@ function Invoke-Build([string]$t) {
 
 # ----------------------------------------------------------------------------------------------- Package
 
+# Imports the environment of the Visual Studio x64 build tools (cl.exe, link.exe, Windows SDK libraries) into this
+# process when cl.exe is not on PATH: Visual Studio located with vswhere, variables read from vcvars64.bat.
+function Import-MsvcEnvironment {
+    if (Get-Command cl -ErrorAction SilentlyContinue) { return }
+    if (-not $IsWindows) { return }
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    if (-not (Test-Path $vswhere)) { return }
+    $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+    if (-not $vs) { return }
+    $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
+    if (-not (Test-Path $vcvars)) { return }
+    Write-Host "Visual Studio build tools: $vs"
+    & cmd.exe /d /c "`"$vcvars`" >nul && set" | ForEach-Object {
+        if ($_ -match '^([^=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process') }
+    }
+}
+
 function Build-Loader([string]$outDir) {
     $source = Join-Path $Root 'build/vst3shim/vst3shim.c'
     $dll = Join-Path $outDir 'vst3shim.dll'
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+    Import-MsvcEnvironment
     if (Get-Command cl -ErrorAction SilentlyContinue) {
         Push-Location $outDir
         # No C runtime, as with clang: no security cookie, no runtime checks, DllMain as the entry point.
@@ -133,7 +151,7 @@ function Build-Loader([string]$outDir) {
         Invoke-Native lld-link @('/dll', '/nodefaultlib', '/entry:DllMain', "/out:$dll", $obj, $lib)
     }
     else {
-        throw 'No C compiler for the VST3 loader: run from a Visual Studio developer shell (cl.exe), or install clang and lld.'
+        throw 'No C compiler for the VST3 loader: install Visual Studio with the C++ x64 build tools (found automatically), or clang and lld.'
     }
     return $dll
 }

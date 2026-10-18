@@ -1,4 +1,4 @@
-# 2026/10/18 17:31:00 UTC - PluginUI
+# 2026/10/18 22:42:00 UTC - PluginUI
 # Release on a tag vX.Y.Z: NativeAOT builds for x64 (x86-64-v3, x86-64-v2) and ARM64 on native runners, the universal
 # VST3 bundle (x64 loader + ARM64), application packages, Steinberg validation on both architectures, the GitHub
 # release and the NuGet packages (trusted publishing on nuget.org, when the repository variable PUBLISH_NUGET is 'true'
@@ -32,7 +32,7 @@ jobs:
     name: Check the version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Version format, VersionPrefix and CHANGELOG section
         run: |
           if [ -n "$VERSION" ]; then version="$VERSION"; else version="${GITHUB_REF_NAME#v}"; fi
@@ -59,10 +59,10 @@ jobs:
       matrix:
         target: [x64-v3, x64-v2]
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
       - name: Tests
@@ -71,7 +71,7 @@ jobs:
       - name: NativeAOT build
         shell: pwsh
         run: pwsh build/Build-Release.ps1 -Stage Build -Target ${{ matrix.target }} $(if ($env:VERSION) { "-Version", $env:VERSION })
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage-${{ matrix.target }}
           path: artifacts/stage/${{ matrix.target }}
@@ -82,10 +82,10 @@ jobs:
     needs: check
     runs-on: windows-11-arm
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
       - name: Tests
@@ -96,7 +96,7 @@ jobs:
       - name: Steinberg validator
         shell: pwsh
         run: pwsh build/Build-Release.ps1 -Stage Validate -ValidatePath artifacts/stage/arm64/plugin/PluginUI.DemoSynth.vst3
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage-arm64
           path: artifacts/stage/arm64
@@ -107,13 +107,13 @@ jobs:
     needs: [build-x64, build-arm64]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: stage-*
           path: artifacts/stage
@@ -122,17 +122,13 @@ jobs:
         run: |
           Get-ChildItem artifacts/stage -Directory -Filter 'stage-*' | ForEach-Object { Rename-Item $_.FullName ($_.Name -replace '^stage-', '') }
           Get-ChildItem artifacts/stage
-      - name: Visual Studio developer environment (cl.exe for the VST3 loader)
-        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
-        with:
-          arch: x64
       - name: Package
         shell: pwsh
         run: pwsh build/Build-Release.ps1 -Stage Package $(if ($env:VERSION) { "-Version", $env:VERSION })
       - name: Validate (x86-64-v3, x86-64-v2, loader)
         shell: pwsh
         run: pwsh build/Build-Release.ps1 -Stage Validate
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release
           path: artifacts/release
@@ -143,13 +139,13 @@ jobs:
     needs: package
     runs-on: windows-11-arm
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release
           path: artifacts/release
@@ -169,8 +165,8 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release
           path: artifacts/release
@@ -185,7 +181,7 @@ jobs:
           ' CHANGELOG.md > notes.md
           if [ ! -s notes.md ]; then echo "::error::Empty CHANGELOG section for $version."; exit 1; fi
           cat notes.md
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         if: vars.PUBLISH_NUGET == 'true'
         with:
           dotnet-version: 10.0.x
