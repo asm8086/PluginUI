@@ -1,0 +1,37 @@
+<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PluginUIEditor</RootNamespace>
+    <AssemblyName>PluginUIEditor</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <Product>PluginUIEditor</Product>
+    <Description>Visual designer for PluginUI editors (.pluginui): toolbox, property grid, code generation, project scaffolding.</Description>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Builds on any OS (CI); runs on Windows 10 1809+. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <!-- The designer uses reflection (PropertyGrid, XML documentation): no trimming, no NativeAOT. -->
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+
+  <!-- Help ▸ Documentation opens these local copies (falls back to GitHub). -->
+  <ItemGroup>
+    <None Include="..\..\docs\EDITOR.md;..\..\docs\EDITOR_FR.md" Link="docs\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\docs\EDITOR.md')" />
+    <None Include="..\..\docs\images\14-editor.png" Link="docs\images\14-editor.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\images\fr\14-editor.png" Link="docs\images\fr\14-editor.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\samples\Designs\*.pluginui" Link="samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PluginUI.Design\PluginUI.Design.csproj" />
+  </ItemGroup>
+
+</Project>

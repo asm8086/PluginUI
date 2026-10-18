@@ -1,0 +1,23 @@
+<!-- 2026/10/18 11:16:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>PluginUI.Gallery</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Also publishable with NativeAOT: dotnet publish -c Release -p:PublishAot=true -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- Windows x64 application (PlatformTarget and AOT instruction set: ..\..\Directory.Build.props). -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PluginUI\PluginUI.csproj" />
+  </ItemGroup>
+
+</Project>

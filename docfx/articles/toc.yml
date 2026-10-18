@@ -1,0 +1,17 @@
+# 2026/10/18 16:20:00 UTC - PluginUI
+- name: Overview
+  href: ../../README.md
+- name: Getting started
+  href: getting-started.md
+- name: Element catalog
+  href: ../../docs/CONTROLS.md
+- name: Extending PluginUI
+  href: ../../docs/EXTENDING.md
+- name: Visual designer (PluginUIEditor)
+  href: ../../docs/EDITOR.md
+- name: Sample instrument (DemoSynth)
+  href: ../../samples/PluginUI.DemoSynth/README.md
+- name: Contributing
+  href: ../../CONTRIBUTING.md
+- name: Changelog
+  href: ../../CHANGELOG.md

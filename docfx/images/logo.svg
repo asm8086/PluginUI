@@ -1,0 +1,8 @@
+<!-- 2026/10/18 15:48:00 UTC - PluginUI -->
+<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
+  <circle cx="32" cy="32" r="30" fill="#1c1d21"/>
+  <path d="M14.1 46.1 A22 22 0 1 1 49.9 46.1" fill="none" stroke="#3b3e47" stroke-width="6" stroke-linecap="round"/>
+  <path d="M14.1 46.1 A22 22 0 0 1 43.5 13.3" fill="none" stroke="#4fc3f7" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="13" fill="#32353d"/>
+  <line x1="32" y1="32" x2="38.5" y2="21" stroke="#e8e8ea" stroke-width="4" stroke-linecap="round"/>
+</svg>

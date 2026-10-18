@@ -1,0 +1,38 @@
+<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Hosts the plug-ins in-process (Steinberg validator): this assembly must not export a VST3 factory. -->
+    <NPlugFactoryExport>false</NPlugFactoryExport>
+    <!-- Logic, DSP and validator tests: no window needed, they also run on Linux CI. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+    <PackageReference Include="NUnit" Version="4.6.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Official Steinberg VST3 validator (native), called in-process on the NPlug factory. -->
+    <ProjectReference Include="$(NPlugRoot)NPlug.Validator\NPlug.Validator.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.NPlug\PluginUI.NPlug.csproj" />
+    <ProjectReference Include="..\..\samples\PluginUI.DemoSynth\PluginUI.DemoSynth.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <Import Project="$(NPlugRoot)NPlug.Proxy\build\NPlug.Proxy.targets" />
+  <Import Project="$(NPlugRoot)NPlug.Validator\build\NPlug.Validator.targets" />
+  <Import Project="$(NPlugRoot)NPlug\build\NPlug.targets" />
+
+</Project>

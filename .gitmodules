@@ -1,0 +1,4 @@
+[submodule "external/NPlug"]
+	path = external/NPlug
+	url = https://github.com/asm8086/NPlug.git
+	branch = integration/pluginui

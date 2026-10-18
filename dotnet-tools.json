@@ -1,0 +1,14 @@
+{
+  "comment": "2026/10/18 15:48:00 UTC - PluginUI",
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "docfx": {
+      "version": "2.81.0",
+      "commands": [
+        "docfx"
+      ],
+      "rollForward": false
+    }
+  }
+}

@@ -1,0 +1,178 @@
+# 2026/10/18 16:20:00 UTC - PluginUI
+# Release on a tag vX.Y.Z: NativeAOT builds for x64 (x86-64-v3, x86-64-v2) and ARM64 on native runners, the universal
+# VST3 bundle (x64 loader + ARM64), application packages, Steinberg validation on both architectures, the GitHub
+# release and the NuGet packages (trusted publishing, when the repository variable PUBLISH_NUGET is 'true').
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (no release is published when run manually)'
+        required: true
+        default: '0.0.0-test'
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
+
+jobs:
+  build-x64:
+    name: Build ${{ matrix.target }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x64-v3, x64-v2]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Tests
+        if: matrix.target == 'x64-v3'
+        run: dotnet test PluginUI.slnx -c Release
+      - name: NativeAOT build
+        shell: pwsh
+        run: pwsh build/Build-Release.ps1 -Stage Build -Target ${{ matrix.target }} $(if ($env:VERSION) { "-Version", $env:VERSION })
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-${{ matrix.target }}
+          path: artifacts/stage/${{ matrix.target }}
+          if-no-files-found: error
+
+  build-arm64:
+    name: Build arm64
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Tests
+        run: dotnet test PluginUI.slnx -c Release
+      - name: NativeAOT build and validation
+        shell: pwsh
+        run: |
+          pwsh build/Build-Release.ps1 -Stage Build -Target arm64 $(if ($env:VERSION) { "-Version", $env:VERSION })
+          pwsh build/Build-Release.ps1 -Stage Validate -ValidatePath artifacts/stage/arm64/plugin/PluginUI.DemoSynth.vst3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-arm64
+          path: artifacts/stage/arm64
+          if-no-files-found: error
+
+  package:
+    name: Package and validate (x64)
+    needs: [build-x64, build-arm64]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stage-*
+          path: artifacts/stage
+      - name: Arrange the stage folders
+        shell: pwsh
+        run: |
+          Get-ChildItem artifacts/stage -Directory -Filter 'stage-*' | ForEach-Object { Rename-Item $_.FullName ($_.Name -replace '^stage-', '') }
+          Get-ChildItem artifacts/stage
+      - name: Visual Studio developer environment (cl.exe for the VST3 loader)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Package
+        shell: pwsh
+        run: pwsh build/Build-Release.ps1 -Stage Package $(if ($env:VERSION) { "-Version", $env:VERSION })
+      - name: Validate (x86-64-v3, x86-64-v2, loader)
+        shell: pwsh
+        run: pwsh build/Build-Release.ps1 -Stage Validate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: artifacts/release
+          if-no-files-found: error
+
+  validate-arm64-bundle:
+    name: Validate the universal bundle on ARM64
+    needs: package
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: artifacts/release
+      - name: Validate
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem artifacts/release -Filter '*-vst3-universal.zip' | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath artifacts/universal
+          pwsh build/Build-Release.ps1 -Stage Validate -ValidatePath artifacts/universal/PluginUI.DemoSynth.vst3
+
+  publish:
+    name: Publish
+    if: github.event_name == 'push'
+    needs: [package, validate-arm64-bundle]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: artifacts/release
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "Release $version" > notes.md; fi
+          cat notes.md
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" --title "PluginUI ${GITHUB_REF_NAME#v}" --notes-file notes.md $prerelease \
+            artifacts/release/*.zip artifacts/release/SHA256SUMS.txt artifacts/release/nuget/*.nupkg
+      - uses: actions/setup-dotnet@v4
+        if: vars.PUBLISH_NUGET == 'true'
+        with:
+          dotnet-version: 10.0.x
+      - name: NuGet login (trusted publishing)
+        if: vars.PUBLISH_NUGET == 'true'
+        id: nuget
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+      - name: Push NuGet packages
+        if: vars.PUBLISH_NUGET == 'true'
+        run: |
+          dotnet nuget push "artifacts/release/nuget/*.nupkg" --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json --skip-duplicate

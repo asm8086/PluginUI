@@ -1,0 +1,26 @@
+<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- SPDX-FileCopyrightText: 2026 asm8086 -->
+<!-- SPDX-License-Identifier: MIT -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Runs the official Steinberg VST3 validator on a built plug-in (.vst3 file or bundle folder): release checks. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- A host, not a plug-in: no VST3 factory export. -->
+    <NPlugFactoryExport>false</NPlugFactoryExport>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(NPlugRoot)NPlug.Validator\NPlug.Validator.csproj" />
+  </ItemGroup>
+
+  <Import Project="$(NPlugRoot)NPlug.Proxy\build\NPlug.Proxy.targets" />
+  <Import Project="$(NPlugRoot)NPlug.Validator\build\NPlug.Validator.targets" />
+  <Import Project="$(NPlugRoot)NPlug\build\NPlug.targets" />
+
+</Project>

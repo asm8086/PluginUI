@@ -1,0 +1,8 @@
+# 2026/10/18 12:38:00 UTC - PluginUI
+# Analyzer rules enforced on every PluginUI project except the tests (see Directory.Build.props).
+is_global = true
+
+# Numbers and text conversions must never depend on the regional settings of the machine: every number shown or
+# parsed by PluginUI uses a decimal point (InvariantNumber / CultureInfo.InvariantCulture).
+dotnet_diagnostic.CA1304.severity = error
+dotnet_diagnostic.CA1305.severity = error

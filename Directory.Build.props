@@ -1,0 +1,68 @@
+<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- SPDX-FileCopyrightText: 2026 asm8086 -->
+<!-- SPDX-License-Identifier: MIT -->
+<Project>
+
+  <!--
+    Target architecture and SIMD instruction set, shared by every project below this folder.
+
+    * PlatformTarget x64: the assemblies are 64-bit only, whatever the solution platform ("Any CPU" included).
+      Skipped when another architecture is requested explicitly (e.g. dotnet publish -r win-arm64).
+    * JIT (Debug builds loaded through the NPlug proxy, tests, Gallery without AOT): RyuJIT already uses
+      every instruction set of the running CPU (SSE4.2, AVX2, FMA, AVX-512...): nothing to configure.
+    * NativeAOT (dotnet publish -p:PublishAot=true): the code is compiled ahead of time for a fixed instruction
+      set. The default x64 baseline has no AVX/AVX2/FMA (Vector256.IsHardwareAccelerated is false, Vector<float>
+      has 4 lanes). x86-64-v3 enables AVX, AVX2, FMA, BMI1/2, LZCNT and MOVBE: Intel Haswell (2013) and later,
+      AMD Zen and later. A binary built this way refuses to load on older CPUs; to ship a build for them, override:
+        dotnet publish ... -p:IlcInstructionSet=x86-64-v2
+      ("native" targets exactly the build machine, for personal use only.)
+  -->
+  <PropertyGroup>
+    <PlatformTarget Condition="'$(PlatformTarget)' == '' and ('$(RuntimeIdentifier)' == '' or $(RuntimeIdentifier.EndsWith('-x64')))">x64</PlatformTarget>
+    <IlcInstructionSet Condition="'$(IlcInstructionSet)' == '' and '$(PlatformTarget)' == 'x64'">x86-64-v3</IlcInstructionSet>
+    <!-- NativeAOT: favor speed over binary size (NPlug.targets already does it for plugins). -->
+    <OptimizationPreference Condition="'$(OptimizationPreference)' == ''">Speed</OptimizationPreference>
+  </PropertyGroup>
+
+  <!--
+    Patched NPlug sources, shared by PluginUI.NPlug, the samples and the tests (a plug-in must reference the same
+    NPlug.csproj). Default: the git submodule external/NPlug (fork asm8086/NPlug, branch integration/pluginui;
+    clone with recurse-submodules), else the sibling folder ..\NPlugCorrected. Override with -p:NPlugRoot=<folder>\src\.
+  -->
+  <PropertyGroup>
+    <NPlugRoot Condition="'$(NPlugRoot)' == '' and Exists('$(MSBuildThisFileDirectory)external/NPlug/src/NPlug/NPlug.csproj')">$(MSBuildThisFileDirectory)external\NPlug\src\</NPlugRoot>
+    <NPlugRoot Condition="'$(NPlugRoot)' == ''">$(MSBuildThisFileDirectory)..\NPlugCorrected\src\</NPlugRoot>
+  </PropertyGroup>
+
+  <!-- Version, authorship and package metadata (only PluginUI and PluginUI.Design are packed). -->
+  <PropertyGroup>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <Authors>asm8086</Authors>
+    <Company>asm8086</Company>
+    <Product>PluginUI</Product>
+    <Copyright>Copyright (c) 2026 asm8086</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://asm8086.github.io/PluginUI/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/asm8086/PluginUI</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>audio;vst3;plugin;ui;gui;direct2d;win32;nativeaot;nplug</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <IsPackable>false</IsPackable>
+    <!-- Source Link (built into the SDK), symbol packages, reproducible builds on CI. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)docs\images\icon.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <!-- Culture-independent code: CA1304 / CA1305 are errors (see CodeAnalysis.globalconfig). Tests are exempt. -->
+  <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(MSBuildProjectExtension)' == '.csproj'">
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)CodeAnalysis.globalconfig" />
+  </ItemGroup>
+
+</Project>

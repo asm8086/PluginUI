@@ -1,0 +1,37 @@
+<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PluginUI.DemoSynth</RootNamespace>
+    <AssemblyName>PluginUI.DemoSynth</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Debug (non-AOT) mode: the NPlug proxy (PluginUI.DemoSynth.vst3) loads this assembly with CoreCLR, so the
+         dependency assemblies must sit next to it. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <IsAotCompatible>true</IsAotCompatible>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+
+    <!-- Windows x64 plug-in by default (bin\$(Configuration)\net10.0\win-x64\); -r win-arm64 for ARM64.
+         PlatformTarget and the NativeAOT instruction set come from ..\..\Directory.Build.props. -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <!-- NPlugRoot (patched NPlug sources, the same NPlug.csproj as PluginUI.NPlug): ../../Directory.Build.props. -->
+  <ItemGroup>
+    <ProjectReference Include="$(NPlugRoot)NPlug\NPlug.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.NPlug\PluginUI.NPlug.csproj" />
+  </ItemGroup>
+
+  <!-- Native debug proxy (Debug), native export of GetPluginFactory, NativeAOT defaults, .vst3 bundle. -->
+  <Import Project="$(NPlugRoot)NPlug.Proxy\build\NPlug.Proxy.targets" />
+  <Import Project="$(NPlugRoot)NPlug\build\NPlug.targets" />
+
+</Project>

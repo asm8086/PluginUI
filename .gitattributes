@@ -1,0 +1,11 @@
+# 2026/10/18 16:20:00 UTC - PluginUI
+# Text files are normalized to LF in the repository and checked out with the platform's line endings.
+* text=auto
+*.cs text diff=csharp
+*.md text
+*.ps1 text eol=crlf
+*.c text
+*.png binary
+*.ico binary
+*.wav binary
+*.dll binary

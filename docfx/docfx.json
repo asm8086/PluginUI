@@ -1,0 +1,62 @@
+{
+  "comment": "2026/10/18 16:20:00 UTC - PluginUI",
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../src",
+          "files": [
+            "PluginUI/PluginUI.csproj",
+            "PluginUI.NPlug/PluginUI.NPlug.csproj",
+            "PluginUI.Design/PluginUI.Design.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "namespaceLayout": "flattened",
+      "memberLayout": "samePage",
+      "enumSortOrder": "declaringOrder",
+      "properties": {
+        "Configuration": "Release"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      { "files": [ "index.md", "toc.yml", "articles/**.{md,yml}", "api/**.{yml,md}" ] },
+      {
+        "src": "..",
+        "files": [
+          "README.md",
+          "README_FR.md",
+          "CHANGELOG.md",
+          "CONTRIBUTING*.md",
+          "docs/*.md",
+          "samples/PluginUI.DemoSynth/README*.md"
+        ]
+      }
+    ],
+    "resource": [
+      { "files": [ "images/**" ] },
+      { "src": "..", "files": [ "docs/images/**.png", "LICENSE" ] }
+    ],
+    "overwrite": [
+      { "files": [ "namespaces/*.md" ] }
+    ],
+    "output": "_site",
+    "template": [ "default", "modern" ],
+    "globalMetadata": {
+      "_appName": "PluginUI",
+      "_appTitle": "PluginUI",
+      "_appFooter": "PluginUI — MIT License — Copyright (c) 2026 asm8086",
+      "_enableSearch": true,
+      "_appLogoPath": "images/logo.svg",
+      "_appFaviconPath": "images/logo.svg",
+      "_gitContribute": { "repo": "https://github.com/asm8086/PluginUI", "branch": "main" },
+      "pdf": false
+    },
+    "sitemap": { "baseUrl": "https://asm8086.github.io/PluginUI" },
+    "markdownEngineProperties": { "alerts": {} }
+  }
+}

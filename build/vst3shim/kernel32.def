@@ -1,0 +1,11 @@
+; 2026/10/18 16:20:00 UTC - PluginUI
+; Import library for local builds with lld-link (MSVC uses the Windows SDK kernel32.lib).
+LIBRARY kernel32.dll
+EXPORTS
+GetModuleHandleExW
+GetModuleFileNameW
+LoadLibraryExW
+GetProcAddress
+GetEnvironmentVariableW
+OutputDebugStringW
+Sleep

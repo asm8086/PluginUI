@@ -1,0 +1,546 @@
+{
+  "comment": "2026/10/18 14:24:00 UTC - PluginUI",
+  "format": "pluginui",
+  "version": 1,
+  "name": "DemoSynth",
+  "size": [820, 470],
+  "sizing": "ScaleToFit",
+  "theme": {
+    "base": "Dark",
+    "accent": "#FFB74D"
+  },
+  "parameters": [
+    {
+      "name": "Shape",
+      "kind": "Linear",
+      "min": 0,
+      "max": 100,
+      "default": 0,
+      "unit": "%",
+      "decimals": 2
+    },
+    {
+      "name": "Detune",
+      "kind": "Linear",
+      "min": 0,
+      "max": 50,
+      "default": 8,
+      "unit": "ct",
+      "decimals": 2
+    },
+    {
+      "name": "Cutoff",
+      "kind": "Logarithmic",
+      "min": 20,
+      "max": 20000,
+      "default": 2400,
+      "unit": "Hz",
+      "decimals": 2
+    },
+    {
+      "name": "Resonance",
+      "kind": "Linear",
+      "min": 0,
+      "max": 100,
+      "default": 20,
+      "unit": "%",
+      "decimals": 2
+    },
+    {
+      "name": "Filter Env",
+      "kind": "Linear",
+      "min": -5,
+      "max": 5,
+      "default": 2,
+      "unit": "oct",
+      "decimals": 2
+    },
+    {
+      "name": "Sidechain Duck",
+      "kind": "Linear",
+      "min": 0,
+      "max": 100,
+      "default": 0,
+      "unit": "%",
+      "decimals": 2
+    },
+    {
+      "name": "Duck Release",
+      "kind": "Logarithmic",
+      "min": 0.02,
+      "max": 1,
+      "default": 0.15,
+      "unit": "s",
+      "decimals": 2
+    },
+    {
+      "name": "Volume",
+      "kind": "Linear",
+      "min": -48,
+      "max": 6,
+      "default": -9,
+      "unit": "dB",
+      "decimals": 2
+    },
+    {
+      "name": "Amp Attack",
+      "kind": "Logarithmic",
+      "min": 0.001,
+      "max": 5,
+      "default": 0.005,
+      "unit": "s",
+      "decimals": 2
+    },
+    {
+      "name": "Amp Decay",
+      "kind": "Logarithmic",
+      "min": 0.005,
+      "max": 10,
+      "default": 0.3,
+      "unit": "s",
+      "decimals": 2
+    },
+    {
+      "name": "Amp Sustain",
+      "kind": "Linear",
+      "min": 0,
+      "max": 100,
+      "default": 70,
+      "unit": "%",
+      "decimals": 2
+    },
+    {
+      "name": "Amp Release",
+      "kind": "Logarithmic",
+      "min": 0.005,
+      "max": 10,
+      "default": 0.35,
+      "unit": "s",
+      "decimals": 2
+    },
+    {
+      "name": "Filter Attack",
+      "kind": "Logarithmic",
+      "min": 0.001,
+      "max": 5,
+      "default": 0.002,
+      "unit": "s",
+      "decimals": 2
+    },
+    {
+      "name": "Filter Decay",
+      "kind": "Logarithmic",
+      "min": 0.005,
+      "max": 10,
+      "default": 0.4,
+      "unit": "s",
+      "decimals": 2
+    },
+    {
+      "name": "Filter Sustain",
+      "kind": "Linear",
+      "min": 0,
+      "max": 100,
+      "default": 20,
+      "unit": "%",
+      "decimals": 2
+    },
+    {
+      "name": "Filter Release",
+      "kind": "Logarithmic",
+      "min": 0.005,
+      "max": 10,
+      "default": 0.4,
+      "unit": "s",
+      "decimals": 2
+    },
+    {
+      "name": "Pitch Bend",
+      "kind": "Linear",
+      "min": -2,
+      "max": 2,
+      "default": 0,
+      "unit": "st",
+      "decimals": 2
+    },
+    {
+      "name": "Mod Wheel",
+      "kind": "Linear",
+      "min": 0,
+      "max": 100,
+      "default": 0,
+      "unit": "%",
+      "decimals": 2
+    }
+  ],
+  "codegen": {
+    "namespace": "PluginUI.DemoSynth.Editor",
+    "class": "DemoSynthDesign",
+    "target": "PluginEditorView",
+    "buildOverride": true,
+    "fieldAccess": "private"
+  },
+  "root": {
+    "type": "Canvas",
+    "children": [
+      {
+        "type": "Label",
+        "name": "title",
+        "properties": {
+          "Width": 160,
+          "Height": 30,
+          "Left": 18,
+          "Top": 10,
+          "Text": "DemoSynth",
+          "TextStyle": {
+            "Size": 18,
+            "Weight": "SemiBold"
+          }
+        }
+      },
+      {
+        "type": "Label",
+        "name": "subtitle",
+        "properties": {
+          "Width": 200,
+          "Height": 20,
+          "Left": 140,
+          "Top": 17,
+          "Text": "PluginUI · NPlug",
+          "TextStyle": {
+            "Size": 10.5
+          },
+          "IsDim": true
+        }
+      },
+      {
+        "type": "ABCompareBar",
+        "name": "ab",
+        "properties": {
+          "Width": 120,
+          "Height": 24,
+          "Left": 682,
+          "Top": 14
+        }
+      },
+      {
+        "type": "GroupBox",
+        "name": "sectionOSCILLATORS",
+        "properties": {
+          "Width": 180,
+          "Height": 152,
+          "Left": 14,
+          "Top": 50,
+          "Header": "OSCILLATORS"
+        }
+      },
+      {
+        "type": "Knob",
+        "name": "shape",
+        "properties": {
+          "Width": 76,
+          "Height": 104,
+          "Left": 26,
+          "Top": 82,
+          "Label": "SHAPE"
+        },
+        "bindings": {
+          "Parameter": "Shape"
+        }
+      },
+      {
+        "type": "Knob",
+        "name": "detune",
+        "properties": {
+          "Width": 76,
+          "Height": 104,
+          "Left": 110,
+          "Top": 82,
+          "Label": "DETUNE",
+          "Value": 0.16,
+          "DefaultValue": 0.16
+        },
+        "bindings": {
+          "Parameter": "Detune"
+        }
+      },
+      {
+        "type": "GroupBox",
+        "name": "sectionFILTER",
+        "properties": {
+          "Width": 262,
+          "Height": 152,
+          "Left": 202,
+          "Top": 50,
+          "Header": "FILTER"
+        }
+      },
+      {
+        "type": "Knob",
+        "name": "cutoff",
+        "properties": {
+          "Width": 76,
+          "Height": 104,
+          "Left": 212,
+          "Top": 82,
+          "Label": "CUTOFF",
+          "Value": 0.6930604153492083,
+          "DefaultValue": 0.6930604153492083
+        },
+        "bindings": {
+          "Parameter": "Cutoff"
+        }
+      },
+      {
+        "type": "Knob",
+        "name": "resonance",
+        "properties": {
+          "Width": 76,
+          "Height": 104,
+          "Left": 296,
+          "Top": 82,
+          "Label": "RESO",
+          "Value": 0.2,
+          "DefaultValue": 0.2
+        },
+        "bindings": {
+          "Parameter": "Resonance"
+        }
+      },
+      {
+        "type": "Knob",
+        "name": "filterEnv",
+        "properties": {
+          "Width": 76,
+          "Height": 104,
+          "Left": 380,
+          "Top": 82,
+          "Label": "ENV",
+          "Value": 0.7,
+          "DefaultValue": 0.7,
+          "IsBipolar": true
+        },
+        "bindings": {
+          "Parameter": "Filter Env"
+        }
+      },
+      {
+        "type": "GroupBox",
+        "name": "sectionSIDECHAIN",
+        "properties": {
+          "Width": 232,
+          "Height": 152,
+          "Left": 472,
+          "Top": 50,
+          "Header": "SIDECHAIN"
+        }
+      },
+      {
+        "type": "Knob",
+        "name": "duck",
+        "properties": {
+          "Width": 76,
+          "Height": 104,
+          "Left": 480,
+          "Top": 82,
+          "Label": "DUCK"
+        },
+        "bindings": {
+          "Parameter": "Sidechain Duck"
+        }
+      },
+      {
+        "type": "Knob",
+        "name": "duckRelease",
+        "properties": {
+          "Width": 76,
+          "Height": 104,
+          "Left": 552,
+          "Top": 82,
+          "Label": "RELEASE",
+          "Value": 0.5150539804460446,
+          "DefaultValue": 0.5150539804460446
+        },
+        "bindings": {
+          "Parameter": "Duck Release"
+        }
+      },
+      {
+        "type": "LevelMeter",
+        "name": "sidechainMeter",
+        "properties": {
+          "Width": 12,
+          "Height": 90,
+          "Left": 632,
+          "Top": 84,
+          "ToolTip": "Sidechain input",
+          "MinDb": -48,
+          "ShowScale": false
+        }
+      },
+      {
+        "type": "HistoryGraph",
+        "name": "duckGraph",
+        "properties": {
+          "Width": 46,
+          "Height": 90,
+          "Left": 650,
+          "Top": 84,
+          "ToolTip": "Gain reduction",
+          "FillFromTop": true,
+          "ShowCurrentValue": false
+        }
+      },
+      {
+        "type": "GroupBox",
+        "name": "sectionOUTPUT",
+        "properties": {
+          "Width": 94,
+          "Height": 152,
+          "Left": 712,
+          "Top": 50,
+          "Header": "OUTPUT"
+        }
+      },
+      {
+        "type": "Knob",
+        "name": "volume",
+        "properties": {
+          "Width": 62,
+          "Height": 104,
+          "Left": 716,
+          "Top": 82,
+          "Label": "VOLUME",
+          "Value": 0.7222222222222222,
+          "DefaultValue": 0.7222222222222222
+        },
+        "bindings": {
+          "Parameter": "Volume"
+        }
+      },
+      {
+        "type": "LevelMeter",
+        "name": "outputMeter",
+        "properties": {
+          "Width": 16,
+          "Height": 90,
+          "Left": 782,
+          "Top": 84,
+          "MinDb": -48,
+          "ShowScale": false
+        }
+      },
+      {
+        "type": "GroupBox",
+        "name": "sectionAMPENVELOPE",
+        "properties": {
+          "Width": 392,
+          "Height": 140,
+          "Left": 14,
+          "Top": 210,
+          "Header": "AMP ENVELOPE"
+        }
+      },
+      {
+        "type": "GroupBox",
+        "name": "sectionFILTERENVELOPE",
+        "properties": {
+          "Width": 392,
+          "Height": 140,
+          "Left": 414,
+          "Top": 210,
+          "Header": "FILTER ENVELOPE"
+        }
+      },
+      {
+        "type": "EnvelopeEditor",
+        "name": "ampEnvelope",
+        "properties": {
+          "Width": 376,
+          "Height": 102,
+          "Left": 22,
+          "Top": 240,
+          "Attack": 0.1889634150903278,
+          "Decay": 0.5386655839902418,
+          "Sustain": 0.7,
+          "Release": 0.5589461599676034
+        },
+        "bindings": {
+          "AttackParameter": "Amp Attack",
+          "DecayParameter": "Amp Decay",
+          "SustainParameter": "Amp Sustain",
+          "ReleaseParameter": "Amp Release"
+        }
+      },
+      {
+        "type": "EnvelopeEditor",
+        "name": "filterEnvelope",
+        "properties": {
+          "Width": 376,
+          "Height": 102,
+          "Left": 422,
+          "Top": 240,
+          "Attack": 0.08138211321289623,
+          "Decay": 0.5765139939630113,
+          "Sustain": 0.2,
+          "Release": 0.5765139939630113
+        },
+        "bindings": {
+          "AttackParameter": "Filter Attack",
+          "DecayParameter": "Filter Decay",
+          "SustainParameter": "Filter Sustain",
+          "ReleaseParameter": "Filter Release"
+        }
+      },
+      {
+        "type": "PitchWheel",
+        "name": "pitchWheel",
+        "properties": {
+          "Width": 34,
+          "Height": 96,
+          "Left": 16,
+          "Top": 360,
+          "Label": "PITCH"
+        },
+        "bindings": {
+          "Parameter": "Pitch Bend"
+        }
+      },
+      {
+        "type": "ModWheel",
+        "name": "modWheel",
+        "properties": {
+          "Width": 34,
+          "Height": 96,
+          "Left": 56,
+          "Top": 360,
+          "Label": "MOD"
+        },
+        "bindings": {
+          "Parameter": "Mod Wheel"
+        }
+      },
+      {
+        "type": "PianoKeyboard",
+        "name": "keyboard",
+        "properties": {
+          "Width": 692,
+          "Height": 96,
+          "Left": 98,
+          "Top": 360,
+          "LowestNote": 36,
+          "HighestNote": 96
+        }
+      },
+      {
+        "type": "CornerResizer",
+        "properties": {
+          "Width": 18,
+          "Height": 18,
+          "Left": 800,
+          "Top": 450
+        }
+      }
+    ]
+  }
+}

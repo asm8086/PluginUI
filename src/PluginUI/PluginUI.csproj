@@ -1,0 +1,35 @@
+<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PluginUI</RootNamespace>
+    <AssemblyName>PluginUI</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
+    <Description>Win32 + Direct2D user interface toolkit for audio plug-in editors (VST3...), NativeAOT compatible.</Description>
+
+    <!-- NativeAOT / trimming analyzers: any incompatibility becomes a build error. -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Blittable, NativeAOT-compatible bindings for Win32, Direct2D, DirectWrite and WIC. -->
+    <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PluginUI.Tests" />
+  </ItemGroup>
+
+</Project>
