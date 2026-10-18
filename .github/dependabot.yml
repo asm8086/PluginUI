@@ -1,0 +1,12 @@
+# 2026/10/18 17:31:00 UTC - PluginUI
+# Weekly updates of the pinned GitHub Actions (commit SHAs) and of the NuGet dependencies.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly

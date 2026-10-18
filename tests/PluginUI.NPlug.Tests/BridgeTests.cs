@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -217,6 +217,36 @@ public class BridgeTests
             Assert.That(PluginUIMessages.SharedState, Does.StartWith("PluginUI."));
             Assert.That(PluginUIMessages.SharedStateRequest, Does.StartWith("PluginUI."));
             Assert.That(PluginUIMessages.TrySend(null, null, "x"), Is.False, "no host: nothing sent, no exception");
+        });
+    }
+    [Test]
+    public void HostKeyCodesMapToKeys()
+    {
+        // VST3 VirtualKeyCodes: KEY_BACK = 1 … KEY_F1 = 40 … KEY_F12 = 51, KEY_SHIFT = 54, KEY_CONTROL = 55, KEY_ALT = 56.
+        Assert.Multiple(() =>
+        {
+            Assert.That(PluginEditorView.MapKey(0, 1), Is.EqualTo(Key.Back));
+            Assert.That(PluginEditorView.MapKey(0, 22), Is.EqualTo(Key.Delete));
+            Assert.That(PluginEditorView.MapKey(0, 40), Is.EqualTo(Key.F1));
+            Assert.That(PluginEditorView.MapKey(0, 51), Is.EqualTo(Key.F12));
+            Assert.That(PluginEditorView.MapKey(0, 54), Is.EqualTo(Key.Shift));
+            Assert.That(PluginEditorView.MapKey(0, 55), Is.EqualTo(Key.Control));
+            Assert.That(PluginEditorView.MapKey(0, 56), Is.EqualTo(Key.Alt));
+            Assert.That(PluginEditorView.MapKey(0, 57), Is.EqualTo(Key.None), "KEY_EQUALS without a character");
+            Assert.That(PluginEditorView.MapKey('a', 0), Is.EqualTo(Key.A));
+        });
+    }
+
+    [Test]
+    public void TypedValuesUseTheDecimalPoint()
+    {
+        var model = new DemoSynth.Plugin.DemoSynthModel();
+        model.Initialize();
+        var cutoff = new NPlugParameterSet(new FakeSink(model))[model.Cutoff];
+        Assert.Multiple(() =>
+        {
+            Assert.That(cutoff.TryParse("1000.5 Hz", out var n) && Math.Abs(model.Cutoff.ToPlain(n) - 1000.5) < 0.01, Is.True);
+            Assert.That(cutoff.TryParse("1000,5", out _), Is.False, "decimal comma");
         });
     }
 }

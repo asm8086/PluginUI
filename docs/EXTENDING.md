@@ -1,4 +1,4 @@
-<!-- 2026/10/18 15:48:00 UTC - PluginUI -->
+<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
 
 # Extending PluginUI
 
@@ -86,7 +86,7 @@ public sealed class BarControl : ValueControl
         if (IsMouseOver) dc.FillRoundedRect(widget, r, style.Hover);
     }
 
-    protected internal override void OnMouseDown(MouseEventArgs e)
+    protected override void OnMouseDown(MouseEventArgs e)
     {
         base.OnMouseDown(e);
         if (TryHandleReset(e) || e.Button != MouseButton.Left) return;
@@ -97,7 +97,7 @@ public sealed class BarControl : ValueControl
         e.Handled = true;        // the host captures the mouse for this element
     }
 
-    protected internal override void OnMouseMove(MouseEventArgs e)
+    protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
         if (!IsEditing) return;
@@ -105,7 +105,7 @@ public sealed class BarControl : ValueControl
         UpdateGesture(_startValue + (e.Position.X - _startX) / DragSensitivity * scale); // performEdit
     }
 
-    protected internal override void OnMouseUp(MouseEventArgs e)
+    protected override void OnMouseUp(MouseEventArgs e)
     {
         base.OnMouseUp(e);
         IsPressed = false;

@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -535,6 +535,20 @@ public static class DesignValues
         _ when char.IsControl(c) || char.IsSurrogate(c) || c is '\u2028' or '\u2029' or '\u0085' => "'\\u" + ((int)c).ToString("X4", CultureInfo.InvariantCulture) + "'",
         _ => "'" + c + "'",
     };
+
+    /// <summary>
+    /// Text safe to put in a single-line C# comment: line terminators (CR, LF, NEL, LS, PS) and other control
+    /// characters are replaced by spaces, so a name cannot end the comment and inject code.
+    /// </summary>
+    /// <param name="s">The text.</param>
+    /// <returns>The text on one line.</returns>
+    public static string CommentText(string s)
+    {
+        ArgumentNullException.ThrowIfNull(s);
+        var sb = new StringBuilder(s.Length);
+        foreach (char c in s) sb.Append(char.IsControl(c) || c is '\u2028' or '\u2029' ? ' ' : c);
+        return sb.ToString();
+    }
 
     /// <summary>C# string literal.</summary>
     /// <param name="s">The text.</param>

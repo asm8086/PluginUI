@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -9,11 +9,12 @@
 //   Contents/x86_64-win/<Name>.x86-64-v2.dll     build for any x86-64-v2 processor (SSE4.2, POPCNT)
 //
 // On the first call, the shim checks the processor (CPUID and the AVX state enabled by the OS), loads the best build
-// present next to it and forwards GetPluginFactory, InitDll and ExitDll to it. The environment variable
+// present next to it and forwards GetPluginFactory, InitDll and ExitDll to it. On a processor below x86-64-v2 it loads
+// nothing (GetPluginFactory returns null): the NativeAOT runtime would otherwise end the host. The environment variable
 // PLUGINUI_X64_LEVEL=v2 forces the x86-64-v2 build (troubleshooting, tests); v3 is honored on a v3 processor only.
 //
-// No CRT and no Windows SDK headers: the few kernel32 functions used are declared below, so the same file builds with
-// MSVC (cl /O2 /LD vst3shim.c kernel32.lib) and with clang + lld-link (see build/Build-Release.ps1).
+// No C runtime and no Windows SDK headers: the few kernel32 functions used are declared below. Built with
+// -DPLUGINUI_SHIM_NO_CRT and no default libraries, by MSVC or by clang + lld-link (see build/Build-Release.ps1).
 
 #if defined(__clang__) || defined(__GNUC__)
 // clang / gcc: inline assembly (their intrin.h needs the C runtime headers).
@@ -60,6 +61,9 @@ KERNEL32 void Sleep(DWORD milliseconds);
 
 #ifdef PLUGINUI_SHIM_NO_CRT
 // Built without the C runtime (/NODEFAULTLIB): the compiler may still turn copy loops into these calls.
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma function(memcpy, memset)
+#endif
 void* memcpy(void* destination, const void* source, unsigned long long count)
 {
     unsigned char* d = (unsigned char*)destination;
@@ -82,6 +86,21 @@ typedef BOOL (*ModuleProc)(void);
 static WCHAR g_path[PATH_CAPACITY];
 static HMODULE g_impl;
 static volatile long g_state; // 0: not loaded, 1: loading, 2: done (g_impl may be null)
+
+// x86-64-v2: CMPXCHG16B, LAHF/SAHF, POPCNT, SSE3, SSE4.1, SSE4.2, SSSE3.
+static int SupportsX64V2(void)
+{
+    int r[4];
+    CpuId(r, 0, 0);
+    if (r[0] < 1) return 0;
+    CpuId(r, 1, 0);
+    const int need1 = (1 << 0) | (1 << 9) | (1 << 13) | (1 << 19) | (1 << 20) | (1 << 23); // SSE3, SSSE3, CX16, SSE4.1, SSE4.2, POPCNT
+    if ((r[2] & need1) != need1) return 0;
+    CpuId(r, (int)0x80000000, 0);
+    if ((unsigned)r[0] < 0x80000001u) return 0;
+    CpuId(r, (int)0x80000001, 0);
+    return (r[2] & 1) != 0; // LAHF/SAHF in 64-bit mode
+}
 
 // x86-64-v3: AVX, AVX2, BMI1, BMI2, F16C, FMA, LZCNT, MOVBE, with the YMM state enabled by the OS (XCR0 bits 1-2).
 static int SupportsX64V3(void)
@@ -164,13 +183,18 @@ static HMODULE LoadImplementation(void)
         return 0;
     }
 
+    if (!SupportsX64V2())
+    {
+        Log(L"this processor does not support x86-64-v2 (SSE4.2, POPCNT): the plug-in cannot run on it", 0);
+        return 0;
+    }
     const int v3 = SupportsX64V3();
     int level = v3 ? 3 : 2;
     WCHAR forced[8];
     DWORD forcedLength = GetEnvironmentVariableW(L"PLUGINUI_X64_LEVEL", forced, 8);
     if (forcedLength == 2 && (forced[0] == L'v' || forced[0] == L'V'))
     {
-        // v2 can always be forced; v3 only on a processor that runs it (the NativeAOT runtime would end the host).
+        // v2 can always be forced (checked above); v3 only on a processor that runs it.
         if (forced[1] == L'2') level = 2;
         else if (forced[1] == L'3' && v3) level = 3;
     }

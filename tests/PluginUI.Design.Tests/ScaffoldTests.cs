@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ public class ScaffoldTests
         var files = ProjectScaffolder.Create(design, new ScaffoldOptions { ProjectName = "Filtr", Kind = ScaffoldKind.Effect, Timestamp = Stamp });
         Assert.That(files.Keys, Is.SupersetOf(new[]
         {
-            "Filtr.csproj", "Directory.Build.props", "README.md", ".gitignore",
+            "Filtr.csproj", "Directory.Build.props", "Directory.Build.targets", "README.md", ".gitignore",
             "Plugin/FiltrModel.cs", "Plugin/FiltrProcessor.cs", "Plugin/FiltrController.cs", "Plugin/FiltrPlugin.cs", "Plugin/LogRangeParameter.cs",
             "Editor/FiltrEditor.cs", "Editor/FiltrEditor.Designer.cs", "Editor/FiltrEditor.pluginui",
         }));

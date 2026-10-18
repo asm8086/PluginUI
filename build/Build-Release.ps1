@@ -1,4 +1,4 @@
-# 2026/10/18 16:20:00 UTC - PluginUI
+# 2026/10/18 17:31:00 UTC - PluginUI
 # SPDX-FileCopyrightText: 2026 asm8086
 # SPDX-License-Identifier: MIT
 
@@ -65,13 +65,17 @@ $ReleaseDir = Join-Path $Artifacts 'release'
 $PluginName = 'PluginUI.DemoSynth'
 
 if (-not $Version) {
-    if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -match '^v(\d+\.\d+\.\d+.*)$') {
-        $Version = $Matches[1]
+    if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -like 'v*') {
+        $Version = $env:GITHUB_REF_NAME.Substring(1)
     }
     else {
         [xml]$props = Get-Content (Join-Path $Root 'Directory.Build.props')
         $Version = $props.SelectSingleNode('//VersionPrefix').InnerText
     }
+}
+# Semantic version only: the value goes into file names and into -p:Version (a ';' would add MSBuild properties).
+if ($Version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$') {
+    throw "Invalid version '$Version': expected X.Y.Z or X.Y.Z-prerelease (letters, digits and dots)."
 }
 Write-Host "PluginUI release $Version ($Stage)"
 
@@ -115,7 +119,9 @@ function Build-Loader([string]$outDir) {
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
     if (Get-Command cl -ErrorAction SilentlyContinue) {
         Push-Location $outDir
-        try { Invoke-Native cl @('/nologo', '/O2', '/W4', '/LD', $source, '/Fe:vst3shim.dll', '/link', 'kernel32.lib') }
+        # No C runtime, as with clang: no security cookie, no runtime checks, DllMain as the entry point.
+        try { Invoke-Native cl @('/nologo', '/O2', '/W4', '/GS-', '/LD', '/DPLUGINUI_SHIM_NO_CRT', $source, '/Fe:vst3shim.dll',
+                '/link', '/NODEFAULTLIB', '/ENTRY:DllMain', 'kernel32.lib') }
         finally { Pop-Location }
     }
     elseif ((Get-Command clang -ErrorAction SilentlyContinue) -and (Get-Command lld-link -ErrorAction SilentlyContinue)) {
@@ -143,6 +149,23 @@ function Copy-Notices([string]$folder) {
     Copy-Item (Join-Path $Root 'build/THIRD-PARTY-NOTICES.txt') (Join-Path $folder 'THIRD-PARTY-NOTICES.txt')
 }
 
+function Write-AppNotes([string]$folder, [string]$name, [string]$rid) {
+    $requirements = if ($name -eq 'PluginUIEditor') {
+        'Windows 10 1809 or later and the .NET 10 Desktop Runtime (https://dotnet.microsoft.com/download/dotnet/10.0).'
+    }
+    else {
+        'Windows 10 1809 or later (single native executable, no runtime needed).'
+    }
+    $text = @"
+PluginUI $Version - $name ($rid)
+https://github.com/asm8086/PluginUI
+
+Requirements: $requirements
+Start: $name.exe
+"@
+    Set-Content -Path (Join-Path $folder 'README.txt') -Value $text -Encoding utf8
+}
+
 function Write-InstallNotes([string]$folder, [string]$kind) {
     $text = @"
 PluginUI $Version - $PluginName ($kind)
@@ -153,7 +176,8 @@ Requirements: Windows 10 1809 or later.
 
 Builds:
   universal  x64 and ARM64 in one bundle; on x64 a loader picks the x86-64-v3 build (AVX2, FMA: Intel Haswell 2013,
-             AMD Zen and later) or the x86-64-v2 build (any other 64-bit processor with SSE4.2).
+             AMD Zen and later) or the x86-64-v2 build (SSE4.2 and POPCNT: Intel Nehalem 2008, AMD Bulldozer 2011
+             and later); on an older processor the plug-in declines to load.
   x64-v3     x64 processors with AVX2 and FMA only.
   x64-v2     any x64 processor with SSE4.2 (slower DSP than x64-v3).
   arm64      Windows on ARM.
@@ -224,6 +248,7 @@ function Invoke-Package {
             if (Test-Path $dir) {
                 Get-ChildItem $dir -Filter '*.pdb' -Recurse | Remove-Item -Force
                 Copy-Notices $dir
+                Write-AppNotes $dir $app.Name $rid
                 New-Zip $dir (Join-Path $ReleaseDir "$($app.Name)-$Version-$rid.zip")
             }
         }

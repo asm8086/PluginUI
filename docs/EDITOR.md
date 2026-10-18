@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
 
 # PluginUIEditor — visual designer
 
@@ -36,7 +36,7 @@ PluginUIEditor is a WinForms application for laying out PluginUI editors visuall
 
 ## Requirements and starting
 
-- Windows 10 1809 or later, x64, with the .NET 10 Desktop Runtime.
+- Windows 10 1809 or later, x64 or ARM64, with the .NET 10 Desktop Runtime.
 - Build: `dotnet build tools/PluginUIEditor -c Release` (the project also builds on Linux or macOS for CI, but only runs on Windows).
 - Start: `PluginUIEditor.exe [design.pluginui]`. The optional argument opens a design. `samples/Designs/DemoSynth.pluginui` is the layout of the demo synthesizer, captured from its editor; it is also copied next to the executable (`samples\`).
 - `PluginUIEditor.exe --snapshot design.pluginui out.png [en|fr]` opens the design, selects its first named element and saves a picture of the window (used for this page).
@@ -185,7 +185,7 @@ protected override UIElement Build()
         ResolveParameter = DesignLoadOptions.ByName(Parameters.GetSnapshotParameters(includeBypass: true)),
         Assets = new EmbeddedAssetResolver(typeof(MyEditor).Assembly),   // or new FileAssetResolver(folder)
     });
-    result.Get<Button>("reset").Clicked += _ => ResetAll();
+    result.Get<Button>("reset").Clicked += ResetAll;
     return result.Root;   // result.Warnings lists unknown types, missing assets…
 }
 ```
@@ -210,6 +210,7 @@ Created files, for an instrument named `MySynth`:
 MySynth/
 ├── MySynth.csproj              NativeAOT plug-in (.vst3), references to NPlug and PluginUI
 ├── Directory.Build.props
+├── Directory.Build.targets     NativeAOT x64 instruction set (x86-64-v3)
 ├── README.md
 ├── .gitignore
 ├── Plugin/                     MySynthModel (parameters of the design), Processor, Controller, Plugin, LogRangeParameter

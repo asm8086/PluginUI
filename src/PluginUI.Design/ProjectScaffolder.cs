@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -141,6 +141,7 @@ public static class ProjectScaffolder
         files[$"Editor/{editor}.Designer.cs"] = generator.Generate(copy);
 
         files["Directory.Build.props"] = context.DirectoryBuildProps();
+        files["Directory.Build.targets"] = context.DirectoryBuildTargets();
         files["README.md"] = context.Readme();
         files[".gitignore"] = context.Header("#") + "bin/\nobj/\n.vs/\n*.user\n";
         files["Editor/assets/README.md"] = context.Header("md") + "\nImages and SVG files referenced by the design (`assets/...` paths). They are embedded in the assembly.\n";
@@ -270,14 +271,24 @@ public static class ProjectScaffolder
         public string DirectoryBuildProps() => Header("xml") + """
             <Project>
 
+              <PropertyGroup>
+                <OptimizationPreference Condition="'$(OptimizationPreference)' == ''">Speed</OptimizationPreference>
+              </PropertyGroup>
+
+            </Project>
+
+            """;
+
+        public string DirectoryBuildTargets() => Header("xml") + """
+            <Project>
+
               <!--
-                64-bit Windows plug-in. NativeAOT builds target x86-64-v3 (AVX2, FMA: Intel 2013+, AMD 2015+); for older
-                CPUs publish with -p:IlcInstructionSet=x86-64-v2. JIT builds (Debug) use every instruction set of the CPU.
+                Evaluated after the project, once its runtime identifier (win-x64 or win-arm64) is known. NativeAOT x64 builds
+                target x86-64-v3 (AVX2, FMA: Intel 2013+, AMD 2015+); for older CPUs publish with
+                -p:IlcInstructionSet=x86-64-v2. JIT builds (Debug) use every instruction set of the CPU.
               -->
               <PropertyGroup>
-                <PlatformTarget Condition="'$(PlatformTarget)' == '' and ('$(RuntimeIdentifier)' == '' or $(RuntimeIdentifier.EndsWith('-x64')))">x64</PlatformTarget>
-                <IlcInstructionSet Condition="'$(IlcInstructionSet)' == '' and '$(PlatformTarget)' == 'x64'">x86-64-v3</IlcInstructionSet>
-                <OptimizationPreference Condition="'$(OptimizationPreference)' == ''">Speed</OptimizationPreference>
+                <IlcInstructionSet Condition="'$(IlcInstructionSet)' == '' and $(RuntimeIdentifier.EndsWith('-x64'))">x86-64-v3</IlcInstructionSet>
               </PropertyGroup>
 
             </Project>
@@ -332,7 +343,7 @@ public static class ProjectScaffolder
                     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
                     <IsAotCompatible>true</IsAotCompatible>
                     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
-                    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>{{define}}
+                    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>{{define}}
                   </PropertyGroup>
 
                   <PropertyGroup>
@@ -390,7 +401,7 @@ public static class ProjectScaffolder
             sb.Append("    }\n");
             foreach (var (property, p) in ModelParameters())
             {
-                sb.Append(CultureInfo.InvariantCulture, $"\n    /// <summary>{System.Security.SecurityElement.Escape(p.Name)}{(p.Unit.Length > 0 ? " (" + System.Security.SecurityElement.Escape(p.Unit) + ")" : string.Empty)}.</summary>\n");
+                sb.Append(CultureInfo.InvariantCulture, $"\n    /// <summary>{System.Security.SecurityElement.Escape(DesignValues.CommentText(p.Name))}{(p.Unit.Length > 0 ? " (" + System.Security.SecurityElement.Escape(DesignValues.CommentText(p.Unit)) + ")" : string.Empty)}.</summary>\n");
                 sb.Append(CultureInfo.InvariantCulture, $"    public {TypeOf(p)} {property} {{ get; }}\n");
             }
             sb.Append("}\n");
@@ -677,7 +688,7 @@ public static class ProjectScaffolder
                     /// <summary>Called once the design is built: wire events, set what the design cannot describe.</summary>
                     partial void OnBuilt(UIElement root)
                     {
-                {{(Instrument ? "        // Notes played on an on-screen keyboard go to the processor.\n        foreach (var keyboard in root.DescendantsAndSelf().OfType<PianoKeyboard>()) ConnectKeyboard(keyboard);\n" : "        // Example: ((Button)root.FindByName(\"reset\")!).Clicked += _ => { };\n")}}    }
+                {{(Instrument ? "        // Notes played on an on-screen keyboard go to the processor.\n        foreach (var keyboard in root.DescendantsAndSelf().OfType<PianoKeyboard>()) ConnectKeyboard(keyboard);\n" : "        // Example: ((Button)root.FindByName(\"reset\")!).Clicked += () => { };\n")}}    }
 
                 """);
             if (bindings)
@@ -824,7 +835,7 @@ public static class ProjectScaffolder
                 <ImplicitUsings>enable</ImplicitUsings>
                 <IsAotCompatible>true</IsAotCompatible>
                 <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
-                <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+                <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
               </PropertyGroup>
 
               <PropertyGroup>
@@ -918,7 +929,7 @@ public static class ProjectScaffolder
             };
             string build = options.Kind == ScaffoldKind.Standalone
                 ? "```\ndotnet run\ndotnet publish -c Release -p:PublishAot=true   # single native executable\n```\n"
-                : $"```\ndotnet build -c Debug                 # bin\\Debug\\net10.0\\win-x64\\{Name}.vst3 (debuggable through the NPlug proxy)\ndotnet publish -c Release -r win-x64  # NativeAOT {Name}.vst3 (AVX2); add -p:IlcInstructionSet=x86-64-v2 for older CPUs\n```\n\nCopy the `.vst3` to `C:\\Program Files\\Common Files\\VST3` and rescan the plug-ins in the DAW.\n";
+                : $"```\ndotnet build -c Debug                   # bin\\Debug\\net10.0\\win-x64\\{Name}.vst3 (win-arm64 on ARM64; debuggable through the NPlug proxy)\ndotnet publish -c Release -r win-x64    # NativeAOT {Name}.vst3 (AVX2); add -p:IlcInstructionSet=x86-64-v2 for older CPUs\ndotnet publish -c Release -r win-arm64  # NativeAOT {Name}.vst3 for Windows on ARM\n```\n\nCopy the `.vst3` to `C:\\Program Files\\Common Files\\VST3` and rescan the plug-ins in the DAW.\n";
             string live = options.IncludeLiveBridge && options.Kind != ScaffoldKind.Standalone
                 ? "\n## Live design (Debug builds)\n\n- In the DAW, Ctrl+Shift+E turns on live edit in the editor: move and resize, then **Ctrl+S** writes the layout to the design file.\n- Saving the design in PluginUIEditor rebuilds the editor in the DAW at once.\n- Regenerate the `.Designer.cs` file (PluginUIEditor: *Generate code*) before a release build.\n"
                 : string.Empty;

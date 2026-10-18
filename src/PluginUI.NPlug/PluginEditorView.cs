@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -391,9 +391,9 @@ public abstract class PluginEditorView : IAudioPluginView, IDisposable
             case 38: return Key.Decimal;
             case 39: return Key.Divide;
             case >= 40 and <= 51: return (Key)((int)Key.F1 + keyCode - 40);
-            case 55: return Key.Shift;
-            case 56: return Key.Control;
-            case 57: return Key.Alt;
+            case 54: return Key.Shift;    // KEY_SHIFT
+            case 55: return Key.Control;  // KEY_CONTROL
+            case 56: return Key.Alt;      // KEY_ALT
         }
         if (character is >= 'a' and <= 'z') return (Key)(character - 'a' + 'A');
         if (character is >= 'A' and <= 'Z' or >= '0' and <= '9') return (Key)character;

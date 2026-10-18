@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -68,7 +68,7 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
 ├── samples/Designs/                Designs d'exemple (.pluginui), dont la disposition de DemoSynth
 ├── tests/PluginUI.Tests/           120 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception)
-├── tests/PluginUI.NPlug.Tests/     20 tests NUnit (pont éditeur ↔ processeur, MIDI learn, DSP du synthé, validateur Steinberg)
+├── tests/PluginUI.NPlug.Tests/     22 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
 └── tests/PluginUI.Design.Tests/    25 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
 ```
 
@@ -88,7 +88,7 @@ Chaque [version](https://github.com/asm8086/PluginUI/releases) fournit :
 
 | Fichier | Contenu |
 |---|---|
-| `PluginUI.DemoSynth-<version>-vst3-universal.zip` | L'instrument de démonstration en un seul bundle VST3 pour x64 et ARM64. Sur x64, un petit chargeur choisit la version x86-64-v3 (AVX2, FMA : Intel Haswell et ultérieurs, AMD Zen et ultérieurs) ou la version x86-64-v2 (tout autre processeur 64 bits) |
+| `PluginUI.DemoSynth-<version>-vst3-universal.zip` | L'instrument de démonstration en un seul bundle VST3 pour x64 et ARM64. Sur x64, un petit chargeur choisit la version x86-64-v3 (AVX2, FMA : Intel Haswell et ultérieurs, AMD Zen et ultérieurs) ou la version x86-64-v2 (SSE4.2 et POPCNT : Intel Nehalem et ultérieurs, AMD Bulldozer et ultérieurs) ; sur un processeur plus ancien, le plugin refuse de se charger au lieu d'arrêter l'hôte |
 | `…-vst3-x64-v3.zip`, `…-vst3-x64-v2.zip`, `…-vst3-arm64.zip` | Une seule version par bundle, sans chargeur |
 | `PluginUIEditor-<version>-win-x64.zip`, `…-win-arm64.zip` | Le concepteur visuel (nécessite le .NET 10 Desktop Runtime) |
 | `PluginUI.Gallery-<version>-win-x64.zip`, `…-win-arm64.zip` | La galerie, compilée en NativeAOT (aucun runtime nécessaire) |
@@ -182,7 +182,7 @@ return new StandaloneWindow(host, "Mon application").Run();
 - Ctrl+Z annule ;
 - **Ctrl+C copie le code C#** correspondant (`SetBounds(...)` ou `Margin`), à recoller dans `Build()`.
 
-Désactivez le raccourci en production avec `host.LiveEditShortcutEnabled = false` (fait dans les versions Release des projets créés par PluginUIEditor, et dans VST3Test).
+Désactivez le raccourci en production avec `host.LiveEditShortcutEnabled = false` (fait dans les versions Release des projets créés par PluginUIEditor).
 
 Avec un `LiveDesignBridge` (versions Debug des projets créés par PluginUIEditor), **Ctrl+S** réécrit la disposition dans le fichier `.pluginui`, et l'enregistrement du design dans PluginUIEditor reconstruit l'éditeur dans le DAW sans recharger le plugin.
 
@@ -270,23 +270,23 @@ Les tests n'ouvrent aucune fenêtre : ils simulent les entrées via `UIHost.Disp
 
 Ce qui a été vérifié pendant le développement :
 
-- compilation sans avertissement, avec les analyseurs NativeAOT et trimming actifs et les avertissements traités comme des erreurs ;
+- compilation des projets PluginUI sans avertissement, avec les analyseurs NativeAOT et trimming actifs et les avertissements traités comme des erreurs ;
 - 120 tests unitaires, y compris les cultures fr-FR / de-DE / en-US / ru-RU, la langue de l'interface, les conventions de conception, et les noyaux SIMD exécutés avec AVX2 / AVX-512, SSE seul et en scalaire ;
-- 20 tests du pont NPlug et de DemoSynth (file de notes, MIDI learn et sa persistance, enveloppes, filtre, oscillateurs, polyphonie, sidechain) ;
+- 22 tests du pont NPlug et de DemoSynth (file de notes, codes de touches de l'hôte, valeurs saisies, MIDI learn et sa persistance, enveloppes, filtre, oscillateurs, polyphonie, sidechain) ;
 - 25 tests des designs et de l'éditeur (aller-retour JSON de toutes les valeurs par défaut et du contenu inconnu, registre complet, chargeur, capture, code généré compilé par Roslyn et identique au chargeur, y compris avec des noms et valeurs hostiles, lien en direct, projets générés, commandes de l'éditeur, extensions) ;
-- validateur VST3 officiel de Steinberg : 47/47 sur VST3Test et sur DemoSynth, et sur les projets d'effet et d'instrument créés par PluginUIEditor ;
+- validateur VST3 officiel de Steinberg : 47/47 sur DemoSynth (x86-64-v3, x86-64-v2, bundle universel sur x64 et sur ARM64), et sur les projets d'effet et d'instrument créés par PluginUIEditor ;
 - PluginUIEditor exécuté sous Wine et piloté par des événements souris et clavier simulés : glisser-déposer depuis la boîte à outils, sélection, suppression, annuler, déplacement au clavier, copier-coller, aperçu interactif, saisie dans la grille des propriétés et dans le tableau des paramètres, génération de code, création de projet (qui compile), enregistrement ;
-- rendu Direct2D / DirectWrite / WIC de toutes les pages de la galerie et des éditeurs GainFilter et DemoSynth, hors écran, sous Wine ;
+- rendu Direct2D / DirectWrite / WIC de toutes les pages de la galerie et de l'éditeur de DemoSynth, hors écran, sous Wine ;
 - relecture indépendante du cœur, avec corrections : capture après une boucle modale, gestes, DPI, presse-papiers, réentrance des popups.
 
-Ce qui **n'a pas pu l'être** dans mon environnement, faute de Windows réel, et reste à confirmer :
+Ce qui **n'a pas pu l'être** pendant le développement, faute de Windows réel, et reste à confirmer :
 
 - le comportement interactif dans une fenêtre (procédure de fenêtre, souris, clavier, curseurs, changements de DPI) dans un vrai DAW ;
 - le rendu SVG natif ;
 - les menus déroulants de PluginUIEditor : sous Wine, ouvrir un menu d'une application WinForms en mode PerMonitorV2 lève une exception dans WinForms (reproduit avec une application de dix lignes), les menus ont donc été testés par leurs raccourcis clavier ;
 - les quelques effets que Wine rend mal : dégradés vers le transparent, découpes arrondies par calque.
 
-Faites d'abord un essai dans la galerie, puis dans les plugins VST3Test et DemoSynth (Reaper, Cubase, Bitwig…).
+Faites d'abord un essai dans la galerie, puis dans le plugin DemoSynth (Reaper, Cubase, Bitwig…).
 
 ## Licence et contributions
 

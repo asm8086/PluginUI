@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -84,7 +84,7 @@ public sealed class DesignBuildResult
 ///         ResolveParameter = DesignLoadOptions.ByName(Parameters.GetSnapshotParameters(includeBypass: true)),
 ///         Assets = new EmbeddedAssetResolver(typeof(MyEditor).Assembly),
 ///     });
-///     result.Get&lt;Button&gt;("reset").Clicked += _ => Reset();
+///     result.Get&lt;Button&gt;("reset").Clicked += Reset;
 ///     return result.Root;
 /// }
 /// </code>

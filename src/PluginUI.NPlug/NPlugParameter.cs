@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -75,7 +75,6 @@ public sealed class NPlugParameter : IParameter
         {
             s = s[..^Parameter.Units.Length].Trim();
         }
-        s = s.Replace(',', '.');
         try
         {
             // Discrete parameters: accept the display text of a state.
@@ -91,6 +90,8 @@ public sealed class NPlugParameter : IParameter
                     }
                 }
             }
+            // Numbers always use the decimal point (InvariantNumber): a decimal comma is rejected.
+            if (s.Contains(',')) return false;
             double value = Parameter.FromString(s);
             if (double.IsNaN(value)) return false;
             if (value == 0.0 && !double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out _) && StepCount != 1) return false;

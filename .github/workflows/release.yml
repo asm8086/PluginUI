@@ -1,4 +1,4 @@
-# 2026/10/18 16:20:00 UTC - PluginUI
+# 2026/10/18 17:31:00 UTC - PluginUI
 # Release on a tag vX.Y.Z: NativeAOT builds for x64 (x86-64-v3, x86-64-v2) and ARM64 on native runners, the universal
 # VST3 bundle (x64 loader + ARM64), application packages, Steinberg validation on both architectures, the GitHub
 # release and the NuGet packages (trusted publishing on nuget.org, when the repository variable PUBLISH_NUGET is 'true'
@@ -18,23 +18,51 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
 
 jobs:
+  check:
+    name: Check the version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Version format, VersionPrefix and CHANGELOG section
+        run: |
+          if [ -n "$VERSION" ]; then version="$VERSION"; else version="${GITHUB_REF_NAME#v}"; fi
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$'; then
+            echo "::error::Invalid version '$version': expected X.Y.Z or X.Y.Z-prerelease."; exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            core="${version%%-*}"
+            prefix=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+            if [ "$core" != "$prefix" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match VersionPrefix $prefix in Directory.Build.props."; exit 1
+            fi
+            if ! grep -Eq "^## \[$core\]" CHANGELOG.md; then
+              echo "::error::CHANGELOG.md has no '## [$core]' section."; exit 1
+            fi
+          fi
+          echo "Version $version"
+
   build-x64:
     name: Build ${{ matrix.target }}
+    needs: check
     runs-on: windows-latest
     strategy:
       matrix:
         target: [x64-v3, x64-v2]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 10.0.x
       - name: Tests
@@ -43,7 +71,7 @@ jobs:
       - name: NativeAOT build
         shell: pwsh
         run: pwsh build/Build-Release.ps1 -Stage Build -Target ${{ matrix.target }} $(if ($env:VERSION) { "-Version", $env:VERSION })
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: stage-${{ matrix.target }}
           path: artifacts/stage/${{ matrix.target }}
@@ -51,22 +79,24 @@ jobs:
 
   build-arm64:
     name: Build arm64
+    needs: check
     runs-on: windows-11-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 10.0.x
       - name: Tests
         run: dotnet test PluginUI.slnx -c Release
-      - name: NativeAOT build and validation
+      - name: NativeAOT build
         shell: pwsh
-        run: |
-          pwsh build/Build-Release.ps1 -Stage Build -Target arm64 $(if ($env:VERSION) { "-Version", $env:VERSION })
-          pwsh build/Build-Release.ps1 -Stage Validate -ValidatePath artifacts/stage/arm64/plugin/PluginUI.DemoSynth.vst3
-      - uses: actions/upload-artifact@v4
+        run: pwsh build/Build-Release.ps1 -Stage Build -Target arm64 $(if ($env:VERSION) { "-Version", $env:VERSION })
+      - name: Steinberg validator
+        shell: pwsh
+        run: pwsh build/Build-Release.ps1 -Stage Validate -ValidatePath artifacts/stage/arm64/plugin/PluginUI.DemoSynth.vst3
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: stage-arm64
           path: artifacts/stage/arm64
@@ -77,13 +107,13 @@ jobs:
     needs: [build-x64, build-arm64]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 10.0.x
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: stage-*
           path: artifacts/stage
@@ -93,7 +123,7 @@ jobs:
           Get-ChildItem artifacts/stage -Directory -Filter 'stage-*' | ForEach-Object { Rename-Item $_.FullName ($_.Name -replace '^stage-', '') }
           Get-ChildItem artifacts/stage
       - name: Visual Studio developer environment (cl.exe for the VST3 loader)
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         with:
           arch: x64
       - name: Package
@@ -102,7 +132,7 @@ jobs:
       - name: Validate (x86-64-v3, x86-64-v2, loader)
         shell: pwsh
         run: pwsh build/Build-Release.ps1 -Stage Validate
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release
           path: artifacts/release
@@ -113,13 +143,13 @@ jobs:
     needs: package
     runs-on: windows-11-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 10.0.x
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release
           path: artifacts/release
@@ -139,29 +169,30 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release
           path: artifacts/release
       - name: Release notes from CHANGELOG.md
         run: |
           version="${GITHUB_REF_NAME#v}"
+          version="${version%%-*}"
           awk -v v="$version" '
             $0 ~ "^## \\[" v "\\]" { found = 1; next }
             found && /^## \[/ { exit }
             found { print }
           ' CHANGELOG.md > notes.md
-          if [ ! -s notes.md ]; then echo "Release $version" > notes.md; fi
+          if [ ! -s notes.md ]; then echo "::error::Empty CHANGELOG section for $version."; exit 1; fi
           cat notes.md
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         if: vars.PUBLISH_NUGET == 'true'
         with:
           dotnet-version: 10.0.x
       - name: NuGet login (trusted publishing)
         if: vars.PUBLISH_NUGET == 'true'
         id: nuget
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ vars.NUGET_USER }}
       - name: Push NuGet packages

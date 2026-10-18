@@ -1,4 +1,4 @@
-# 2026/10/18 16:20:00 UTC - PluginUI
+# 2026/10/18 17:31:00 UTC - PluginUI
 # Build and tests on every push and pull request: Linux (libraries, tests) and Windows (also NativeAOT + validator).
 name: CI
 
@@ -24,10 +24,10 @@ jobs:
     name: Linux (build, tests)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 10.0.x
       - name: Build
@@ -39,18 +39,19 @@ jobs:
     name: Windows (build, tests, NativeAOT)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: 10.0.x
       - name: Build
         run: dotnet build PluginUI.slnx -c Release
       - name: Test
         run: dotnet test PluginUI.slnx -c Release --no-build
-      - name: NativeAOT plug-in (x86-64-v3) and Steinberg validator
+      - name: NativeAOT plug-in (x86-64-v3)
         shell: pwsh
-        run: |
-          pwsh build/Build-Release.ps1 -Stage Build -Target x64-v3
-          pwsh build/Build-Release.ps1 -Stage Validate -ValidatePath artifacts/stage/x64-v3/plugin/PluginUI.DemoSynth.vst3
+        run: pwsh build/Build-Release.ps1 -Stage Build -Target x64-v3
+      - name: Steinberg validator
+        shell: pwsh
+        run: pwsh build/Build-Release.ps1 -Stage Validate -ValidatePath artifacts/stage/x64-v3/plugin/PluginUI.DemoSynth.vst3

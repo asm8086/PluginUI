@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/18 17:31:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -204,11 +204,14 @@ public class BuildTests
     [Test]
     public void GeneratedCodeSurvivesHostileNamesAndValues()
     {
-        var document = new DesignDocument { Name = "Hostile" };
+        // A line break in a name must not end the generated comment and inject code.
+        var document = new DesignDocument { Name = "Hostile\n}\u2028public class Injected {" };
         document.Codegen.Target = CodegenTarget.Standalone;
         document.Codegen.Namespace = "Test.Hostile";
         document.Codegen.ClassName = "HostileView";
-        // Names that would hide types used by the generated code, or the class itself.
+        // "root" was the parameter name of BindDesignFields; names that would hide types used by the generated code, or
+        // the class itself.
+        document.Root.Add(new DesignNode("Label") { Name = "root" });
         document.Root.Add(new DesignNode("Label") { Name = "Color" }.Set("Text", "line\u2028separator\u2029end"));
         document.Root.Add(new DesignNode("Label") { Name = "HostileView" });
         document.Root.Add(new DesignNode("Slider") { Name = "Orientation" }.Set("Orientation", Orientation.Horizontal));
@@ -243,6 +246,8 @@ public class BuildTests
         var other = DesignLoader.Build(document).Root;
         view.GetType().GetMethod("BindDesignFields", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(view, [other]);
         Assert.That(view.GetType().GetField("split", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(view), Is.SameAs(other.FindByName("split")));
+        Assert.That(view.GetType().GetField("root", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(view), Is.SameAs(other.FindByName("root")));
+        Assert.That(assembly.GetTypes().Select(t => t.Name), Has.None.EqualTo("Injected"));
 
         // Undefined enum values and invalid settings.
         var odd = new DesignDocument { Name = "Odd" };

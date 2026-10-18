@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -68,7 +68,7 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/Designs/                Sample designs (.pluginui), including the DemoSynth layout
 ├── tests/PluginUI.Tests/           120 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions)
-├── tests/PluginUI.NPlug.Tests/     20 NUnit tests (editor ↔ processor bridge, MIDI learn, synth DSP, Steinberg validator)
+├── tests/PluginUI.NPlug.Tests/     22 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
 └── tests/PluginUI.Design.Tests/    25 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
 ```
 
@@ -88,7 +88,7 @@ Each [release](https://github.com/asm8086/PluginUI/releases) provides:
 
 | File | Content |
 |---|---|
-| `PluginUI.DemoSynth-<version>-vst3-universal.zip` | The demo instrument as one VST3 bundle for x64 and ARM64. On x64, a small loader picks the x86-64-v3 build (AVX2, FMA: Intel Haswell and later, AMD Zen and later) or the x86-64-v2 build (any other 64-bit processor) |
+| `PluginUI.DemoSynth-<version>-vst3-universal.zip` | The demo instrument as one VST3 bundle for x64 and ARM64. On x64, a small loader picks the x86-64-v3 build (AVX2, FMA: Intel Haswell and later, AMD Zen and later) or the x86-64-v2 build (SSE4.2 and POPCNT: Intel Nehalem and later, AMD Bulldozer and later); on an older processor the plug-in declines to load instead of stopping the host |
 | `…-vst3-x64-v3.zip`, `…-vst3-x64-v2.zip`, `…-vst3-arm64.zip` | One build per bundle, without loader |
 | `PluginUIEditor-<version>-win-x64.zip`, `…-win-arm64.zip` | The visual designer (needs the .NET 10 Desktop Runtime) |
 | `PluginUI.Gallery-<version>-win-x64.zip`, `…-win-arm64.zip` | The gallery, compiled with NativeAOT (no runtime needed) |
@@ -182,7 +182,7 @@ return new StandaloneWindow(host, "My application").Run();
 - Ctrl+Z undoes;
 - **Ctrl+C copies the corresponding C# code** (`SetBounds(...)` or `Margin`), to paste back into `Build()`.
 
-Disable the shortcut in production with `host.LiveEditShortcutEnabled = false` (done in Release builds of the projects created by PluginUIEditor, and in VST3Test).
+Disable the shortcut in production with `host.LiveEditShortcutEnabled = false` (done in Release builds of the projects created by PluginUIEditor).
 
 With a `LiveDesignBridge` (Debug builds of projects created by PluginUIEditor), **Ctrl+S** writes the layout back to the `.pluginui` file, and saving the design in PluginUIEditor rebuilds the editor in the DAW without reloading the plug-in.
 
@@ -270,23 +270,23 @@ The tests open no windows: they simulate input through `UIHost.Dispatch…`. The
 
 What was verified during development:
 
-- build without warnings, with the NativeAOT and trimming analyzers enabled and warnings treated as errors;
+- the PluginUI projects build without warnings, with the NativeAOT and trimming analyzers enabled and warnings treated as errors;
 - 120 unit tests, including the fr-FR / de-DE / en-US / ru-RU cultures, the interface language, the design conventions, and the SIMD kernels run with AVX2 / AVX-512, SSE only and scalar;
-- 20 tests of the NPlug bridge and of DemoSynth (note queue, MIDI learn and its persistence, envelopes, filter, oscillators, polyphony, sidechain);
+- 22 tests of the NPlug bridge and of DemoSynth (note queue, host key codes, typed values, MIDI learn and its persistence, envelopes, filter, oscillators, polyphony, sidechain);
 - 25 tests of the designs and of the editor (JSON round trip of all default values and of unknown content, complete registry, loader, capture, generated code compiled by Roslyn and identical to the loader, including with hostile names and values, live bridge, generated projects, editor commands, extensions);
-- Steinberg's official VST3 validator: 47/47 on VST3Test and on DemoSynth, and on the effect and instrument projects created by PluginUIEditor;
+- Steinberg's official VST3 validator: 47/47 on DemoSynth (x86-64-v3, x86-64-v2, the universal bundle on x64 and on ARM64), and on the effect and instrument projects created by PluginUIEditor;
 - PluginUIEditor run under Wine and driven by simulated mouse and keyboard events: drag and drop from the toolbox, selection, deletion, undo, keyboard moves, copy and paste, interactive preview, input in the property grid and in the parameter table, code generation, project creation (which builds), saving;
-- Direct2D / DirectWrite / WIC rendering of every gallery page and of the GainFilter and DemoSynth editors, off-screen, under Wine;
+- Direct2D / DirectWrite / WIC rendering of every gallery page and of the DemoSynth editor, off-screen, under Wine;
 - independent review of the core, with fixes: capture after a modal loop, gestures, DPI, clipboard, popup reentrancy.
 
-What **could not be verified** in my environment, for lack of a real Windows machine, and remains to be confirmed:
+What **could not be verified** during development, for lack of a real Windows machine, and remains to be confirmed:
 
 - interactive behavior in a window (window procedure, mouse, keyboard, cursors, DPI changes) in a real DAW;
 - native SVG rendering;
 - PluginUIEditor's drop-down menus: under Wine, opening a menu of a WinForms application in PerMonitorV2 mode throws an exception inside WinForms (reproduced with a ten-line application), so the menus were tested through their keyboard shortcuts;
 - the few effects Wine renders poorly: gradients to transparent, rounded clipping per layer.
 
-Try the gallery first, then the VST3Test and DemoSynth plug-ins (Reaper, Cubase, Bitwig…).
+Try the gallery first, then the DemoSynth plug-in (Reaper, Cubase, Bitwig…).
 
 ## License and contributing
 
