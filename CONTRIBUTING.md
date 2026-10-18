@@ -87,4 +87,4 @@ By contributing, you agree that your contributions are licensed under the [MIT L
 
 Maintainers publish a release by pushing a tag `vX.Y.Z`. The release workflow builds and tests everything, creates the
 VST3 bundle of the demo instrument for x64 (x86-64-v3 and x86-64-v2) and ARM64, the PluginUIEditor and gallery
-packages, publishes the GitHub release and pushes the NuGet packages.
+packages, pushes the NuGet packages (when the repository variable `PUBLISH_NUGET` is `true` and nuget.org trusted publishing is set up) and publishes the GitHub release.

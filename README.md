@@ -24,7 +24,7 @@ It brings together the element catalogs of **VSTGUI** and **iPlug2**, complement
 ```
 PluginUI/
 ├── PluginUI.slnx
-├── Directory.Build.props           x64 architecture + AVX2 instruction set for NativeAOT (all projects)
+├── Directory.Build.props/.targets  Shared settings: NPlug location, package metadata, AVX2 instruction set for NativeAOT x64
 ├── CodeAnalysis.globalconfig       Enforced analysis rules (CA1304 / CA1305: no dependency on regional settings)
 ├── README.md, README_FR.md         This file (English, French)
 ├── LICENSE                         MIT license
@@ -76,7 +76,7 @@ About 34,000 lines of C# for the libraries. All public members have XML document
 
 ## Requirements
 
-- Windows 10 1809 (build 17763) or later, x64. Native SVG from 1703.
+- Windows 10 1809 (build 17763) or later, x64 or ARM64. Native SVG from 1703.
 - Default NativeAOT publishing: a processor with AVX2 and FMA (see "Performance and SIMD").
 - Visual Studio 2026, .NET 10 SDK.
 - `TerraFX.Interop.Windows` 10.0.26100.6 (NuGet), for Win32 / Direct2D / DirectWrite / WIC bindings without marshalling, NativeAOT-compatible.
@@ -92,7 +92,7 @@ Each [release](https://github.com/asm8086/PluginUI/releases) provides:
 | `…-vst3-x64-v3.zip`, `…-vst3-x64-v2.zip`, `…-vst3-arm64.zip` | One build per bundle, without loader |
 | `PluginUIEditor-<version>-win-x64.zip`, `…-win-arm64.zip` | The visual designer (needs the .NET 10 Desktop Runtime) |
 | `PluginUI.Gallery-<version>-win-x64.zip`, `…-win-arm64.zip` | The gallery, compiled with NativeAOT (no runtime needed) |
-| `*.nupkg`, `SHA256SUMS.txt` | NuGet packages (also on nuget.org) and checksums |
+| `*.nupkg`, `SHA256SUMS.txt` | NuGet packages (also pushed to nuget.org once publishing is enabled) and checksums |
 
 `build/Build-Release.ps1` builds the same files locally; see [CONTRIBUTING.md](CONTRIBUTING.md#releases).
 
@@ -182,7 +182,7 @@ return new StandaloneWindow(host, "My application").Run();
 - Ctrl+Z undoes;
 - **Ctrl+C copies the corresponding C# code** (`SetBounds(...)` or `Margin`), to paste back into `Build()`.
 
-Disable the shortcut in production with `host.LiveEditShortcutEnabled = false` (done in Release in VST3Test).
+Disable the shortcut in production with `host.LiveEditShortcutEnabled = false` (done in Release builds of the projects created by PluginUIEditor, and in VST3Test).
 
 With a `LiveDesignBridge` (Debug builds of projects created by PluginUIEditor), **Ctrl+S** writes the layout back to the `.pluginui` file, and saving the design in PluginUIEditor rebuilds the editor in the DAW without reloading the plug-in.
 
@@ -194,10 +194,9 @@ With a `LiveDesignBridge` (Debug builds of projects created by PluginUIEditor), 
 
 ## Performance and SIMD
 
-`Directory.Build.props` sets the architecture and instruction set for all projects in the folder:
+`Directory.Build.targets` sets the instruction set for all projects in the folder:
 
-- `PlatformTarget` is `x64`, unless another architecture is explicitly requested.
-- The gallery builds for `win-x64` by default.
+- The libraries are AnyCPU (x64 and ARM64); the gallery, the editor and the plug-in build for the architecture of the build machine by default (`-r win-x64` or `-r win-arm64` to choose).
 - With NativeAOT, `IlcInstructionSet` is `x86-64-v3` (AVX, AVX2, FMA, BMI1/2). Without this setting, AOT code is locked to the x64 baseline, with neither AVX nor FMA. To target processors without AVX2, publish with `-p:IlcInstructionSet=x86-64-v2`.
 - With the JIT, nothing to set: the compiler uses whatever the processor offers.
 

@@ -1,0 +1,24 @@
+<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- SPDX-FileCopyrightText: 2026 asm8086 -->
+<!-- SPDX-License-Identifier: MIT -->
+<Project>
+
+  <!--
+    SIMD instruction set of NativeAOT x64 builds (evaluated after the projects, so that their default runtime
+    identifier is known).
+
+    * JIT (Debug builds loaded through the NPlug proxy, tests, gallery without AOT): RyuJIT already uses every
+      instruction set of the running processor (SSE4.2, AVX2, FMA, AVX-512...): nothing to configure.
+    * NativeAOT (dotnet publish -p:PublishAot=true): the code is compiled ahead of time for a fixed instruction set.
+      The default x64 baseline has no AVX/AVX2/FMA (Vector256.IsHardwareAccelerated is false, Vector<float> has
+      4 lanes). x86-64-v3 enables AVX, AVX2, FMA, BMI1/2, LZCNT and MOVBE: Intel Haswell (2013) and later, AMD Zen
+      and later. A binary built this way refuses to load on older processors; for them, override:
+        dotnet publish ... -p:IlcInstructionSet=x86-64-v2
+      (the release packages contain both builds, see build/Build-Release.ps1; "native" targets exactly the build
+      machine, for personal use only).
+  -->
+  <PropertyGroup>
+    <IlcInstructionSet Condition="'$(IlcInstructionSet)' == '' and $(RuntimeIdentifier.EndsWith('-x64'))">x86-64-v3</IlcInstructionSet>
+  </PropertyGroup>
+
+</Project>

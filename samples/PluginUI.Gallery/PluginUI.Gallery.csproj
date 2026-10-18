@@ -1,4 +1,4 @@
-<!-- 2026/10/18 11:16:00 UTC - PluginUI -->
+<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -12,8 +12,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Also publishable with NativeAOT: dotnet publish -c Release -p:PublishAot=true -->
     <IsAotCompatible>true</IsAotCompatible>
-    <!-- Windows x64 application (PlatformTarget and AOT instruction set: ..\..\Directory.Build.props). -->
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <!-- Windows application for the architecture of the build machine by default (-r win-x64 / win-arm64 to choose);
+         NativeAOT instruction set: ..\..\Directory.Build.targets. -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>

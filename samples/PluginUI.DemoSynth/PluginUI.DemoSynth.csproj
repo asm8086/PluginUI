@@ -19,9 +19,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
 
-    <!-- Windows x64 plug-in by default (bin\$(Configuration)\net10.0\win-x64\); -r win-arm64 for ARM64.
-         PlatformTarget and the NativeAOT instruction set come from ..\..\Directory.Build.props. -->
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <!-- Windows plug-in for the architecture of the build machine by default (bin\$(Configuration)\net10.0\win-x64\ on x64);
+         -r win-x64 / win-arm64 to choose.
+         The NativeAOT instruction set comes from ..\..\Directory.Build.targets. -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
   </PropertyGroup>
 
   <!-- NPlugRoot (patched NPlug sources, the same NPlug.csproj as PluginUI.NPlug): ../../Directory.Build.props. -->

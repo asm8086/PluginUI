@@ -16,6 +16,7 @@
   <Folder Name="/build/">
     <Project Path="build/ValidatePlugin/ValidatePlugin.csproj" />
     <File Path="build/Build-Release.ps1" />
+    <File Path="build/THIRD-PARTY-NOTICES.txt" />
     <File Path="build/vst3shim/vst3shim.c" />
     <File Path="build/vst3shim/kernel32.def" />
   </Folder>
@@ -52,6 +53,8 @@
     <File Path="CONTRIBUTING.md" />
     <File Path="CONTRIBUTING_FR.md" />
     <File Path=".gitattributes" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
     <File Path=".gitignore" />
     <File Path="dotnet-tools.json" />
   </Folder>

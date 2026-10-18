@@ -93,4 +93,4 @@ En contribuant, vous acceptez que vos contributions soient publiées sous [licen
 
 Les mainteneurs publient une version en poussant une étiquette `vX.Y.Z`. Le workflow de publication compile et teste
 tout, crée le bundle VST3 de l'instrument de démonstration pour x64 (x86-64-v3 et x86-64-v2) et ARM64, les paquets de
-PluginUIEditor et de la galerie, publie la version GitHub et pousse les paquets NuGet.
+PluginUIEditor et de la galerie, pousse les paquets NuGet (quand la variable de dépôt `PUBLISH_NUGET` vaut `true` et que la publication de confiance est configurée sur nuget.org) et publie la version GitHub.

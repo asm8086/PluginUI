@@ -16,7 +16,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Builds on any OS (CI); runs on Windows 10 1809+. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <!-- The designer uses reflection (PropertyGrid, XML documentation): no trimming, no NativeAOT. -->
     <PublishTrimmed>false</PublishTrimmed>

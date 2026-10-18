@@ -78,7 +78,8 @@ Write-Host "PluginUI release $Version ($Stage)"
 function Invoke-Native {
     param([string]$Command, [string[]]$Arguments)
     Write-Host "> $Command $($Arguments -join ' ')"
-    & $Command @Arguments
+    # Out-Host: the tool output must not become the return value of the calling function.
+    & $Command @Arguments | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "$Command failed with exit code $LASTEXITCODE" }
 }
 
@@ -137,6 +138,11 @@ function New-Zip([string]$source, [string]$zip) {
     Write-Host "  $([IO.Path]::GetFileName($zip))"
 }
 
+function Copy-Notices([string]$folder) {
+    Copy-Item (Join-Path $Root 'LICENSE') (Join-Path $folder 'LICENSE.txt')
+    Copy-Item (Join-Path $Root 'build/THIRD-PARTY-NOTICES.txt') (Join-Path $folder 'THIRD-PARTY-NOTICES.txt')
+}
+
 function Write-InstallNotes([string]$folder, [string]$kind) {
     $text = @"
 PluginUI $Version - $PluginName ($kind)
@@ -155,6 +161,7 @@ Builds:
 Troubleshooting: the environment variable PLUGINUI_X64_LEVEL=v2 forces the x86-64-v2 build of the universal bundle.
 "@
     Set-Content -Path (Join-Path $folder 'README.txt') -Value $text -Encoding utf8
+    Copy-Notices $folder
 }
 
 function New-Bundle([string]$parent, [hashtable]$files) {
@@ -216,6 +223,7 @@ function Invoke-Package {
             $dir = Join-Path $StageDir "$t/$($app.Dir)"
             if (Test-Path $dir) {
                 Get-ChildItem $dir -Filter '*.pdb' -Recurse | Remove-Item -Force
+                Copy-Notices $dir
                 New-Zip $dir (Join-Path $ReleaseDir "$($app.Name)-$Version-$rid.zip")
             }
         }
@@ -228,7 +236,8 @@ function Invoke-Package {
     }
 
     # Checksums of the downloadable files.
-    $sums = Get-ChildItem $ReleaseDir -File -Recurse | Where-Object { $_.Name -ne 'SHA256SUMS.txt' } | Sort-Object Name | ForEach-Object {
+    # (the symbol packages go to nuget.org only, they are not release downloads)
+    $sums = Get-ChildItem $ReleaseDir -File -Recurse | Where-Object { $_.Name -ne 'SHA256SUMS.txt' -and $_.Extension -ne '.snupkg' } | Sort-Object Name | ForEach-Object {
         "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"
     }
     Set-Content -Path (Join-Path $ReleaseDir 'SHA256SUMS.txt') -Value $sums -Encoding utf8
@@ -243,28 +252,45 @@ function Invoke-Validate {
     $work = Join-Path $Artifacts 'work'
     $checks = @()
     if ($ValidatePath) {
-        foreach ($p in $ValidatePath) { $checks += @{ Path = $p; Level = $null } }
+        foreach ($p in $ValidatePath) { $checks += @{ Path = $p; Level = $null; Required = $true } }
     }
     elseif ($arch -eq 'Arm64') {
-        $checks += @{ Path = (Join-Path $work "arm64/$PluginName.vst3"); Level = $null }
-        $checks += @{ Path = (Join-Path $work "universal/$PluginName.vst3"); Level = $null }
+        $checks += @{ Path = (Join-Path $work "arm64/$PluginName.vst3"); Level = $null; Required = $false }
+        $checks += @{ Path = (Join-Path $work "universal/$PluginName.vst3"); Level = $null; Required = $false }
     }
     else {
-        foreach ($t in 'x64-v3', 'x64-v2') { $checks += @{ Path = (Join-Path $work "$t/$PluginName.vst3"); Level = $null } }
+        foreach ($t in 'x64-v3', 'x64-v2') { $checks += @{ Path = (Join-Path $work "$t/$PluginName.vst3"); Level = $null; Required = $false } }
         # The loader: the build chosen for this processor, then the x86-64-v2 build forced.
-        $checks += @{ Path = (Join-Path $work "universal/$PluginName.vst3"); Level = $null }
-        $checks += @{ Path = (Join-Path $work "universal/$PluginName.vst3"); Level = 'v2' }
+        $checks += @{ Path = (Join-Path $work "universal/$PluginName.vst3"); Level = $null; Required = $false }
+        $checks += @{ Path = (Join-Path $work "universal/$PluginName.vst3"); Level = 'v2'; Required = $false }
     }
     $failed = 0
+    $ran = 0
     foreach ($check in $checks) {
-        if (-not (Test-Path $check.Path)) { Write-Warning "Not built, skipped: $($check.Path)"; continue }
+        $path = $check.Path
+        if (-not (Test-Path $path)) {
+            if ($check.Required) { Write-Host "Not found: $path"; $failed++ } else { Write-Warning "Not built, skipped: $path" }
+            continue
+        }
+        if (Test-Path $path -PathType Leaf) {
+            # The validator expects a bundle: wrap a single plug-in file into one for this architecture.
+            $vstArch = if ($arch -eq 'Arm64') { 'arm64-win' } else { 'x86_64-win' }
+            $name = [IO.Path]::GetFileNameWithoutExtension($path)
+            $bundle = Join-Path $work "validate/$ran/$name.vst3"
+            New-Item -ItemType Directory -Force -Path (Join-Path $bundle "Contents/$vstArch") | Out-Null
+            Copy-Item $path (Join-Path $bundle "Contents/$vstArch/$name.vst3") -Force
+            $path = $bundle
+        }
         if ($check.Level) { $env:PLUGINUI_X64_LEVEL = $check.Level } else { Remove-Item Env:PLUGINUI_X64_LEVEL -ErrorAction SilentlyContinue }
-        Write-Host "Validating $($check.Path)$(if ($check.Level) { " (PLUGINUI_X64_LEVEL=$($check.Level))" })"
-        & dotnet run --project $validator -c $Configuration -- $check.Path
+        Write-Host "Validating $path$(if ($check.Level) { " (PLUGINUI_X64_LEVEL=$($check.Level))" })"
+        & dotnet run --project $validator -c $Configuration -- $path | Out-Host
         if ($LASTEXITCODE -ne 0) { $failed++ }
+        $ran++
     }
     Remove-Item Env:PLUGINUI_X64_LEVEL -ErrorAction SilentlyContinue
     if ($failed -gt 0) { throw "$failed validation(s) failed." }
+    if ($ran -eq 0) { throw 'Nothing was validated: build and package first, or give -ValidatePath.' }
+    Write-Host "$ran validation(s) passed."
 }
 
 # ------------------------------------------------------------------------------------------------- Main

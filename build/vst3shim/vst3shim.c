@@ -10,7 +10,7 @@
 //
 // On the first call, the shim checks the processor (CPUID and the AVX state enabled by the OS), loads the best build
 // present next to it and forwards GetPluginFactory, InitDll and ExitDll to it. The environment variable
-// PLUGINUI_X64_LEVEL=v2 or v3 forces a build (troubleshooting, tests).
+// PLUGINUI_X64_LEVEL=v2 forces the x86-64-v2 build (troubleshooting, tests); v3 is honored on a v3 processor only.
 //
 // No CRT and no Windows SDK headers: the few kernel32 functions used are declared below, so the same file builds with
 // MSVC (cl /O2 /LD vst3shim.c kernel32.lib) and with clang + lld-link (see build/Build-Release.ps1).
@@ -164,19 +164,21 @@ static HMODULE LoadImplementation(void)
         return 0;
     }
 
-    int level = SupportsX64V3() ? 3 : 2;
+    const int v3 = SupportsX64V3();
+    int level = v3 ? 3 : 2;
     WCHAR forced[8];
     DWORD forcedLength = GetEnvironmentVariableW(L"PLUGINUI_X64_LEVEL", forced, 8);
     if (forcedLength == 2 && (forced[0] == L'v' || forced[0] == L'V'))
     {
+        // v2 can always be forced; v3 only on a processor that runs it (the NativeAOT runtime would end the host).
         if (forced[1] == L'2') level = 2;
-        else if (forced[1] == L'3') level = 3;
+        else if (forced[1] == L'3' && v3) level = 3;
     }
 
     HMODULE module = TryLoad(self, level);
     // v3 build missing (or failing to load): the v2 build runs everywhere. v2 build missing on a v3 processor: v3.
     if (module == 0 && level == 3) module = TryLoad(self, 2);
-    else if (module == 0 && SupportsX64V3()) module = TryLoad(self, 3);
+    else if (module == 0 && v3) module = TryLoad(self, 3);
     if (module == 0) Log(L"no usable build found next to ", self);
     return module;
 }

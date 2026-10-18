@@ -4,22 +4,11 @@
 <Project>
 
   <!--
-    Target architecture and SIMD instruction set, shared by every project below this folder.
-
-    * PlatformTarget x64: the assemblies are 64-bit only, whatever the solution platform ("Any CPU" included).
-      Skipped when another architecture is requested explicitly (e.g. dotnet publish -r win-arm64).
-    * JIT (Debug builds loaded through the NPlug proxy, tests, Gallery without AOT): RyuJIT already uses
-      every instruction set of the running CPU (SSE4.2, AVX2, FMA, AVX-512...): nothing to configure.
-    * NativeAOT (dotnet publish -p:PublishAot=true): the code is compiled ahead of time for a fixed instruction
-      set. The default x64 baseline has no AVX/AVX2/FMA (Vector256.IsHardwareAccelerated is false, Vector<float>
-      has 4 lanes). x86-64-v3 enables AVX, AVX2, FMA, BMI1/2, LZCNT and MOVBE: Intel Haswell (2013) and later,
-      AMD Zen and later. A binary built this way refuses to load on older CPUs; to ship a build for them, override:
-        dotnet publish ... -p:IlcInstructionSet=x86-64-v2
-      ("native" targets exactly the build machine, for personal use only.)
+    SIMD instruction set: see Directory.Build.targets (x86-64-v3 by default for NativeAOT x64 builds).
+    No PlatformTarget here: libraries stay AnyCPU, so the same assemblies serve x64 and ARM64 (and NuGet consumers);
+    executables and plug-ins get their architecture from their runtime identifier.
   -->
   <PropertyGroup>
-    <PlatformTarget Condition="'$(PlatformTarget)' == '' and ('$(RuntimeIdentifier)' == '' or $(RuntimeIdentifier.EndsWith('-x64')))">x64</PlatformTarget>
-    <IlcInstructionSet Condition="'$(IlcInstructionSet)' == '' and '$(PlatformTarget)' == 'x64'">x86-64-v3</IlcInstructionSet>
     <!-- NativeAOT: favor speed over binary size (NPlug.targets already does it for plugins). -->
     <OptimizationPreference Condition="'$(OptimizationPreference)' == ''">Speed</OptimizationPreference>
   </PropertyGroup>
