@@ -16,10 +16,10 @@
   </PropertyGroup>
 
   <!--
-    Temporary: NPlug.Validator 1.4.0 was built before the ARM64 folder fix. On Windows ARM64 its managed side looks for
-    the validator proxy in Contents\arm_64-win, while the native Steinberg validator loads Contents\arm64-win (where
-    NPlug.Proxy 2.0.2 puts it): the proxy is copied to both. Remove with NPlug.Validator 1.4.1 (the version bump of
-    xoofx/NPlug#27, not yet on NuGet).
+    Temporary: NPlug.Validator 1.4.0 was built before the ARM64 folder fix. On Windows ARM64 its type initializer looks
+    for the validator proxy in Contents\arm_64-win, while NPlug.Proxy 2.0.2 puts it in arm64-win: a copy lets the
+    validator start (this tool validates plug-in files, which does not use the proxy). Remove with NPlug.Validator
+    1.4.1 (the version bump of xoofx/NPlug#27, not yet on NuGet).
   -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == '' and '$(NETCoreSdkRuntimeIdentifier)' == 'win-arm64'">
     <Content Include="$(NPlugProxyLibraryFile)" Link="nplug_validator_proxy.vst3/Contents/arm_64-win/nplug_validator_proxy.vst3" CopyToOutputDirectory="PreserveNewest" Visible="false" />
