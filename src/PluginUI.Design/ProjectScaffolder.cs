@@ -335,6 +335,8 @@ public static class ProjectScaffolder
 
                   <PropertyGroup>
                     <PluginUIRoot Condition="'$(PluginUIRoot)' == ''">{{options.PluginUIRoot}}</PluginUIRoot>
+                    <!-- dotnet publish: NativeAOT .vst3; dotnet build: CoreCLR debug proxy. -->
+                    <PublishAot Condition="'$(PublishAot)' == '' and '$(_IsPublishing)' == 'true'">true</PublishAot>
                   </PropertyGroup>
 
                   <!--

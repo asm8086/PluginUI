@@ -26,6 +26,15 @@
   </PropertyGroup>
 
   <!--
+    "dotnet publish" builds the NativeAOT .vst3; "dotnet build" keeps the CoreCLR debug proxy. Set here because NPlug.targets,
+    imported from the NuGet package, comes too late to enable PublishAot. Projects referencing the PluginUI.NPlug package get
+    this from the package.
+  -->
+  <PropertyGroup>
+    <PublishAot Condition="'$(PublishAot)' == '' and '$(_IsPublishing)' == 'true'">true</PublishAot>
+  </PropertyGroup>
+
+  <!--
     PluginUI.NPlug brings the NPlug package and its build files: native debug proxy (Debug), native export of
     GetPluginFactory, NativeAOT defaults, .vst3 output. A plug-in using the NuGet packages references PluginUI.NPlug the
     same way (<PackageReference Include="PluginUI.NPlug" ... />).

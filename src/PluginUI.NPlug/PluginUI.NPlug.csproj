@@ -36,6 +36,8 @@
 
   <ItemGroup>
     <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+    <!-- dotnet publish -> NativeAOT .vst3, for the plug-ins that reference this package (directly or not). -->
+    <None Include="build\PluginUI.NPlug.props" Pack="true" PackagePath="build\;buildTransitive\" />
   </ItemGroup>
 
   <ItemGroup>

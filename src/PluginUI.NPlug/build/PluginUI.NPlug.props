@@ -1,0 +1,16 @@
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- SPDX-FileCopyrightText: 2026 asm8086 -->
+<!-- SPDX-License-Identifier: MIT -->
+<Project>
+
+  <!--
+    Imported before the plug-in project (NuGet .props), so that "dotnet publish" produces the NativeAOT .vst3 without
+    -p:PublishAot=true. NPlug.targets enables PublishAot when publishing too, but NuGet imports it after the SDK has
+    derived the publish settings from PublishAot (self-contained, trimming), which is too late. "dotnet build" keeps
+    PublishAot off, so Debug builds still get the CoreCLR debug proxy (<Name>.vst3).
+  -->
+  <PropertyGroup>
+    <PublishAot Condition="'$(PublishAot)' == '' and '$(_IsPublishing)' == 'true'">true</PublishAot>
+  </PropertyGroup>
+
+</Project>
