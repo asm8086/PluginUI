@@ -1,4 +1,4 @@
-<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- 2026/10/19 16:55:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -20,7 +20,7 @@
     <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
     <PackageReference Include="NUnit.Analyzers" Version="4.15.0" />
     <!-- Official Steinberg VST3 validator (native), called in-process on the NPlug factory. -->
-    <PackageReference Include="NPlug.Validator" Version="1.4.0.380" />
+    <PackageReference Include="NPlug.Validator" Version="1.4.1.380" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-// 2026/10/19 13:37:00 UTC - PluginUI
+// 2026/10/19 16:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -259,15 +259,6 @@ public class DemoSynthTests
     [Test]
     public void SteinbergValidatorPasses()
     {
-        // NPlug.Validator 1.4.0 was built before the ARM64 folder fix: on Windows ARM64 its managed side loads the
-        // validator proxy from Contents\arm_64-win and the native validator from Contents\arm64-win, two different
-        // modules. Fixed by NPlug.Validator 1.4.1 (xoofx/NPlug#27); the release still validates the ARM64 bundle file.
-        if (OperatingSystem.IsWindows() && System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64
-            && typeof(AudioPluginValidator).Assembly.GetName().Version < new Version(1, 4, 1))
-        {
-            Assert.Ignore("NPlug.Validator 1.4.0 cannot validate a factory in-process on Windows ARM64.");
-        }
-
         var output = new StringWriter();
         var errors = new StringWriter();
         bool passed = AudioPluginValidator.Validate(DemoSynthPlugin.GetFactory().Export, output, errors);
