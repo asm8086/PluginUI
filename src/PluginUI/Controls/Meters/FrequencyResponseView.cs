@@ -1,4 +1,4 @@
-// 2026/10/19 20:27:00 UTC - PluginUI
+// 2026/10/19 22:45:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -214,6 +214,20 @@ public sealed class ResponseNode
 /// handle to move one edge, turn the wheel over a node to change its band ratio or step its <see cref="ResponseNode.WheelParameter"/>.
 /// Drags send complete edit gestures, all parameters of the node in parallel.</para>
 /// </remarks>
+/// <example>
+/// <code>
+/// var view = new FrequencyResponseView { SampleRate = 48000, SpectrumSource = shared.Input };
+/// // Curves: any function of the frequency in Hz (here the magnitude in dB of the plug-in's own filter).
+/// view.Curves.Add(new ResponseCurve("Band 1", Color.FromRgb(0xFF7043), f => band1.MagnitudeDb(f)));
+/// view.Curves.Add(new ResponseCurve("Phase", Color.FromRgb(0xFFB300), f => cascade.Phase(f), ResponseAxis.Right));
+/// view.RightAxisTicks = RightAxisTicks.PiMultiples;
+/// view.SpectrumFilter = f => cascade.MagnitudeDb(f);   // output spectrum without a second FFT
+/// // A gain node, and a band node defined by its two edges.
+/// view.Nodes.Add(new ResponseNode { FrequencyParameter = Parameters[model.Freq], ValueParameter = Parameters[model.Gain], IsValueEditable = true, WheelParameter = Parameters[model.Q] });
+/// view.Nodes.Add(new ResponseNode { UsesBandEdges = true, LowFrequencyParameter = Parameters[model.Low], HighFrequencyParameter = Parameters[model.High] });
+/// view.ContentVersion = () => model.Shape.NormalizedValue;   // repaint when a design parameter changes
+/// </code>
+/// </example>
 public class FrequencyResponseView : Control
 {
     private const float NodeRadius = 7f;

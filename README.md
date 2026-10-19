@@ -1,4 +1,4 @@
-<!-- 2026/10/19 17:23:00 UTC - PluginUI -->
+<!-- 2026/10/19 22:45:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -6,7 +6,7 @@
 
 PluginUI is a user interface toolkit for VST3 plug-in editors written in C# / .NET 10. It draws everything with **Direct2D / DirectWrite** in **a single Win32 window, a child of the DAW's window**, has no dependency on WinForms, WPF or any UI runtime, and stays **NativeAOT-compatible** (the compiled plug-in is a native DLL that needs no installed .NET).
 
-It brings together the element catalogs of **VSTGUI** and **iPlug2**, complemented by elements for instruments and for analysis (equalizer, EBU R128 loudness, spectrogram, waveform, MSEG, step sequencer, drag-and-drop modulation, MIDI learn, A/B): about eighty elements, each available as stylable vector drawing, as bitmap / film strip and as SVG. It also provides the extension points to create more.
+It brings together the element catalogs of **VSTGUI** and **iPlug2**, complemented by elements for instruments and for analysis (equalizer, frequency-response display, EBU R128 loudness, spectrogram, waveform, MSEG, step sequencer, drag-and-drop modulation, MIDI learn, A/B): about eighty elements, each available as stylable vector drawing, as bitmap / film strip and as SVG. It also provides the extension points to create more.
 
 ![Gallery — rotary and linear](docs/images/1-rotary-linear.png)
 
@@ -16,6 +16,7 @@ It brings together the element catalogs of **VSTGUI** and **iPlug2**, complement
 | ![Containers and lists](docs/images/5-containers-lists.png) | ![Skins and styles](docs/images/6-skins-styles.png) |
 | ![Light theme](docs/images/7-light-theme.png) | ![Live edit mode](docs/images/9-live-edit.png) |
 | ![Instrument](docs/images/10-instrument.png) | ![Mixing and analysis](docs/images/11-analysis.png) |
+| ![Frequency response](docs/images/15-response.png) | |
 
 *Screenshots produced by `PluginUI.Gallery --snapshot` (off-screen rendering). The crossed-out frames on the "Skins" and "Containers" pages are the SVGs, which the capture engine (Wine) cannot draw; Windows displays them natively.*
 
@@ -66,7 +67,7 @@ PluginUI/
 ├── samples/PluginUI.Gallery/       Demo application (standalone window + PNG capture mode)
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/Designs/                Sample designs (.pluginui), including the DemoSynth layout
-├── tests/PluginUI.Tests/           123 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions)
+├── tests/PluginUI.Tests/           132 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions)
 ├── tests/PluginUI.NPlug.Tests/     22 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
 └── tests/PluginUI.Design.Tests/    25 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
 ```
@@ -251,7 +252,7 @@ dotnet run --project samples/PluginUI.Gallery                       # interactiv
 dotnet run --project samples/PluginUI.Gallery -- --snapshot out 2   # PNG captures at scale 2
 ```
 
-The gallery shows the element families on eight pages, offers a dark or light theme and four accent colors, and includes live edit. It starts in English; `--lang fr` gives the French interface:
+The gallery shows the element families on nine pages, offers a dark or light theme and four accent colors, and includes live edit. It starts in English; `--lang fr` gives the French interface:
 
 ```
 dotnet run --project samples/PluginUI.Gallery -- --lang fr                    # interactive window, in French
@@ -286,7 +287,7 @@ The tests open no windows: they simulate input through `UIHost.Dispatch…`. The
 What was verified during development:
 
 - the PluginUI projects build without warnings, with the NativeAOT and trimming analyzers enabled and warnings treated as errors;
-- 123 unit tests, including the fr-FR / de-DE / en-US / ru-RU cultures, the interface language, the design conventions, and the SIMD kernels run with AVX2 / AVX-512, SSE only and scalar;
+- 132 unit tests, including the fr-FR / de-DE / en-US / ru-RU cultures, the interface language, the design conventions, and the SIMD kernels run with AVX2 / AVX-512, SSE only and scalar;
 - 22 tests of the NPlug bridge and of DemoSynth (note queue, host key codes, typed values, MIDI learn and its persistence, envelopes, filter, oscillators, polyphony, sidechain);
 - 25 tests of the designs and of the editor (JSON round trip of all default values and of unknown content, complete registry, loader, capture, generated code compiled by Roslyn and identical to the loader, including with hostile names and values, live bridge, generated projects, editor commands, extensions);
 - Steinberg's official VST3 validator: 47/47 on DemoSynth (x86-64-v3, x86-64-v2, the universal bundle on x64 and on ARM64), and on the effect and instrument projects created by PluginUIEditor;

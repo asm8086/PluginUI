@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 22:45:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,7 @@ internal static class Snapshots
         Directory.CreateDirectory(dir);
         var app = new GalleryApp();
         var host = app.Host;
-        string[] names = ["1-rotary-linear", "2-buttons-menus", "3-text-pickers", "4-meters-midi", "5-containers-lists", "6-skins-styles", "10-instrument", "11-analysis"];
+        string[] names = ["1-rotary-linear", "2-buttons-menus", "3-text-pickers", "4-meters-midi", "5-containers-lists", "6-skins-styles", "10-instrument", "11-analysis", "15-response"];
         for (int page = 0; page < names.Length; page++)
         {
             app.Tabs.SelectedIndex = page;
