@@ -1,4 +1,4 @@
-<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -9,17 +9,33 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- Not packed yet: it references the NPlug sources (NPlug.Proxy 2.0.1 on NuGet lacks the arm64-win folder fix). -->
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
     <Description>Hosts PluginUI editors in NPlug (VST3) plug-ins: IAudioPluginView adapter and parameter binding.</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <!-- NPlugRoot (NPlug sources) is set in ../../Directory.Build.props. -->
+  <!--
+    A library, not a plug-in: NPlug's build files must neither add the GetPluginFactory export here nor copy the debug
+    proxy next to this assembly (it would end up in the package and in every referencing project).
+  -->
+  <PropertyGroup>
+    <NPlugFactoryExport>false</NPlugFactoryExport>
+    <NPlugProxyLibraryFile>none</NPlugProxyLibraryFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\PluginUI\PluginUI.csproj" />
-    <ProjectReference Include="$(NPlugRoot)NPlug\NPlug.csproj" />
+    <!--
+      PrivateAssets none: NPlug's build files (factory export, debug proxy, NativeAOT defaults, .vst3 output) also reach
+      the plug-ins that reference PluginUI.NPlug, so one reference is enough. A plug-in may still reference a newer NPlug.
+    -->
+    <PackageReference Include="NPlug" Version="0.6.1.380" PrivateAssets="none" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

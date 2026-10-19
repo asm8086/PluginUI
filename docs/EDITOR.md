@@ -1,4 +1,4 @@
-<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 
 # PluginUIEditor — visual designer
 
@@ -208,7 +208,7 @@ Created files, for an instrument named `MySynth`:
 
 ```
 MySynth/
-├── MySynth.csproj              NativeAOT plug-in (.vst3), references to NPlug and PluginUI
+├── MySynth.csproj              NativeAOT plug-in (.vst3), reference to PluginUI.NPlug (which brings NPlug)
 ├── Directory.Build.props
 ├── Directory.Build.targets     NativeAOT x64 instruction set (x86-64-v3)
 ├── README.md
@@ -221,7 +221,7 @@ MySynth/
     └── assets/                 Images and SVG of the design (embedded resources "assets/…")
 ```
 
-The NPlug and PluginUI folders are taken from *Tools ▸ Options* and written relative to the project when possible; without them, the project file expects PluginUI in `..\PluginUI\` (a sibling folder of the project) and takes the NPlug sources from its submodule (`external\NPlug\src\`), or else from a sibling clone `..\NPlug\src\`; the `NPlugRoot` and `PluginUIRoot` MSBuild properties override them. The design parameters become NPlug parameters (linear, logarithmic, integer, toggle, list). The processor of an effect passes the audio through and the instrument plays a monophonic sine: replace them with your DSP.
+The PluginUI folder is taken from *Tools ▸ Options* and written relative to the project when possible; without it, the project file expects PluginUI in `..\PluginUI\` (a sibling folder of the project), and the `PluginUIRoot` MSBuild property overrides it. NPlug comes from its NuGet package, brought by `PluginUI.NPlug`; add `<PackageReference Include="NPlug" Version="…" />` to the project to use a newer version. The design parameters become NPlug parameters (linear, logarithmic, integer, toggle, list). The processor of an effect passes the audio through and the instrument plays a monophonic sine: replace them with your DSP.
 
 ## Live design bridge
 
@@ -256,7 +256,7 @@ Without the extension, a design that uses custom elements still opens: they are 
 
 - **Interface language**: *Automatic* (follows the Windows display language: French for `fr-*`, English otherwise), English or French. Menus, panels, categories, dialogs and messages are translated, as are the texts drawn by PluginUI on the surface (context menus, live edit). Property names stay those of the C# API. Numbers always use a decimal point.
 - **Snap grid** in DIPs (0: none).
-- **NPlug `src` folder** and **PluginUI folder** used by new projects.
+- **PluginUI folder** used by new projects.
 - **Extension assemblies**.
 
 The settings are stored in `%AppData%\PluginUIEditor\settings.json` with the recent files.

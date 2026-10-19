@@ -1,4 +1,4 @@
-<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -25,14 +25,13 @@
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
   </PropertyGroup>
 
-  <!-- NPlugRoot (NPlug sources, the same NPlug.csproj as PluginUI.NPlug): ../../Directory.Build.props. -->
+  <!--
+    PluginUI.NPlug brings the NPlug package and its build files: native debug proxy (Debug), native export of
+    GetPluginFactory, NativeAOT defaults, .vst3 output. A plug-in using the NuGet packages references PluginUI.NPlug the
+    same way (<PackageReference Include="PluginUI.NPlug" ... />).
+  -->
   <ItemGroup>
-    <ProjectReference Include="$(NPlugRoot)NPlug\NPlug.csproj" />
     <ProjectReference Include="..\..\src\PluginUI.NPlug\PluginUI.NPlug.csproj" />
   </ItemGroup>
-
-  <!-- Native debug proxy (Debug), native export of GetPluginFactory, NativeAOT defaults, .vst3 bundle. -->
-  <Import Project="$(NPlugRoot)NPlug.Proxy\build\NPlug.Proxy.targets" />
-  <Import Project="$(NPlugRoot)NPlug\build\NPlug.targets" />
 
 </Project>

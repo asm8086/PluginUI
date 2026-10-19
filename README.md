@@ -1,4 +1,4 @@
-<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -30,7 +30,6 @@ PluginUI/
 ├── LICENSE                         MIT license
 ├── CHANGELOG.md                    Version history
 ├── CONTRIBUTING.md, CONTRIBUTING_FR.md   How to contribute (English, French)
-├── external/NPlug/                 Git submodule: NPlug (xoofx/NPlug, tag 0.6.0)
 ├── build/                          Release script, VST3 loader (vst3shim) and validator tool
 ├── .github/workflows/              CI (Linux + Windows), documentation site, releases
 ├── docs/                           Each guide in English (X.md) and French (X_FR.md)
@@ -80,7 +79,8 @@ About 34,000 lines of C# for the libraries. All public members have XML document
 - Default NativeAOT publishing: a processor with AVX2 and FMA (see "Performance and SIMD").
 - Visual Studio 2026, .NET 10 SDK.
 - `TerraFX.Interop.Windows` 10.0.26100.6 (NuGet), for Win32 / Direct2D / DirectWrite / WIC bindings without marshalling, NativeAOT-compatible.
-- `PluginUI.NPlug` only: the NPlug 0.6.0 sources. By default the git submodule `external/NPlug` ([xoofx/NPlug](https://github.com/xoofx/NPlug), tag `0.6.0`; clone with `git clone --recurse-submodules`), otherwise a neighboring clone `..\NPlug`. To use another copy, set the MSBuild property `NPlugRoot` to that copy's `src\` folder. NuGet packages: `PluginUI` and `PluginUI.Design`; `PluginUI.NPlug` is used from source until the `NPlug.Proxy` package on NuGet writes ARM64 plug-ins to `Contents\arm64-win` (version 2.0.1 still uses `arm_64-win`; the NPlug 0.6.0 sources are fixed).
+- `PluginUI.NPlug` only: [NPlug](https://github.com/xoofx/NPlug) 0.6.1 or later (NuGet package `NPlug`, brought by `PluginUI.NPlug`).
+- NuGet packages: `PluginUI`, `PluginUI.Design` and `PluginUI.NPlug`.
 
 ## Downloads
 
@@ -99,6 +99,21 @@ Each [release](https://github.com/asm8086/PluginUI/releases) provides:
 ## Quick start
 
 ### In an NPlug plug-in (VST3)
+
+A plug-in is a class library with a Windows runtime identifier; the `PluginUI.NPlug` package brings PluginUI and NPlug
+(with NPlug's build files: debug proxy, factory export, NativeAOT `.vst3`):
+
+```xml
+<PropertyGroup>
+  <TargetFramework>net10.0</TargetFramework>
+  <OutputType>Library</OutputType>
+  <RuntimeIdentifier>win-x64</RuntimeIdentifier> <!-- or win-arm64 -->
+  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Debug builds loaded through the NPlug proxy -->
+</PropertyGroup>
+<ItemGroup>
+  <PackageReference Include="PluginUI.NPlug" Version="0.1.0-beta.3" />
+</ItemGroup>
+```
 
 ```csharp
 // Controller: the beginEdit/performEdit/endEdit bridge is provided.
@@ -254,7 +269,7 @@ dotnet tool restore
 dotnet docfx docfx/docfx.json --serve
 ```
 
-The site is generated in `docfx/_site` and published on [GitHub Pages](https://asm8086.github.io/PluginUI/) by the documentation workflow. The API step builds `PluginUI.NPlug`, so the patched NPlug sources must be available (submodule, `..\NPlugCorrected` or `NPlugRoot`); a warning about `NPlug.Proxy.msbuildproj` is expected. The French guides are part of the site too, reachable from the language link at the top of each guide.
+The site is generated in `docfx/_site` and published on [GitHub Pages](https://asm8086.github.io/PluginUI/) by the documentation workflow. The French guides are part of the site too, reachable from the language link at the top of each guide.
 
 ## Tests
 

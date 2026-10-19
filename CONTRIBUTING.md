@@ -1,4 +1,4 @@
-<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 
 # Contributing to PluginUI
 
@@ -17,12 +17,11 @@ Open an [issue](https://github.com/asm8086/PluginUI/issues) with:
 ## Getting the sources
 
 ```
-git clone --recurse-submodules https://github.com/asm8086/PluginUI.git
+git clone https://github.com/asm8086/PluginUI.git
 ```
 
-`external/NPlug` is a submodule: [xoofx/NPlug](https://github.com/xoofx/NPlug) at the release PluginUI is built
-and tested with (tag `0.6.0`). If you cloned without `--recurse-submodules`, run
-`git submodule update --init --recursive`.
+NPlug comes from its NuGet package (`NPlug`, referenced by `src/PluginUI.NPlug`; the tests and the validator tool use
+`NPlug.Validator`): nothing else to fetch.
 
 ## Building and testing
 
@@ -71,8 +70,9 @@ Other useful commands:
 
 ## NPlug changes
 
-Fixes to NPlug go to its repository ([xoofx/NPlug](https://github.com/xoofx/NPlug)). Once they are released, the
-submodule moves to the new tag (`git -C external/NPlug checkout <tag>`, then commit the submodule).
+Fixes to NPlug go to its repository ([xoofx/NPlug](https://github.com/xoofx/NPlug)). Once they are released on
+NuGet, the `NPlug` version is raised in `src/PluginUI.NPlug/PluginUI.NPlug.csproj` (and `NPlug.Validator` in the tests
+and `build/ValidatePlugin`).
 
 ## Pull requests
 

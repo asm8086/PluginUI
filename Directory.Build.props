@@ -1,4 +1,4 @@
-<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 <!-- SPDX-FileCopyrightText: 2026 asm8086 -->
 <!-- SPDX-License-Identifier: MIT -->
 <Project>
@@ -13,20 +13,7 @@
     <OptimizationPreference Condition="'$(OptimizationPreference)' == ''">Speed</OptimizationPreference>
   </PropertyGroup>
 
-  <!--
-    NPlug sources, shared by PluginUI.NPlug, the samples and the tests (a plug-in must reference the same NPlug.csproj).
-    Default: the git submodule external/NPlug (xoofx/NPlug at tag 0.6.0; clone with recurse-submodules), else a sibling
-    clone ..\NPlug, else the older sibling copy ..\NPlugCorrected. Override with -p:NPlugRoot=<folder>\src\.
-    Sources rather than the NuGet package: NPlug.Proxy 2.0.1 (a dependency of NPlug 0.6.0 on NuGet) still writes the
-    ARM64 plug-in to Contents\arm_64-win instead of Contents\arm64-win.
-  -->
-  <PropertyGroup>
-    <NPlugRoot Condition="'$(NPlugRoot)' == '' and Exists('$(MSBuildThisFileDirectory)external/NPlug/src/NPlug/NPlug.csproj')">$(MSBuildThisFileDirectory)external\NPlug\src\</NPlugRoot>
-    <NPlugRoot Condition="'$(NPlugRoot)' == '' and Exists('$(MSBuildThisFileDirectory)../NPlug/src/NPlug/NPlug.csproj')">$(MSBuildThisFileDirectory)..\NPlug\src\</NPlugRoot>
-    <NPlugRoot Condition="'$(NPlugRoot)' == ''">$(MSBuildThisFileDirectory)..\NPlugCorrected\src\</NPlugRoot>
-  </PropertyGroup>
-
-  <!-- Version, authorship and package metadata (only PluginUI and PluginUI.Design are packed). -->
+  <!-- Version, authorship and package metadata (only PluginUI, PluginUI.Design and PluginUI.NPlug are packed). -->
   <PropertyGroup>
     <VersionPrefix>0.1.0</VersionPrefix>
     <Authors>asm8086</Authors>

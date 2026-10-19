@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 <!-- SPDX-FileCopyrightText: 2026 asm8086 -->
 <!-- SPDX-License-Identifier: MIT -->
 <Project Sdk="Microsoft.NET.Sdk">
@@ -16,11 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(NPlugRoot)NPlug.Validator\NPlug.Validator.csproj" />
+    <PackageReference Include="NPlug.Validator" Version="1.4.0.380" />
   </ItemGroup>
-
-  <Import Project="$(NPlugRoot)NPlug.Proxy\build\NPlug.Proxy.targets" />
-  <Import Project="$(NPlugRoot)NPlug.Validator\build\NPlug.Validator.targets" />
-  <Import Project="$(NPlugRoot)NPlug\build\NPlug.targets" />
 
 </Project>

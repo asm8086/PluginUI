@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 13:37:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -19,9 +19,6 @@ internal sealed class EditorSettings
 
     /// <summary>Recently opened designs, most recent first.</summary>
     public List<string> RecentFiles { get; set; } = new();
-
-    /// <summary>NPlug src folder written in new projects.</summary>
-    public string NPlugRoot { get; set; } = string.Empty;
 
     /// <summary>PluginUI folder written in new projects.</summary>
     public string PluginUIRoot { get; set; } = string.Empty;

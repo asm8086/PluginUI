@@ -1,4 +1,4 @@
-<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 
 # PluginUIEditor — concepteur visuel
 
@@ -208,7 +208,7 @@ Fichiers créés, pour un instrument nommé `MySynth` :
 
 ```
 MySynth/
-├── MySynth.csproj              Plugin NativeAOT (.vst3), références à NPlug et PluginUI
+├── MySynth.csproj              Plugin NativeAOT (.vst3), référence à PluginUI.NPlug (qui apporte NPlug)
 ├── Directory.Build.props
 ├── Directory.Build.targets     jeu d'instructions NativeAOT x64 (x86-64-v3)
 ├── README.md
@@ -221,7 +221,7 @@ MySynth/
     └── assets/                 Images et SVG du design (ressources incorporées « assets/… »)
 ```
 
-Les dossiers de NPlug et de PluginUI sont pris dans *Outils ▸ Options* et écrits relativement au projet quand c'est possible ; sans eux, le fichier projet attend PluginUI dans `..\PluginUI\` (dossier voisin du projet) et prend les sources de NPlug dans son sous-module (`external\NPlug\src\`), ou à défaut dans un clone voisin `..\NPlug\src\` ; les propriétés MSBuild `NPlugRoot` et `PluginUIRoot` les remplacent. Les paramètres du design deviennent des paramètres NPlug (linéaire, logarithmique, entier, interrupteur, liste). Le processeur d'un effet laisse passer l'audio et l'instrument joue une sinusoïde monophonique : remplacez-les par votre DSP.
+Le dossier de PluginUI est pris dans *Outils ▸ Options* et écrit relativement au projet quand c'est possible ; sans lui, le fichier projet attend PluginUI dans `..\PluginUI\` (dossier voisin du projet), et la propriété MSBuild `PluginUIRoot` le remplace. NPlug vient de son paquet NuGet, apporté par `PluginUI.NPlug` ; ajoutez `<PackageReference Include="NPlug" Version="…" />` au projet pour en utiliser une version plus récente. Les paramètres du design deviennent des paramètres NPlug (linéaire, logarithmique, entier, interrupteur, liste). Le processeur d'un effet laisse passer l'audio et l'instrument joue une sinusoïde monophonique : remplacez-les par votre DSP.
 
 ## Lien de design en direct
 
@@ -256,7 +256,7 @@ Sans l'extension, un design qui utilise des éléments personnalisés s'ouvre qu
 
 - **Langue de l'interface** : *Automatique* (suit la langue d'affichage de Windows : français pour `fr-*`, anglais sinon), anglais ou français. Les menus, panneaux, catégories, boîtes de dialogue et messages sont traduits, ainsi que les textes dessinés par PluginUI sur la surface (menus contextuels, édition en direct). Les noms des propriétés restent ceux de l'API C#. Les nombres utilisent toujours le point décimal.
 - **Grille magnétique** en DIP (0 : aucune).
-- **Dossier `src` de NPlug** et **dossier de PluginUI** utilisés par les nouveaux projets.
+- **Dossier de PluginUI** utilisé par les nouveaux projets.
 - **Assemblies d'extension**.
 
 Les réglages sont enregistrés dans `%AppData%\PluginUIEditor\settings.json` avec la liste des fichiers récents.

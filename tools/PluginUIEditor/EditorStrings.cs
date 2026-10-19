@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 13:37:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -39,7 +39,7 @@ internal sealed record EditorStrings
         UnsupportedPaste = "Le presse-papiers ne contient pas d'éléments PluginUI.", CannotHoldChildren = "{0} ne peut pas contenir d'éléments.",
         DropHint = "Glissez un élément de la boîte à outils, ou double-cliquez dessus.",
         OptionsTitle = "Options", OptionLanguage = "Langue de l'interface", LanguageAuto = "Automatique (langue de Windows)",
-        OptionGrid = "Grille magnétique (DIP, 0 = aucune)", OptionNPlugRoot = "Dossier src de NPlug (nouveaux projets)",
+        OptionGrid = "Grille magnétique (DIP, 0 = aucune)",
         OptionPluginUIRoot = "Dossier de PluginUI (nouveaux projets)", Ok = "OK", Cancel = "Annuler", Browse = "Parcourir…",
         NewProjectTitle = "Nouveau projet", ProjectName = "Nom du projet (identifiant C#)", ProjectKind = "Type", KindEffect = "Effet VST3",
         KindInstrument = "Instrument VST3", KindStandalone = "Application Windows", ProjectFolder = "Dossier parent", Vendor = "Éditeur",
@@ -156,7 +156,6 @@ internal sealed record EditorStrings
     public string OptionLanguage { get; init; } = "Interface language";
     public string LanguageAuto { get; init; } = "Automatic (Windows language)";
     public string OptionGrid { get; init; } = "Snap grid (DIPs, 0 = none)";
-    public string OptionNPlugRoot { get; init; } = "NPlug src folder (new projects)";
     public string OptionPluginUIRoot { get; init; } = "PluginUI folder (new projects)";
     public string Ok { get; init; } = "OK";
     public string Cancel { get; init; } = "Cancel";

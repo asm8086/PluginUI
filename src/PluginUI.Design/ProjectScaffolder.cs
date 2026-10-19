@@ -1,4 +1,4 @@
-// 2026/10/19 07:48:00 UTC - PluginUI
+// 2026/10/19 13:37:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -40,13 +40,6 @@ public sealed class ScaffoldOptions
 
     /// <summary>Plug-in version.</summary>
     public Version Version { get; set; } = new(0, 1, 0);
-
-    /// <summary>
-    /// Folder of NPlug's <c>src</c> directory, as written in the project file (MSBuild syntax; relative paths should
-    /// start with <c>$(MSBuildThisFileDirectory)</c>). <c>null</c> (default): the NPlug submodule of PluginUI
-    /// (<c>$(PluginUIRoot)external\NPlug\src\</c>) when it exists, else a sibling clone of NPlug (<c>..\NPlug\src\</c>).
-    /// </summary>
-    public string? NPlugRoot { get; set; }
 
     /// <summary>Folder of PluginUI (the one containing <c>src</c>), as written in the project file.</summary>
     public string PluginUIRoot { get; set; } = @"$(MSBuildThisFileDirectory)..\PluginUI\";
@@ -295,12 +288,6 @@ public static class ProjectScaffolder
 
             """;
 
-        // Explicit folder, or the NPlug submodule of PluginUI with a sibling NPlug clone as fallback.
-        private string NPlugRootLines => options.NPlugRoot is { Length: > 0 } root
-            ? $"\n    <NPlugRoot Condition=\"'$(NPlugRoot)' == ''\">{root}</NPlugRoot>"
-            : "\n    <NPlugRoot Condition=\"'$(NPlugRoot)' == '' and Exists('$(PluginUIRoot)external/NPlug/src/NPlug/NPlug.csproj')\">$(PluginUIRoot)external\\NPlug\\src\\</NPlugRoot>"
-              + "\n    <NPlugRoot Condition=\"'$(NPlugRoot)' == ''\">$(MSBuildThisFileDirectory)..\\NPlug\\src\\</NPlugRoot>";
-
         private string AssetItems => $$"""
               <ItemGroup>
                 <!-- Design assets, embedded with their design path ("assets/knob.png") as resource name. -->
@@ -347,19 +334,18 @@ public static class ProjectScaffolder
                   </PropertyGroup>
 
                   <PropertyGroup>
-                    <PluginUIRoot Condition="'$(PluginUIRoot)' == ''">{{options.PluginUIRoot}}</PluginUIRoot>{{NPlugRootLines}}
+                    <PluginUIRoot Condition="'$(PluginUIRoot)' == ''">{{options.PluginUIRoot}}</PluginUIRoot>
                   </PropertyGroup>
 
+                  <!--
+                    PluginUI.NPlug brings the NPlug package and its build files: native debug proxy (Debug), GetPluginFactory
+                    export, NativeAOT defaults, .vst3 output. For another NPlug version, add <PackageReference Include="NPlug" />.
+                  -->
                   <ItemGroup>
-                    <ProjectReference Include="$(NPlugRoot)NPlug\NPlug.csproj" />
                     <ProjectReference Include="$(PluginUIRoot)src\PluginUI.NPlug\PluginUI.NPlug.csproj" />
                   </ItemGroup>
                 {{bridge}}
                 {{AssetItems}}
-
-                  <!-- Native debug proxy (Debug), GetPluginFactory export, NativeAOT defaults, .vst3 bundle. -->
-                  <Import Project="$(NPlugRoot)NPlug.Proxy\build\NPlug.Proxy.targets" />
-                  <Import Project="$(NPlugRoot)NPlug\build\NPlug.targets" />
 
                 </Project>
 
@@ -952,7 +938,7 @@ public static class ProjectScaffolder
                 ## Build
 
                 {{build}}
-                It expects the NPlug and PluginUI sources at the paths set in the project file (`NPlugRoot`, `PluginUIRoot`).
+                It expects the PluginUI sources at the path set in the project file (`PluginUIRoot`){{(options.Kind == ScaffoldKind.Standalone ? "" : "; NPlug comes from its NuGet package")}}.
                 {{live}}
                 """;
         }

@@ -1,4 +1,4 @@
-<!-- 2026/10/19 09:59:00 UTC - PluginUI -->
+<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -18,11 +18,11 @@
     <PackageReference Include="NUnit" Version="5.0.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
     <PackageReference Include="NUnit.Analyzers" Version="4.15.0" />
+    <!-- Official Steinberg VST3 validator (native), called in-process on the NPlug factory. -->
+    <PackageReference Include="NPlug.Validator" Version="1.4.0.380" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Official Steinberg VST3 validator (native), called in-process on the NPlug factory. -->
-    <ProjectReference Include="$(NPlugRoot)NPlug.Validator\NPlug.Validator.csproj" />
     <ProjectReference Include="..\..\src\PluginUI.NPlug\PluginUI.NPlug.csproj" />
     <ProjectReference Include="..\..\samples\PluginUI.DemoSynth\PluginUI.DemoSynth.csproj" />
   </ItemGroup>
@@ -30,9 +30,5 @@
   <ItemGroup>
     <Using Include="NUnit.Framework" />
   </ItemGroup>
-
-  <Import Project="$(NPlugRoot)NPlug.Proxy\build\NPlug.Proxy.targets" />
-  <Import Project="$(NPlugRoot)NPlug.Validator\build\NPlug.Validator.targets" />
-  <Import Project="$(NPlugRoot)NPlug\build\NPlug.targets" />
 
 </Project>

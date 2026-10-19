@@ -1,4 +1,4 @@
-# 2026/10/18 22:42:00 UTC - PluginUI
+# 2026/10/19 13:37:00 UTC - PluginUI
 # SPDX-FileCopyrightText: 2026 asm8086
 # SPDX-License-Identifier: MIT
 
@@ -272,10 +272,11 @@ function Invoke-Package {
         }
     }
 
-    # NuGet packages (PluginUI, PluginUI.Design).
+    # NuGet packages (PluginUI, PluginUI.Design, PluginUI.NPlug).
     if (-not $SkipNuGet) {
-        Invoke-Native dotnet @('pack', (Join-Path $Root 'src/PluginUI/PluginUI.csproj'), '-c', $Configuration, "-p:Version=$Version", '-o', (Join-Path $ReleaseDir 'nuget'))
-        Invoke-Native dotnet @('pack', (Join-Path $Root 'src/PluginUI.Design/PluginUI.Design.csproj'), '-c', $Configuration, "-p:Version=$Version", '-o', (Join-Path $ReleaseDir 'nuget'))
+        foreach ($project in 'PluginUI', 'PluginUI.Design', 'PluginUI.NPlug') {
+            Invoke-Native dotnet @('pack', (Join-Path $Root "src/$project/$project.csproj"), '-c', $Configuration, "-p:Version=$Version", '-o', (Join-Path $ReleaseDir 'nuget'))
+        }
     }
 
     # Checksums of the downloadable files.

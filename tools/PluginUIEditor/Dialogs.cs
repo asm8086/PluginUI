@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 13:37:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -77,17 +77,15 @@ internal static class OptionsDialog
     {
         var t = EditorStrings.Current;
         using var form = DialogLayout.Dialog(t.OptionsTitle, 560);
-        var table = DialogLayout.Table(5);
+        var table = DialogLayout.Table(4);
         var language = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
         language.Items.AddRange([t.LanguageAuto, "English", "Français"]);
         language.SelectedIndex = settings.Language switch { "en" => 1, "fr" => 2, _ => 0 };
         var grid = new NumericUpDown { Minimum = 0, Maximum = 64, DecimalPlaces = 0, Value = (decimal)Math.Clamp(settings.GridSize, 0f, 64f) };
-        var nplug = new TextBox { Text = settings.NPlugRoot, Width = 340 };
         var pluginui = new TextBox { Text = settings.PluginUIRoot, Width = 340 };
         DialogLayout.Row(table, 0, t.OptionLanguage, language);
         DialogLayout.Row(table, 1, t.OptionGrid, grid);
-        DialogLayout.Row(table, 2, t.OptionNPlugRoot, nplug, DialogLayout.BrowseFolder(nplug, t.OptionNPlugRoot));
-        DialogLayout.Row(table, 3, t.OptionPluginUIRoot, pluginui, DialogLayout.BrowseFolder(pluginui, t.OptionPluginUIRoot));
+        DialogLayout.Row(table, 2, t.OptionPluginUIRoot, pluginui, DialogLayout.BrowseFolder(pluginui, t.OptionPluginUIRoot));
         var extensions = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Height = 72, WordWrap = false, Text = string.Join(Environment.NewLine, settings.Extensions) };
         var addExtension = new Button { Text = t.Browse, AutoSize = true };
         addExtension.Click += (_, _) =>
@@ -96,13 +94,12 @@ internal static class OptionsDialog
             if (dialog.ShowDialog() != DialogResult.OK) return;
             foreach (var file in dialog.FileNames) extensions.AppendText((extensions.TextLength > 0 ? Environment.NewLine : string.Empty) + file);
         };
-        DialogLayout.Row(table, 4, t.OptionExtensions, extensions, addExtension);
+        DialogLayout.Row(table, 3, t.OptionExtensions, extensions, addExtension);
         form.Controls.Add(table);
         form.Controls.Add(DialogLayout.Buttons(form, t.Ok, t.Cancel));
         if (form.ShowDialog(owner) != DialogResult.OK) return false;
         settings.Language = language.SelectedIndex switch { 1 => "en", 2 => "fr", _ => "auto" };
         settings.GridSize = (float)grid.Value;
-        settings.NPlugRoot = nplug.Text.Trim();
         settings.PluginUIRoot = pluginui.Text.Trim();
         settings.Extensions = extensions.Lines.Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
         settings.Save();
@@ -164,7 +161,6 @@ internal static class NewProjectDialog
             IncludeLiveBridge = live.Checked,
         };
         string target = Path.Combine(folder.Text.Trim(), project);
-        if (settings.NPlugRoot.Length > 0) options.NPlugRoot = MsBuildPath(target, settings.NPlugRoot);
         if (settings.PluginUIRoot.Length > 0) options.PluginUIRoot = MsBuildPath(target, settings.PluginUIRoot);
         return (options, target);
     }
