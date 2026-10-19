@@ -1,4 +1,4 @@
-// 2026/10/19 17:23:00 UTC - PluginUI
+// 2026/10/19 20:27:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -390,6 +390,7 @@ public static class BuiltInDesignTypes
         registry.Register<WaveformView>(Instrument);
 
         registry.Register<ParametricEqEditor>(Analysis);
+        registry.Register<FrequencyResponseView>(Analysis);
         registry.Register<CompressorCurve>(Analysis);
         registry.Register<LoudnessMeter>(Analysis);
         registry.Register<Goniometer>(Analysis);

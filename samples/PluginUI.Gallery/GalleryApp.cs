@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 22:34:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -35,6 +35,7 @@ internal sealed class GalleryApp
         Tabs.AddPage(L.T("Skins", "Habillages"), SkinsPage.Build());
         Tabs.AddPage("Instrument", InstrumentPage.Build(Audio));
         Tabs.AddPage(L.T("Analysis", "Analyse"), AnalysisPage.Build(Audio));
+        Tabs.AddPage(L.T("Response", "Réponse"), ResponsePage.Build(Audio));
 
         _themeSelector = new SegmentedControl(L.T("Dark", "Sombre"), L.T("Light", "Clair")) { ToolTip = L.T("Theme", "Thème") };
         _accentSelector = new DropDown(_accents.Select(a => a.Name).ToArray()) { ToolTip = L.T("Accent color", "Couleur d'accent") };

@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 20:27:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,8 @@ namespace PluginUI;
 /// Drop-down list (combo box) for a discrete value: shows the selected item and a chevron, opens a menu with a
 /// check mark on the current item. Items come from <see cref="Items"/> or the parameter's state labels; names such as
 /// <c>"Bass/Sub"</c> are grouped into sub-menus when <see cref="SubmenuSeparator"/> is set.
+/// <see cref="IsItemAvailable"/> hides the items that do not apply in the current context (the menu omits them and the
+/// wheel and arrow keys skip them), without changing the indices of the others.
 /// </summary>
 public class DropDown : ValueControl
 {
@@ -39,6 +41,13 @@ public class DropDown : ValueControl
     /// <summary>Character splitting item names into sub-menu groups (e.g. '/'), or null for a flat menu.</summary>
     [Category("Behavior")]
     public char? SubmenuSeparator { get; set; }
+
+    /// <summary>
+    /// Tells whether the item at an index can be chosen (null = all items). Unavailable items are left out of the menu
+    /// and skipped by the wheel and the arrow keys; the selected item stays displayed even when it is unavailable.
+    /// </summary>
+    [Browsable(false)]
+    public Func<int, bool>? IsItemAvailable { get; set; }
 
     /// <summary>Text shown when there are no items.</summary>
     [Category("Text")]
@@ -126,6 +135,7 @@ public class DropDown : ValueControl
         var groups = new Dictionary<string, MenuItem>();
         for (int i = 0; i < labels.Count; i++)
         {
+            if (IsItemAvailable is { } available && !available(i)) continue;
             int index = i;
             string label = labels[i];
             var item = new MenuItem(DisplayName(label), () => SelectByUser(index)) { IsChecked = i == selected };
@@ -155,6 +165,18 @@ public class DropDown : ValueControl
         SetValueByUser(Count <= 1 ? 0.0 : Math.Clamp(index, 0, Count - 1) / (double)(Count - 1));
     }
 
+    // Moves to the next available item in a direction; stays put when there is none.
+    private void StepByUser(int direction)
+    {
+        int count = Count;
+        for (int i = SelectedIndex + direction; i >= 0 && i < count; i += direction)
+        {
+            if (IsItemAvailable is { } available && !available(i)) continue;
+            SelectByUser(i);
+            return;
+        }
+    }
+
     /// <inheritdoc />
     protected internal override void OnMouseDown(MouseEventArgs e)
     {
@@ -169,7 +191,7 @@ public class DropDown : ValueControl
     {
         if (!IsEffectivelyEnabled || Count == 0) return;
         // Wheel up = previous item, like native combo boxes.
-        SelectByUser(SelectedIndex - Math.Sign(e.WheelDelta));
+        StepByUser(-Math.Sign(e.WheelDelta));
         e.Handled = true;
     }
 
@@ -180,8 +202,8 @@ public class DropDown : ValueControl
         {
             switch (e.Key)
             {
-                case Key.Down or Key.Right: SelectByUser(SelectedIndex + 1); e.Handled = true; return;
-                case Key.Up or Key.Left: SelectByUser(SelectedIndex - 1); e.Handled = true; return;
+                case Key.Down or Key.Right: StepByUser(1); e.Handled = true; return;
+                case Key.Up or Key.Left: StepByUser(-1); e.Handled = true; return;
                 case Key.Enter or Key.Space or Key.F4: OpenMenu(); e.Handled = true; return;
             }
         }

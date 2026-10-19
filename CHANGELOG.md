@@ -1,4 +1,4 @@
-<!-- 2026/10/19 17:23:00 UTC - PluginUI -->
+<!-- 2026/10/19 20:27:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -10,6 +10,15 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **FrequencyResponseView**, with `ResponseCurve` and `ResponseNode`: frequency-response display for equalizers and
+  filters. Any number of curves supplied by the consumer (no filter design inside), logarithmic or linear frequency
+  axis, fixed left axis and auto-scaled right axis (decimal or π-multiple ticks, for phases and delays), analyzed input
+  spectrum (FFT with 50 % overlap, instant attack, exponential release, 20·log10 or 6·log2 decibels) and the same
+  spectrum shaped by a response without a second FFT, draggable nodes bound to parameters (parallel gestures),
+  optionally defined by two band edges with their own handles, wheel on the band ratio or on any parameter.
+  Registered for PluginUIEditor designs, shown in the gallery (*Response*).
+- **DropDown.IsItemAvailable**: hides the items that do not apply in the current context (left out of the menu, skipped
+  by the wheel and the arrow keys) without changing the indices of the others.
 - **ViewSwitcher**: shows one child at a time, chosen by `SelectedIndex` or by a bound parameter (VSTGUI
   `UIViewSwitchContainer`); registered for PluginUIEditor designs, shown in the gallery (*Containers* ▸ *Effects*).
 - **LevelMeter** skins: with `Skin` (for example a `FilmStripSkin`), each channel is drawn by the skin with its level

@@ -1,4 +1,4 @@
-<!-- 2026/10/19 17:23:00 UTC - PluginUI -->
+<!-- 2026/10/19 20:27:00 UTC - PluginUI -->
 
 # Element catalog
 
@@ -47,7 +47,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 
 | Element | Key points | Equivalent |
 |---|---|---|
-| `DropDown` | Items from the parameter or an explicit list, submenus via a separator (`"Group/Item"`), mouse wheel and arrows | `COptionMenu`, `IVMenuButtonControl` |
+| `DropDown` | Items from the parameter or an explicit list, submenus via a separator (`"Group/Item"`), mouse wheel and arrows, unavailable items hidden (`IsItemAvailable`) | `COptionMenu`, `IVMenuButtonControl` |
 | `MenuButton` | Arbitrary menu (`MenuItem`), hamburger / dots / text + chevron styles | `IVMenuButtonControl` |
 | `MenuPopup` | Drawn menu: check marks, shortcuts, separators, submenus, keyboard, type-ahead, scrolling | `IPopupMenuControl` |
 | `NativeMenu` | Native Win32 menu (`UIHost.UseNativeMenus`) | `COptionMenu` (native) |
@@ -80,6 +80,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `FpsCounter` | Frames per second and frame time (debugging) | `IFPSDisplayControl` |
 | `HistoryGraph` | Scrolling history of a value (gain reduction, envelope, LFO): line, filled or bars, lock-free `PeakValue` source or polled function | `IVDisplayControl` |
 | `ParametricEqEditor`, `EqBand` | Parametric equalizer: exact curve of the RBJ biquads, draggable nodes (frequency and gain in parallel gestures), Q with the mouse wheel, shape menu per band, adding and removing bands, spectrum in the background | — (bonus) |
+| `FrequencyResponseView`, `ResponseCurve`, `ResponseNode` | Response display for any filter: consumer-supplied curves, log or linear frequency axis, fixed left axis and auto-scaled right axis (phase in multiples of π, delays), analyzed input spectrum (50 % overlap, release smoothing, 20·log10 or 6·log2 dB) and the spectrum shaped by a response without a second FFT, nodes bound to parameters, band nodes defined by two edges with their own handles | — (bonus) |
 | `CompressorCurve` | Transfer curve (threshold, ratio, soft knee), threshold and ratio adjustable with the mouse, live input level | — (bonus) |
 | `LoudnessMeter` + `Dsp.LoudnessAnalyzer` | EBU R128 / BS.1770-4 loudness: momentary, short-term, integrated (with gating), LRA range, peak; target and tolerance | — (bonus) |
 | `Goniometer`, `CorrelationMeter` | Stereo image (M/S Lissajous) and phase correlation −1…+1 | — (bonus) |
