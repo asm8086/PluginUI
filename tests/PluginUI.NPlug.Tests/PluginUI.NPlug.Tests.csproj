@@ -13,6 +13,15 @@
     <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
 
+  <!--
+    Temporary: NPlug.Validator 1.4.0 was built before the ARM64 folder fix and looks for its proxy in
+    Contents\arm_64-win on Windows ARM64, while NPlug.Proxy 2.0.2 names the folder arm64-win. Remove with
+    NPlug.Validator 1.4.1 (the version bump of xoofx/NPlug#27, not yet on NuGet).
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == '' and '$(NETCoreSdkRuntimeIdentifier)' == 'win-arm64'">
+    <NPlugVstArch>arm_64-win</NPlugVstArch>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="NUnit" Version="5.0.0" />
