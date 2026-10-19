@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 17:23:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -23,6 +23,9 @@ internal static class MetersPage
         c.At(new ProgressBar { Value = 0.62, ShowText = true }, 210, 132, 210, 16);
         c.At(new ProgressBar { IsIndeterminate = true }, 210, 156, 210, 8);
         c.At(new FpsCounter(), 330, 98, 90, 18);
+        var strip = new FilmStripSkin(Art.MeterStrip(), ImageFit.Stretch);
+        c.At(new LevelMeter { Sources = audio.NewPeakSources(), Skin = strip, ShowScale = false, ChannelGap = 4f, ToolTip = L.T("Film-strip skin: one frame per level", "Skin film-strip : une image par niveau") }, 210, 178, 40, 98);
+        c.At(new LevelMeter { Sources = audio.NewPeakSources(), Skin = strip, ToolTip = L.T("Film-strip skin with the dB scale", "Skin film-strip avec l'échelle en dB") }, 262, 178, 64, 98);
 
         c.Caption("OSCILLOSCOPE", 20, 290);
         c.At(new Oscilloscope { Source = audio.Ring, WindowSamples = 800, Filled = true, Gain = 1.6f }, 20, 314, 400, 150);

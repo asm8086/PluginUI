@@ -1,10 +1,12 @@
-<!-- 2026/10/18 15:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 17:23:00 UTC - PluginUI -->
 
 # Element catalog
 
 *Version française : [CONTROLS_FR.md](CONTROLS_FR.md)*
 
 All types are in the `PluginUI` namespace. **Value** controls derive from `ValueControl`: binding to an `IParameter` (`Parameter = …`), full VST3 gesture, reset on double-click or Ctrl+click (`ResetOnDoubleClick`, `ResetOnControlClick`), keyboard value entry for `Knob` and `Slider` (double-click on the value text, Alt+click, right double-click or Enter, chosen with `TextEntryTriggers`; numbers always use a decimal point), mouse wheel, arrow keys, Shift for fine adjustment, value bubble (`ShowValueBubble`), skin (`Skin`) and style (`Style`). The "Equivalent" column gives the corresponding VSTGUI or iPlug2 class.
+
+Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and **iPlug2** `master` of 18 October 2026 (commit `39ea73a`, after tag `v1.0.0-beta`).
 
 ## Rotary
 
@@ -17,7 +19,7 @@ All types are in the `PluginUI` namespace. **Value** controls derive from `Value
 
 | Element | Key points | Equivalent |
 |---|---|---|
-| `Slider` | Vertical or horizontal, bipolar, `Cap`/`Round`/`Line`/`None` handles, `JumpToClick`, tick marks, side label, `SliderHandleSkin` (bitmap handle) | `CSlider`, `IVSliderControl`, `IBSliderControl`, `ISVGSliderControl` |
+| `Slider` | Vertical or horizontal, bipolar, `Cap`/`Round`/`Line`/`None` handles, `JumpToClick`, tick marks, side label, `SliderHandleSkin` (bitmap handle) | `CSlider`, `IVSliderControl`, `IBSliderControl`, `ISVGSliderControl`, `CHorizontalSlider`, `CVerticalSlider` |
 | `RangeSlider` | Two bounds (`Low`/`High`, `LowParameter`/`HighParameter`), minimum gap, dragging of the band | `IVRangeSliderControl` |
 | `MultiSlider` | N bars, drawing with the mouse (interpolated, Ctrl: straight line), bipolar, step, highlighted index, `BindParameters` | `IVMultiSliderControl` |
 | `XYPad` | Two parameters edited in simultaneous gestures, grid, crosshair | `CXYPad`, `IVXYPadControl` |
@@ -29,10 +31,10 @@ All types are in the `PluginUI` namespace. **Value** controls derive from `Value
 
 | Element | Key points | Equivalent |
 |---|---|---|
-| `Button` | Text and/or icon (bitmap, SVG, `IconRenderer`), `Normal`/`Accent`/`Flat`/`Outline` appearances, repeat while pressed, momentary parameter | `CKickButton`, `CTextButton`, `IVButtonControl` |
-| `ToggleButton` | `OnText`/`OffText`, LED, state color; with a `FilmStripSkin`, equivalent to `CMovieButton` | `COnOffButton`, `CMovieButton`, `IVToggleControl` |
+| `Button` | Text and/or icon (bitmap, SVG, `IconRenderer`), `Normal`/`Accent`/`Flat`/`Outline` appearances, repeat while pressed, momentary parameter | `CKickButton`, `CTextButton`, `IVButtonControl`, `IBButtonControl` (+ `ImageStateSkin`), `ISVGButtonControl` (+ `SvgStateSkin`) |
+| `ToggleButton` | `OnText`/`OffText`, LED, state color; with a `FilmStripSkin`, equivalent to `CMovieButton` | `COnOffButton`, `CMovieButton`, `IVToggleControl`, `ITextToggleControl`, `ISVGToggleControl` |
 | `CheckBox` | Animated box + text | `CCheckBox` |
-| `Switch` | N positions, vertical/horizontal, direct or cyclic selection, film strip by state index | `CHorizontalSwitch`, `IVSwitchControl` |
+| `Switch` | N positions, vertical/horizontal, direct or cyclic selection, film strip by state index | `CHorizontalSwitch`, `IVSwitchControl`, `CVerticalSwitch`, `IBSwitchControl` (+ `FilmStripSkin`), `ISVGSwitchControl` |
 | `SlideSwitch` | Animated "pill" switch | `IVSlideSwitchControl` |
 | `SegmentedControl` | Segments in a row or column, sliding highlight | `CSegmentButton`, `IVTabSwitchControl` |
 | `RadioGroup` | List of radio buttons | `IVRadioButtonControl` |
@@ -55,7 +57,7 @@ All types are in the `PluginUI` namespace. **Value** controls derive from `Value
 
 | Element | Key points | Equivalent |
 |---|---|---|
-| `Label` | One or more lines, alignments, `TextSource` refreshed every frame (real-time text) | `CTextLabel`, `CMultiLineTextLabel`, `ITextControl`, `IRTTextControl`, `IVLabelControl` |
+| `Label` | One or more lines, alignments, `TextSource` refreshed every frame (real-time text) | `CTextLabel`, `CMultiLineTextLabel`, `ITextControl`, `IRTTextControl`, `IVLabelControl`, `IMultiLineTextControl` |
 | `ValueDisplay` | Parameter value, entry by double-click or Enter, optional dragging | `CParamDisplay`, `ICaptionControl` |
 | `NumberBox` | Drag, mouse wheel, text entry, −/+ buttons | `IVNumberBoxControl` |
 | `TextBox` | Single-line entry: selection, clipboard, words (Ctrl+arrows), filter, max. length, read-only, search style | `CTextEdit`, `CSearchTextEdit`, `ITextEntryControl` |
@@ -69,7 +71,7 @@ All types are in the `PluginUI` namespace. **Value** controls derive from `Value
 
 | Element | Key points | Equivalent |
 |---|---|---|
-| `LevelMeter` | 1 to 64 channels, gradient / segments / solid, peak + RMS, peak hold, clip indicator, dB scale, gain reduction mode, lock-free `PeakValue` sources | `CVuMeter`, `IVMeterControl`, `IVLEDMeterControl`, `IVPeakAvgMeterControl` |
+| `LevelMeter` | 1 to 64 channels, gradient / segments / solid, peak + RMS, peak hold, clip indicator, dB scale, gain reduction mode, lock-free `PeakValue` sources, film strip via `Skin` (one frame per level, drawn per channel) | `CVuMeter`, `IVMeterControl`, `IVLEDMeterControl`, `IVPeakAvgMeterControl`, `IBMeterControl` (+ `FilmStripSkin`) |
 | `Led` | Brightness, glow, round or square shapes, function-based source | `ILEDControl` |
 | `Oscilloscope` | Reads an `AudioRingBuffer`, rising-edge trigger, gain, fill, glow | `IVScopeControl`, `IVDisplayControl` |
 | `SpectrumAnalyzer` | FFT (`Dsp.Fft`), log axis 20 Hz–20 kHz, slope compensation, attack/release smoothing, peak hold, fractional-octave bar mode | `IVSpectrumAnalyzerControl`, `IVBarGraphSpectrumAnalyzerControl` |
@@ -98,9 +100,10 @@ All types are in the `PluginUI` namespace. **Value** controls derive from `Value
 | `Canvas` | Absolute positioning (`SetBounds`): the usual root of an editor | `CViewContainer` |
 | `StackPanel`, `WrapPanel`, `DockPanel`, `UniformGrid` | Stacking, wrapping, docking, regular grid | `CRowColumnView` |
 | `Grid` | `Auto` / pixel / star rows and columns, spanning, spacing (`new Grid("Auto,*", "120,*")`) | iPlug2 Flexbox |
-| `Border`, `Panel` | Background (color or gradient, equivalent to `CGradientView`), border, rounded corners, drop shadow, padding | `CShadowViewContainer`, `IVPanelControl` |
+| `Border`, `Panel` | Background (color or gradient, equivalent to `CGradientView`), border, rounded corners, drop shadow, padding | `CShadowViewContainer`, `IVPanelControl`, `IPanelControl` |
 | `GroupBox` | Titled frame, accent bar, collapsible | `IVGroupControl` |
 | `TabView` | Tabs on top or on the left, animated indicator, pages that can be disabled, Ctrl+Tab; only the visible page is attached | `CTabView`, `IVTabbedPagesControl` |
+| `ViewSwitcher` | Shows one child at a time, chosen by `SelectedIndex` or a bound parameter (discrete: step index; continuous: value spread over the children); hidden views keep their state | `UIViewSwitchContainer` |
 | `ScrollViewer` | Vertical and horizontal scrolling, thin overlay scroll bars, mouse wheel (Shift: horizontal), `ScrollIntoView` | `CScrollView` |
 | `SplitView` | Two panes and a movable splitter | `CSplitView` |
 | `ListBox` | Virtualized list, single or extended selection, keyboard, type-ahead search, reordering by dragging | `CListControl`, `CStringList` |
@@ -119,7 +122,7 @@ All types are in the `PluginUI` namespace. **Value** controls derive from `Value
 | `ABCompareBar`, `ParameterSnapshot` | A/B comparison of complete settings, copy to the other slot, restore through gestures | — (bonus) |
 | `PresetBar`, `IPresetProvider`, `PresetList` | Previous/next, menu by bank, Save / Save as / Delete, Ctrl+S | `IVBakedPresetManagerControl`, `IVDiskPresetManagerControl` |
 | `Dialog` | Modal dialog, default and cancel buttons, `Dialog.ShowMessage` | — |
-| `AboutBox`, `SplashScreen` | "About" window, splash screen that fades out | `CSplashScreen`, `IAboutBoxControl` |
+| `AboutBox`, `SplashScreen` | "About" window, splash screen that fades out | `CSplashScreen`, `IAboutBoxControl`, `CAnimationSplashScreen` |
 
 ## Images and integration
 
@@ -127,20 +130,20 @@ All types are in the `PluginUI` namespace. **Value** controls derive from `Value
 |---|---|---|
 | `ImageView` | Fitted image (`ImageFit`) or animated film strip (loop, ping-pong) | `CMovieBitmap`, `CAutoAnimation`, `IBitmapControl` |
 | `SvgView` | Native SVG, fitting, rotation | `ISVGControl` |
-| `NativeWindowHost` | Embeds a third-party Win32 window (video, WebView2 created by the application) | `CExternalView`, `IPlatformViewControl` |
+| `NativeWindowHost` | Embeds a third-party Win32 window (video, WebView2 created by the application) | `CExternalView`, `IPlatformViewControl`, `CExternalControl` |
 
 ## Skins (`Skins`)
 
 | Skin | Use |
 |---|---|
-| `FilmStripSkin` | Film strip: frame chosen from the value or the state index |
+| `FilmStripSkin` | Film strip: frame chosen from the value or the state index (`CMultiFrameBitmap`) |
 | `ImageStateSkin` | One image per state: normal, on, hover, pressed, disabled |
 | `SvgRotarySkin` | SVG rotor turned according to the value, fixed background and highlight |
 | `ImageRotarySkin` | Bitmap rotor turned according to the value, fixed background and highlight (`IBKnobRotaterControl`) |
 | `SvgStateSkin` | One SVG per state or per value range |
-| `NineSliceSkin` | Stretchable bitmap frame without distorting the corners |
+| `NineSliceSkin` | Stretchable bitmap frame without distorting the corners (`CNinePartTiledBitmap`) |
 | `SliderHandleSkin` | Bitmap handle (and track) for `Slider` |
-| `DelegateSkin` | Free drawing by a function |
+| `DelegateSkin` | Free drawing by a function (`ILambdaControl`) |
 
 ## Cross-cutting services
 
@@ -148,4 +151,4 @@ MIDI learn (`UIHost.MidiLearn`, `IMidiLearnService`, `MidiLearnService`: "MIDI L
 
 ## Not included (by design)
 
-Built-in WebView2 web view (use `NativeWindowHost`), GPU shaders, OpenGL view, full code editor, font and date pickers.
+Built-in WebView2 web view (`IWebViewControl`; use `NativeWindowHost`), GPU shaders (`IShaderControl`), OpenGL view (`COpenGLView`), full code editor (VSTGUI text editor), font and date pickers (`CFontChooser`). Multi-touch (`IMultiTouchControlBase`): PluginUI handles the mouse, and single-finger touch through Windows' mouse emulation.

@@ -1,10 +1,12 @@
-<!-- 2026/10/18 15:48:00 UTC - PluginUI -->
+<!-- 2026/10/19 17:23:00 UTC - PluginUI -->
 
 # Catalogue des éléments
 
 *English version: [CONTROLS.md](CONTROLS.md)*
 
 Tous les types sont dans l'espace de noms `PluginUI`. Les contrôles **à valeur** dérivent de `ValueControl` : liaison à un `IParameter` (`Parameter = …`), geste VST3 complet, réinitialisation par double-clic ou Ctrl+clic (`ResetOnDoubleClick`, `ResetOnControlClick`), saisie de la valeur au clavier pour `Knob` et `Slider` (double-clic sur le texte de la valeur, Alt+clic, double-clic droit ou Entrée, au choix par `TextEntryTriggers` ; nombres toujours avec le point décimal), molette, flèches, Maj pour le réglage fin, bulle de valeur (`ShowValueBubble`), habillage (`Skin`) et style (`Style`). La colonne « Équivalent » indique la classe VSTGUI ou iPlug2 correspondante.
+
+Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) et **iPlug2** `master` du 18 octobre 2026 (commit `39ea73a`, après le tag `v1.0.0-beta`).
 
 ## Rotatifs
 
@@ -17,7 +19,7 @@ Tous les types sont dans l'espace de noms `PluginUI`. Les contrôles **à valeur
 
 | Élément | Points clés | Équivalent |
 |---|---|---|
-| `Slider` | Vertical ou horizontal, bipolaire, poignées `Cap`/`Round`/`Line`/`None`, `JumpToClick`, graduations, libellé latéral, `SliderHandleSkin` (poignée bitmap) | `CSlider`, `IVSliderControl`, `IBSliderControl`, `ISVGSliderControl` |
+| `Slider` | Vertical ou horizontal, bipolaire, poignées `Cap`/`Round`/`Line`/`None`, `JumpToClick`, graduations, libellé latéral, `SliderHandleSkin` (poignée bitmap) | `CSlider`, `IVSliderControl`, `IBSliderControl`, `ISVGSliderControl`, `CHorizontalSlider`, `CVerticalSlider` |
 | `RangeSlider` | Deux bornes (`Low`/`High`, `LowParameter`/`HighParameter`), écart minimal, glisser de la bande | `IVRangeSliderControl` |
 | `MultiSlider` | N barres, dessin à la souris (interpolé, Ctrl : ligne droite), bipolaire, pas, index en surbrillance, `BindParameters` | `IVMultiSliderControl` |
 | `XYPad` | Deux paramètres édités dans des gestes simultanés, grille, réticule | `CXYPad`, `IVXYPadControl` |
@@ -29,10 +31,10 @@ Tous les types sont dans l'espace de noms `PluginUI`. Les contrôles **à valeur
 
 | Élément | Points clés | Équivalent |
 |---|---|---|
-| `Button` | Texte et/ou icône (bitmap, SVG, `IconRenderer`), apparences `Normal`/`Accent`/`Flat`/`Outline`, répétition tant que pressé, paramètre momentané | `CKickButton`, `CTextButton`, `IVButtonControl` |
-| `ToggleButton` | `OnText`/`OffText`, LED, couleur d'état ; avec un `FilmStripSkin`, équivalent de `CMovieButton` | `COnOffButton`, `CMovieButton`, `IVToggleControl` |
+| `Button` | Texte et/ou icône (bitmap, SVG, `IconRenderer`), apparences `Normal`/`Accent`/`Flat`/`Outline`, répétition tant que pressé, paramètre momentané | `CKickButton`, `CTextButton`, `IVButtonControl`, `IBButtonControl` (+ `ImageStateSkin`), `ISVGButtonControl` (+ `SvgStateSkin`) |
+| `ToggleButton` | `OnText`/`OffText`, LED, couleur d'état ; avec un `FilmStripSkin`, équivalent de `CMovieButton` | `COnOffButton`, `CMovieButton`, `IVToggleControl`, `ITextToggleControl`, `ISVGToggleControl` |
 | `CheckBox` | Case animée + texte | `CCheckBox` |
-| `Switch` | N positions, vertical/horizontal, sélection directe ou cyclique, film-strip par index d'état | `CHorizontalSwitch`, `IVSwitchControl` |
+| `Switch` | N positions, vertical/horizontal, sélection directe ou cyclique, film-strip par index d'état | `CHorizontalSwitch`, `IVSwitchControl`, `CVerticalSwitch`, `IBSwitchControl` (+ `FilmStripSkin`), `ISVGSwitchControl` |
 | `SlideSwitch` | Interrupteur « pilule » animé | `IVSlideSwitchControl` |
 | `SegmentedControl` | Segments en ligne ou colonne, surbrillance glissante | `CSegmentButton`, `IVTabSwitchControl` |
 | `RadioGroup` | Liste de boutons radio | `IVRadioButtonControl` |
@@ -55,7 +57,7 @@ Tous les types sont dans l'espace de noms `PluginUI`. Les contrôles **à valeur
 
 | Élément | Points clés | Équivalent |
 |---|---|---|
-| `Label` | Une ou plusieurs lignes, alignements, `TextSource` rafraîchi à chaque image (texte temps réel) | `CTextLabel`, `CMultiLineTextLabel`, `ITextControl`, `IRTTextControl`, `IVLabelControl` |
+| `Label` | Une ou plusieurs lignes, alignements, `TextSource` rafraîchi à chaque image (texte temps réel) | `CTextLabel`, `CMultiLineTextLabel`, `ITextControl`, `IRTTextControl`, `IVLabelControl`, `IMultiLineTextControl` |
 | `ValueDisplay` | Valeur du paramètre, saisie par double-clic ou Entrée, glisser optionnel | `CParamDisplay`, `ICaptionControl` |
 | `NumberBox` | Glisser, molette, saisie, boutons −/+ | `IVNumberBoxControl` |
 | `TextBox` | Saisie une ligne : sélection, presse-papiers, mots (Ctrl+flèches), filtre, longueur max., lecture seule, style recherche | `CTextEdit`, `CSearchTextEdit`, `ITextEntryControl` |
@@ -69,7 +71,7 @@ Tous les types sont dans l'espace de noms `PluginUI`. Les contrôles **à valeur
 
 | Élément | Points clés | Équivalent |
 |---|---|---|
-| `LevelMeter` | 1 à 64 canaux, dégradé / segments / plein, crête + RMS, maintien de crête, indicateur d'écrêtage, échelle en dB, mode réduction de gain, sources `PeakValue` sans verrou | `CVuMeter`, `IVMeterControl`, `IVLEDMeterControl`, `IVPeakAvgMeterControl` |
+| `LevelMeter` | 1 à 64 canaux, dégradé / segments / plein, crête + RMS, maintien de crête, indicateur d'écrêtage, échelle en dB, mode réduction de gain, sources `PeakValue` sans verrou, film-strip par `Skin` (une image par niveau, dessinée par canal) | `CVuMeter`, `IVMeterControl`, `IVLEDMeterControl`, `IVPeakAvgMeterControl`, `IBMeterControl` (+ `FilmStripSkin`) |
 | `Led` | Luminosité, lueur, formes rondes ou carrées, source par fonction | `ILEDControl` |
 | `Oscilloscope` | Lecture d'un `AudioRingBuffer`, déclenchement sur front montant, gain, remplissage, lueur | `IVScopeControl`, `IVDisplayControl` |
 | `SpectrumAnalyzer` | FFT (`Dsp.Fft`), axe log 20 Hz–20 kHz, compensation de pente, lissage attaque/relâchement, maintien de crête, mode barres par fraction d'octave | `IVSpectrumAnalyzerControl`, `IVBarGraphSpectrumAnalyzerControl` |
@@ -98,9 +100,10 @@ Tous les types sont dans l'espace de noms `PluginUI`. Les contrôles **à valeur
 | `Canvas` | Positionnement absolu (`SetBounds`) : la racine habituelle d'un éditeur | `CViewContainer` |
 | `StackPanel`, `WrapPanel`, `DockPanel`, `UniformGrid` | Empilement, retour à la ligne, ancrage, grille régulière | `CRowColumnView` |
 | `Grid` | Lignes/colonnes `Auto` / pixels / étoiles, fusion, espacements (`new Grid("Auto,*", "120,*")`) | Flexbox iPlug2 |
-| `Border`, `Panel` | Fond (couleur ou dégradé, équivalent de `CGradientView`), bordure, arrondi, ombre portée, marge interne | `CShadowViewContainer`, `IVPanelControl` |
+| `Border`, `Panel` | Fond (couleur ou dégradé, équivalent de `CGradientView`), bordure, arrondi, ombre portée, marge interne | `CShadowViewContainer`, `IVPanelControl`, `IPanelControl` |
 | `GroupBox` | Cadre titré, barre d'accent, repliable | `IVGroupControl` |
 | `TabView` | Onglets en haut ou à gauche, indicateur animé, pages désactivables, Ctrl+Tab ; seule la page visible est attachée | `CTabView`, `IVTabbedPagesControl` |
+| `ViewSwitcher` | Affiche un seul enfant à la fois, choisi par `SelectedIndex` ou par un paramètre lié (discret : indice du pas ; continu : valeur répartie sur les enfants) ; les vues masquées gardent leur état | `UIViewSwitchContainer` |
 | `ScrollViewer` | Défilement vertical et horizontal, barres fines superposées, molette (Maj : horizontal), `ScrollIntoView` | `CScrollView` |
 | `SplitView` | Deux volets et séparateur déplaçable | `CSplitView` |
 | `ListBox` | Liste virtualisée, sélection simple ou étendue, clavier, recherche par frappe, réordonnancement par glisser | `CListControl`, `CStringList` |
@@ -119,7 +122,7 @@ Tous les types sont dans l'espace de noms `PluginUI`. Les contrôles **à valeur
 | `ABCompareBar`, `ParameterSnapshot` | Comparaison A/B de réglages complets, copie vers l'autre emplacement, restauration par gestes | — (bonus) |
 | `PresetBar`, `IPresetProvider`, `PresetList` | Précédent/suivant, menu par banque, Enregistrer / Enregistrer sous / Supprimer, Ctrl+S | `IVBakedPresetManagerControl`, `IVDiskPresetManagerControl` |
 | `Dialog` | Dialogue modal, boutons par défaut et d'annulation, `Dialog.ShowMessage` | — |
-| `AboutBox`, `SplashScreen` | Fenêtre « À propos », écran d'accueil qui s'efface en fondu | `CSplashScreen`, `IAboutBoxControl` |
+| `AboutBox`, `SplashScreen` | Fenêtre « À propos », écran d'accueil qui s'efface en fondu | `CSplashScreen`, `IAboutBoxControl`, `CAnimationSplashScreen` |
 
 ## Images et intégration
 
@@ -127,20 +130,20 @@ Tous les types sont dans l'espace de noms `PluginUI`. Les contrôles **à valeur
 |---|---|---|
 | `ImageView` | Image ajustée (`ImageFit`) ou film-strip animé (boucle, aller-retour) | `CMovieBitmap`, `CAutoAnimation`, `IBitmapControl` |
 | `SvgView` | SVG natif, ajustement, rotation | `ISVGControl` |
-| `NativeWindowHost` | Incruste une fenêtre Win32 tierce (vidéo, WebView2 créée par l'application) | `CExternalView`, `IPlatformViewControl` |
+| `NativeWindowHost` | Incruste une fenêtre Win32 tierce (vidéo, WebView2 créée par l'application) | `CExternalView`, `IPlatformViewControl`, `CExternalControl` |
 
 ## Habillages (`Skins`)
 
 | Habillage | Usage |
 |---|---|
-| `FilmStripSkin` | Film-strip : image choisie selon la valeur ou l'index d'état |
+| `FilmStripSkin` | Film-strip : image choisie selon la valeur ou l'index d'état (`CMultiFrameBitmap`) |
 | `ImageStateSkin` | Une image par état : normal, actif, survol, enfoncé, désactivé |
 | `SvgRotarySkin` | Rotor SVG tourné selon la valeur, fond et reflet fixes |
 | `ImageRotarySkin` | Rotor bitmap tourné selon la valeur, fond et reflet fixes (`IBKnobRotaterControl`) |
 | `SvgStateSkin` | Un SVG par état ou par plage de valeur |
-| `NineSliceSkin` | Cadre bitmap étirable sans déformation des coins |
+| `NineSliceSkin` | Cadre bitmap étirable sans déformation des coins (`CNinePartTiledBitmap`) |
 | `SliderHandleSkin` | Poignée (et piste) bitmap pour `Slider` |
-| `DelegateSkin` | Dessin libre par une fonction |
+| `DelegateSkin` | Dessin libre par une fonction (`ILambdaControl`) |
 
 ## Services transverses
 
@@ -148,4 +151,4 @@ Apprentissage MIDI (`UIHost.MidiLearn`, `IMidiLearnService`, `MidiLearnService` 
 
 ## Non inclus (volontairement)
 
-Vue web WebView2 intégrée (utilisez `NativeWindowHost`), shaders GPU, vue OpenGL, éditeur de code complet, sélecteurs de police et de date.
+Vue web WebView2 intégrée (`IWebViewControl` ; utilisez `NativeWindowHost`), shaders GPU (`IShaderControl`), vue OpenGL (`COpenGLView`), éditeur de code complet (éditeur de texte de VSTGUI), sélecteurs de police et de date (`CFontChooser`). Multi-touch (`IMultiTouchControlBase`) : PluginUI gère la souris, et le toucher à un doigt grâce à l'émulation de la souris par Windows.

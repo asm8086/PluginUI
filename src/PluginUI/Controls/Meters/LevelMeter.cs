@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 17:23:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -321,7 +321,8 @@ public class LevelMeter : Control
 
     private float ScaleThickness => !ShowScale ? 0f : Vertical ? 24f : 13f;
 
-    private float ClipThickness => ShowClipIndicator && Mode == MeterMode.Level ? 5f : 0f;
+    // With a skin, the clip state goes to the skin (SkinState.StateIndex) instead of a drawn strip.
+    private float ClipThickness => ShowClipIndicator && Mode == MeterMode.Level && Skin is null ? 5f : 0f;
 
     private void Areas(Rect widget, out Rect bars, out Rect scale, out Rect clip)
     {
@@ -408,6 +409,41 @@ public class LevelMeter : Control
         _gradient = new LinearGradientPaint(start, end, stops, RelativeToBounds: false);
         _gradientRect = bars;
         return _gradient;
+    }
+
+    /// <summary>
+    /// Draws the meter. With a <see cref="Control.Skin"/> (for example a <see cref="FilmStripSkin"/> whose frame follows
+    /// the level), the skin draws each channel in its own bar area: <see cref="SkinState.Value"/> is the channel level
+    /// mapped to [0, 1] over <see cref="MinDb"/>…<see cref="MaxDb"/> (or the reduction range in gain-reduction mode) and
+    /// <see cref="SkinState.StateIndex"/> is 1 while the channel's clip indicator is latched. The scale is still drawn.
+    /// </summary>
+    /// <param name="dc">Drawing context.</param>
+    protected override void OnRender(DrawingContext dc)
+    {
+        if (Skin is null)
+        {
+            base.OnRender(dc);
+            return;
+        }
+        var style = EffectiveStyle;
+        LayoutParts(style, out var label, out var widget, out var value);
+        var states = ChannelSkinStates(widget, out var scale);
+        foreach (var state in states) Skin.Render(dc, this, state);
+        if (!scale.IsEmpty) RenderScale(dc, scale, Theme.Palette);
+        if (!label.IsEmpty) RenderLabel(dc, label, style);
+        if (!value.IsEmpty) RenderValue(dc, value, style);
+    }
+
+    /// <summary>Skin state of each channel: bar area, level in [0, 1], 1 when the clip indicator is latched.</summary>
+    internal SkinState[] ChannelSkinStates(Rect widget, out Rect scale)
+    {
+        Areas(widget, out var bars, out scale, out _);
+        var states = new SkinState[ChannelCount];
+        for (int ch = 0; ch < states.Length; ch++)
+        {
+            states[ch] = new SkinState(ChannelRect(bars, ch), Fraction(_peak[ch].LevelDb), _clipped[ch] ? 1 : 0, IsMouseOver, IsPressed, IsEffectivelyEnabled, IsFocused);
+        }
+        return states;
     }
 
     /// <inheritdoc />

@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 17:23:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,7 @@ internal static class ContainersPage
         var collapsed = new GroupBox(L.T("FILTER", "FILTRE"), new DialogText(L.T("hidden", "caché"))) { IsCollapsible = true, IsCollapsed = true };
         var tabs = new TabView();
         tabs.AddPage(L.T("Synth", "Synthé"), new StackPanel(Orientation.Vertical, 10f).Add(group, collapsed));
-        tabs.AddPage(L.T("Effects", "Effets"), new DialogText(L.T("Effects page", "Page des effets")));
+        tabs.AddPage(L.T("Effects", "Effets"), EffectsPage());
         tabs.AddPage(L.T("Settings", "Réglages"), new DialogText(L.T("Settings page", "Page des réglages")));
         tabs.Pages[2].IsEnabled = false;
         root.Add(tabs, 0, 0);
@@ -57,6 +57,20 @@ internal static class ContainersPage
         images.Add(new SvgView(SvgImage.FromString(Art.LogoSvg)) { Label = "SvgView" }, 0, 1);
         root.Add(images, 1, 2);
         return root;
+    }
+
+    // ViewSwitcher: the panel shown follows the effect type chosen in the drop-down (same parameter).
+    private static UIElement EffectsPage()
+    {
+        var type = LocalParameter.FromList(L.T("Effect", "Effet"), ["Chorus", "Delay", "Reverb"], 1);
+        var panels = new ViewSwitcher { Parameter = type, ToolTip = "ViewSwitcher" };
+        panels.Add(
+            new DialogText(L.T("Chorus: rate, depth, voices", "Chorus : vitesse, profondeur, voix")),
+            new DialogText(L.T("Delay: time, feedback, ping-pong", "Délai : temps, réinjection, ping-pong")),
+            new DialogText(L.T("Reverb: size, damping, pre-delay", "Réverbération : taille, amortissement, pré-délai")));
+        var menu = new DropDown { Parameter = type };
+        menu.SetBounds(0f, 0f, 160f, 28f);
+        return new StackPanel(Orientation.Vertical, 10f).Add(menu, panels);
     }
 
     private sealed class Sample(string name, double length, string key)

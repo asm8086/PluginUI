@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 17:23:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -77,6 +77,36 @@ internal static class Art
             }
         }
         return new FilmStrip(ImageSource.FromPixels(size, size * frames, px, pixelsPerDip: 2f), frames);
+    }
+
+    /// <summary>
+    /// LED-bar meter film strip (frame 0 = silent, last frame = full scale): green, amber and red segments, unlit
+    /// segments still visible, 2× density.
+    /// </summary>
+    public static FilmStrip MeterStrip(int frames = 25, int width = 24, int height = 192)
+    {
+        const int segments = 24;
+        var px = new byte[width * height * frames * 4];
+        float pitch = height / (float)segments;
+        for (int f = 0; f < frames; f++)
+        {
+            int lit = (int)MathF.Round(segments * f / (float)(frames - 1));
+            for (int s = 0; s < segments; s++)
+            {
+                float t = s / (float)(segments - 1);
+                float r = t > 0.85f ? 1.0f : t > 0.65f ? 1.0f : 0.24f;
+                float g = t > 0.85f ? 0.32f : t > 0.65f ? 0.72f : 0.84f;
+                float b = t > 0.85f ? 0.32f : t > 0.65f ? 0.30f : 0.55f;
+                float k = s < lit ? 1f : 0.16f;
+                int top = (int)MathF.Round(height - (s + 1) * pitch) + 1;
+                int bottom = (int)MathF.Round(height - s * pitch) - 1;
+                for (int y = top; y < bottom; y++)
+                {
+                    for (int x = 2; x < width - 2; x++) Put(px, width, x, f * height + y, r * k, g * k, b * k, 1f);
+                }
+            }
+        }
+        return new FilmStrip(ImageSource.FromPixels(width, height * frames, px, pixelsPerDip: 2f), frames);
     }
 
     /// <summary>Square push-button image (off / on), 2× density.</summary>

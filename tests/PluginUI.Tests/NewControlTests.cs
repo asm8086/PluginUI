@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 17:23:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -345,5 +345,82 @@ public class NewControlTests
             .Where(p => (string?)p.GetValue(UIStrings.French) == (string?)p.GetValue(UIStrings.English))
             .Select(p => p.Name).ToArray();
         Assert.That(same, Is.EquivalentTo(new[] { nameof(UIStrings.Ok), nameof(UIStrings.PresetPlaceholder), nameof(UIStrings.VersionFormat) }));
+    }
+    [Test]
+    public void ViewSwitcherShowsTheViewOfTheParameterValue()
+    {
+        var type = LocalParameter.FromList("Effect", ["Chorus", "Delay", "Reverb"], 1);
+        var views = new[] { new Probe(), new Probe(), new Probe() };
+        var switcher = Add(new ViewSwitcher { Parameter = type }, 10f, 10f, 200f, 100f);
+        int raised = -1;
+        switcher.SelectionChanged += (_, index) => raised = index;
+        switcher.Add(views);
+        _host.UpdateLayout();
+        Assert.Multiple(() =>
+        {
+            Assert.That(views.Select(v => v.IsVisible), Is.EqualTo(new[] { false, true, false }));
+            Assert.That(switcher.SelectedView, Is.SameAs(views[1]));
+            Assert.That(views[1].Bounds, Is.EqualTo(new Rect(10f, 10f, 200f, 100f)), "full content area");
+            Assert.That(_host.HitAt(new Point(50f, 50f)), Is.SameAs(views[1]), "hidden views are not hit-tested");
+        });
+
+        type.SetValue(1.0); // host automation, preset...
+        Assert.That((switcher.SelectedIndex, raised), Is.EqualTo((2, 2)));
+        Assert.That(views.Select(v => v.IsVisible), Is.EqualTo(new[] { false, false, true }));
+
+        switcher.SelectedIndex = 0; // edits the parameter
+        Assert.That((type.NormalizedValue, raised, views[0].IsVisible), Is.EqualTo((0.0, 0, true)));
+    }
+
+    [Test]
+    public void ViewSwitcherMapsContinuousValuesAndWorksWithoutParameter()
+    {
+        var switcher = Add(new ViewSwitcher(), 0f, 0f, 100f, 100f);
+        Assert.That(switcher.SelectedIndex, Is.EqualTo(-1), "no view");
+        var a = new Probe();
+        var b = new Probe();
+        switcher.Add(a, b);
+        _host.UpdateLayout();
+        Assert.That((switcher.SelectedIndex, a.IsVisible, b.IsVisible), Is.EqualTo((0, true, false)));
+        switcher.SelectedIndex = 5; // clamped to the last view
+        _host.UpdateLayout();
+        Assert.That((switcher.SelectedIndex, a.IsVisible, b.IsVisible), Is.EqualTo((1, false, true)));
+
+        var mix = new LocalParameter("Mix");
+        switcher.Parameter = mix;
+        var c = new Probe();
+        switcher.Add(c);
+        _host.UpdateLayout();
+        Assert.Multiple(() =>
+        {
+            Assert.That(switcher.IndexForValue(0.0, 3), Is.EqualTo(0));
+            Assert.That(switcher.IndexForValue(0.3, 3), Is.EqualTo(1));
+            Assert.That(switcher.IndexForValue(0.8, 3), Is.EqualTo(2));
+        });
+        mix.SetValue(0.6);
+        Assert.That((switcher.SelectedView, a.IsVisible, b.IsVisible, c.IsVisible), Is.EqualTo((b, false, true, false)));
+    }
+
+    [Test]
+    public void LevelMeterSkinGetsEachChannelLevelAndClipState()
+    {
+        var meter = Add(new LevelMeter { InputUnit = LevelUnit.Decibels, MinDb = -60f, MaxDb = 0f, ShowScale = false, Skin = new NullSkin() }, 0f, 0f, 40f, 100f);
+        meter.SetLevels(-30f, 3f);
+        var states = meter.ChannelSkinStates(new Rect(0f, 0f, 40f, 100f), out var scale);
+        Assert.Multiple(() =>
+        {
+            Assert.That(states, Has.Length.EqualTo(2));
+            Assert.That(states[0].Value, Is.EqualTo(0.5).Within(1e-6));
+            Assert.That(states[1].Value, Is.EqualTo(1.0));
+            Assert.That((states[0].StateIndex, states[1].StateIndex), Is.EqualTo((0, 1)), "clip latched on the second channel");
+            Assert.That(states[0].Bounds, Is.EqualTo(new Rect(0f, 0f, 19f, 100f)), "no clip strip with a skin");
+            Assert.That(states[1].Bounds, Is.EqualTo(new Rect(21f, 0f, 19f, 100f)));
+            Assert.That(scale.IsEmpty, Is.True);
+        });
+    }
+
+    private sealed class NullSkin : IControlSkin
+    {
+        public void Render(DrawingContext dc, Control control, in SkinState state) { }
     }
 }

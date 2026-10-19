@@ -1,4 +1,4 @@
-<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- 2026/10/19 17:23:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -66,7 +66,7 @@ PluginUI/
 ├── samples/PluginUI.Gallery/       Demo application (standalone window + PNG capture mode)
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/Designs/                Sample designs (.pluginui), including the DemoSynth layout
-├── tests/PluginUI.Tests/           120 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions)
+├── tests/PluginUI.Tests/           123 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions)
 ├── tests/PluginUI.NPlug.Tests/     22 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
 └── tests/PluginUI.Design.Tests/    25 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
 ```
@@ -286,7 +286,7 @@ The tests open no windows: they simulate input through `UIHost.Dispatch…`. The
 What was verified during development:
 
 - the PluginUI projects build without warnings, with the NativeAOT and trimming analyzers enabled and warnings treated as errors;
-- 120 unit tests, including the fr-FR / de-DE / en-US / ru-RU cultures, the interface language, the design conventions, and the SIMD kernels run with AVX2 / AVX-512, SSE only and scalar;
+- 123 unit tests, including the fr-FR / de-DE / en-US / ru-RU cultures, the interface language, the design conventions, and the SIMD kernels run with AVX2 / AVX-512, SSE only and scalar;
 - 22 tests of the NPlug bridge and of DemoSynth (note queue, host key codes, typed values, MIDI learn and its persistence, envelopes, filter, oscillators, polyphony, sidechain);
 - 25 tests of the designs and of the editor (JSON round trip of all default values and of unknown content, complete registry, loader, capture, generated code compiled by Roslyn and identical to the loader, including with hostile names and values, live bridge, generated projects, editor commands, extensions);
 - Steinberg's official VST3 validator: 47/47 on DemoSynth (x86-64-v3, x86-64-v2, the universal bundle on x64 and on ARM64), and on the effect and instrument projects created by PluginUIEditor;

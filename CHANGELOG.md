@@ -1,4 +1,4 @@
-<!-- 2026/10/19 16:55:00 UTC - PluginUI -->
+<!-- 2026/10/19 17:23:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -10,6 +10,12 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **ViewSwitcher**: shows one child at a time, chosen by `SelectedIndex` or by a bound parameter (VSTGUI
+  `UIViewSwitchContainer`); registered for PluginUIEditor designs, shown in the gallery (*Containers* ▸ *Effects*).
+- **LevelMeter** skins: with `Skin` (for example a `FilmStripSkin`), each channel is drawn by the skin with its level
+  as value and its latched clip indicator as state index (iPlug2 `IBMeterControl`); shown in the gallery (*Meters*).
+- Element catalog: reference versions of the equivalents (VSTGUI 4.15.1, iPlug2 `master` of 2026-10-18), and the
+  equivalents that were missing.
 - **PluginUI.NPlug** is published on NuGet. It depends on the `NPlug` package and passes its build files on (debug
   proxy, factory export, NativeAOT `.vst3`), so a plug-in project needs this single package reference.
 

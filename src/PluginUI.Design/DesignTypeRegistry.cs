@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/19 17:23:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -337,6 +337,7 @@ public static class BuiltInDesignTypes
         registry.Register<ScrollViewer>(Containers);
         registry.Register<SplitView>(Containers);
         registry.Register<TabView>(Containers);
+        registry.Register<ViewSwitcher>(Containers);
         registry.Register<Panel>();
         registry.Register<ContentPanel>();
 
