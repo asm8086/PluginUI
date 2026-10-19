@@ -1,4 +1,4 @@
-2026/10/18 17:31:00 UTC - PluginUI
+2026/10/19 07:48:00 UTC - PluginUI
 
 THIRD-PARTY NOTICES
 
@@ -6,7 +6,7 @@ The PluginUI binaries (VST3 plug-ins, gallery, PluginUIEditor) include or are bu
 PluginUI itself is under the MIT License (LICENSE.txt).
 
 ===============================================================================================================
-NPlug - https://github.com/xoofx/NPlug (fork with fixes: https://github.com/asm8086/NPlug)
+NPlug 0.6.0 - https://github.com/xoofx/NPlug
 License: BSD-2-Clause (and the VST3 interface license reproduced in it)
 ---------------------------------------------------------------------------------------------------------------
 Copyright (c) 2023, Alexandre Mutel

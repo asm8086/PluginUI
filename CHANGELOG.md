@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -7,6 +7,12 @@ All notable changes to this project are documented in this file. The format foll
 Before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
+
+### Changed
+
+- NPlug: the `external/NPlug` submodule now points to the official [xoofx/NPlug](https://github.com/xoofx/NPlug)
+  release 0.6.0, which contains all the fixes PluginUI needed (the asm8086/NPlug fork is no longer used). Without the
+  submodule, the build looks for a sibling `..\NPlug` clone; generated projects do the same.
 
 ## [0.1.0] - 2026-10-18
 

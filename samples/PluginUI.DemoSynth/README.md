@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 
 # PluginUI DemoSynth
 
@@ -62,7 +62,7 @@ dotnet publish -c Release -r win-x64       # NativeAOT: PluginUI.DemoSynth.vst3,
 dotnet publish -c Release -r win-x64 -p:IlcInstructionSet=x86-64-v2   # for CPUs without AVX2
 ```
 
-Copy the `.vst3` to `C:\Program Files\Common Files\VST3` and rescan in the DAW. It needs the patched NPlug sources: the `external/NPlug` submodule of the repository, the sibling `..\NPlugCorrected` folder, or `NPlugRoot`. Ready-made bundles (x64 and ARM64) are attached to each [release](https://github.com/asm8086/PluginUI/releases).
+Copy the `.vst3` to `C:\Program Files\Common Files\VST3` and rescan in the DAW. It needs the NPlug sources: the `external/NPlug` submodule of the repository, a sibling `..\NPlug` clone, or `NPlugRoot`. Ready-made bundles (x64 and ARM64) are attached to each [release](https://github.com/asm8086/PluginUI/releases).
 
 Side-chain routing: in Cubase, open the instrument's side-chain from the plug-in window header; in Reaper, set the track to 4 channels and send the kick to channels 3/4; in Bitwig, pick the source in the device's side-chain selector.
 

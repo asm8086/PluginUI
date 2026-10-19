@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 
 # Contribuer à PluginUI
 
@@ -22,9 +22,9 @@ Ouvrez un [ticket](https://github.com/asm8086/PluginUI/issues) avec :
 git clone --recurse-submodules https://github.com/asm8086/PluginUI.git
 ```
 
-`external/NPlug` est un sous-module : le fork [asm8086/NPlug](https://github.com/asm8086/NPlug), branche
-`integration/pluginui`, qui contient des corrections de NPlug proposées en amont. Si vous avez cloné sans
-`--recurse-submodules`, lancez `git submodule update --init`.
+`external/NPlug` est un sous-module : [xoofx/NPlug](https://github.com/xoofx/NPlug) à la version avec laquelle
+PluginUI est compilé et testé (étiquette `0.6.0`). Si vous avez cloné sans `--recurse-submodules`, lancez
+`git submodule update --init --recursive`.
 
 ## Compiler et tester
 
@@ -75,8 +75,8 @@ Autres commandes utiles :
 
 ## Modifications de NPlug
 
-Les corrections de NPlug vont d'abord dans son dépôt d'origine ([xoofx/NPlug](https://github.com/xoofx/NPlug)), puis
-dans la branche `integration/pluginui` du fork, et le sous-module est mis à jour.
+Les corrections de NPlug vont dans son dépôt ([xoofx/NPlug](https://github.com/xoofx/NPlug)). Une fois publiées, le
+sous-module passe à la nouvelle étiquette (`git -C external/NPlug checkout <étiquette>`, puis validez le sous-module).
 
 ## Demandes de fusion
 

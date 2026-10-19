@@ -1,4 +1,4 @@
-<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -9,14 +9,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- Not packed until the NPlug fixes it needs are released upstream: it references the patched NPlug sources. -->
+    <!-- Not packed yet: it references the NPlug sources (NPlug.Proxy 2.0.1 on NuGet lacks the arm64-win folder fix). -->
     <IsPackable>false</IsPackable>
     <Description>Hosts PluginUI editors in NPlug (VST3) plug-ins: IAudioPluginView adapter and parameter binding.</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <!-- NPlugRoot (patched NPlug sources) is set in ../../Directory.Build.props. -->
+  <!-- NPlugRoot (NPlug sources) is set in ../../Directory.Build.props. -->
   <ItemGroup>
     <ProjectReference Include="..\PluginUI\PluginUI.csproj" />
     <ProjectReference Include="$(NPlugRoot)NPlug\NPlug.csproj" />

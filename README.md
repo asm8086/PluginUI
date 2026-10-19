@@ -1,4 +1,4 @@
-<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -30,7 +30,7 @@ PluginUI/
 ├── LICENSE                         MIT license
 ├── CHANGELOG.md                    Version history
 ├── CONTRIBUTING.md, CONTRIBUTING_FR.md   How to contribute (English, French)
-├── external/NPlug/                 Git submodule: NPlug fork with the fixes PluginUI needs (asm8086/NPlug, integration/pluginui)
+├── external/NPlug/                 Git submodule: NPlug (xoofx/NPlug, tag 0.6.0)
 ├── build/                          Release script, VST3 loader (vst3shim) and validator tool
 ├── .github/workflows/              CI (Linux + Windows), documentation site, releases
 ├── docs/                           Each guide in English (X.md) and French (X_FR.md)
@@ -80,7 +80,7 @@ About 34,000 lines of C# for the libraries. All public members have XML document
 - Default NativeAOT publishing: a processor with AVX2 and FMA (see "Performance and SIMD").
 - Visual Studio 2026, .NET 10 SDK.
 - `TerraFX.Interop.Windows` 10.0.26100.6 (NuGet), for Win32 / Direct2D / DirectWrite / WIC bindings without marshalling, NativeAOT-compatible.
-- `PluginUI.NPlug` only: the patched NPlug sources. By default the git submodule `external/NPlug` (fork [asm8086/NPlug](https://github.com/asm8086/NPlug), branch `integration/pluginui`; clone with `git clone --recurse-submodules`), otherwise the neighboring folder `..\NPlugCorrected`. To use another copy, set the MSBuild property `NPlugRoot` to that copy's `src\` folder. NuGet packages: `PluginUI` and `PluginUI.Design`; `PluginUI.NPlug` is used from source until the NPlug fixes it needs are released.
+- `PluginUI.NPlug` only: the NPlug 0.6.0 sources. By default the git submodule `external/NPlug` ([xoofx/NPlug](https://github.com/xoofx/NPlug), tag `0.6.0`; clone with `git clone --recurse-submodules`), otherwise a neighboring clone `..\NPlug`. To use another copy, set the MSBuild property `NPlugRoot` to that copy's `src\` folder. NuGet packages: `PluginUI` and `PluginUI.Design`; `PluginUI.NPlug` is used from source until the `NPlug.Proxy` package on NuGet writes ARM64 plug-ins to `Contents\arm64-win` (version 2.0.1 still uses `arm_64-win`; the NPlug 0.6.0 sources are fixed).
 
 ## Downloads
 

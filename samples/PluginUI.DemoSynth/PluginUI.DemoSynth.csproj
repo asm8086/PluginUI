@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -25,7 +25,7 @@
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
   </PropertyGroup>
 
-  <!-- NPlugRoot (patched NPlug sources, the same NPlug.csproj as PluginUI.NPlug): ../../Directory.Build.props. -->
+  <!-- NPlugRoot (NPlug sources, the same NPlug.csproj as PluginUI.NPlug): ../../Directory.Build.props. -->
   <ItemGroup>
     <ProjectReference Include="$(NPlugRoot)NPlug\NPlug.csproj" />
     <ProjectReference Include="..\..\src\PluginUI.NPlug\PluginUI.NPlug.csproj" />

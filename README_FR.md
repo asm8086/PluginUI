@@ -1,4 +1,4 @@
-<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -30,7 +30,7 @@ PluginUI/
 ├── LICENSE                         Licence MIT
 ├── CHANGELOG.md                    Historique des versions
 ├── CONTRIBUTING.md, CONTRIBUTING_FR.md   Comment contribuer (anglais, français)
-├── external/NPlug/                 Sous-module git : fork de NPlug avec les corrections nécessaires (asm8086/NPlug, integration/pluginui)
+├── external/NPlug/                 Sous-module git : NPlug (xoofx/NPlug, étiquette 0.6.0)
 ├── build/                          Script de publication, chargeur VST3 (vst3shim) et outil de validation
 ├── .github/workflows/              Intégration continue (Linux + Windows), site de documentation, versions
 ├── docs/                           Chaque guide en anglais (X.md) et en français (X_FR.md)
@@ -80,7 +80,7 @@ Environ 34 000 lignes de C# pour les bibliothèques. Tous les membres publics on
 - Publication NativeAOT par défaut : processeur avec AVX2 et FMA (voir « Performances et SIMD »).
 - Visual Studio 2026, SDK .NET 10.
 - `TerraFX.Interop.Windows` 10.0.26100.6 (NuGet), pour des liaisons Win32 / Direct2D / DirectWrite / WIC sans marshalling, compatibles NativeAOT.
-- `PluginUI.NPlug` uniquement : les sources corrigées de NPlug. Par défaut le sous-module git `external/NPlug` (fork [asm8086/NPlug](https://github.com/asm8086/NPlug), branche `integration/pluginui` ; clonez avec `git clone --recurse-submodules`), sinon le dossier voisin `..\NPlugCorrected`. Pour en utiliser une autre copie, définissez la propriété MSBuild `NPlugRoot` sur son dossier `src\`. Paquets NuGet : `PluginUI` et `PluginUI.Design` ; `PluginUI.NPlug` s'utilise en sources tant que les corrections de NPlug dont il a besoin ne sont pas publiées.
+- `PluginUI.NPlug` uniquement : les sources de NPlug 0.6.0. Par défaut le sous-module git `external/NPlug` ([xoofx/NPlug](https://github.com/xoofx/NPlug), étiquette `0.6.0` ; clonez avec `git clone --recurse-submodules`), sinon un clone voisin `..\NPlug`. Pour en utiliser une autre copie, définissez la propriété MSBuild `NPlugRoot` sur son dossier `src\`. Paquets NuGet : `PluginUI` et `PluginUI.Design` ; `PluginUI.NPlug` s'utilise en sources tant que le paquet NuGet `NPlug.Proxy` ne place pas les plug-ins ARM64 dans `Contents\arm64-win` (la version 2.0.1 utilise encore `arm_64-win` ; les sources de NPlug 0.6.0 sont corrigées).
 
 ## Téléchargements
 

@@ -1,4 +1,4 @@
-// 2026/10/18 17:31:00 UTC - PluginUI
+// 2026/10/19 07:48:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -44,7 +44,7 @@ public sealed class ScaffoldOptions
     /// <summary>
     /// Folder of NPlug's <c>src</c> directory, as written in the project file (MSBuild syntax; relative paths should
     /// start with <c>$(MSBuildThisFileDirectory)</c>). <c>null</c> (default): the NPlug submodule of PluginUI
-    /// (<c>$(PluginUIRoot)external\NPlug\src\</c>) when it exists, else the sibling folder <c>..\NPlugCorrected\src\</c>.
+    /// (<c>$(PluginUIRoot)external\NPlug\src\</c>) when it exists, else a sibling clone of NPlug (<c>..\NPlug\src\</c>).
     /// </summary>
     public string? NPlugRoot { get; set; }
 
@@ -295,11 +295,11 @@ public static class ProjectScaffolder
 
             """;
 
-        // Explicit folder, or the NPlug submodule of PluginUI with the sibling NPlugCorrected folder as fallback.
+        // Explicit folder, or the NPlug submodule of PluginUI with a sibling NPlug clone as fallback.
         private string NPlugRootLines => options.NPlugRoot is { Length: > 0 } root
             ? $"\n    <NPlugRoot Condition=\"'$(NPlugRoot)' == ''\">{root}</NPlugRoot>"
             : "\n    <NPlugRoot Condition=\"'$(NPlugRoot)' == '' and Exists('$(PluginUIRoot)external/NPlug/src/NPlug/NPlug.csproj')\">$(PluginUIRoot)external\\NPlug\\src\\</NPlugRoot>"
-              + "\n    <NPlugRoot Condition=\"'$(NPlugRoot)' == ''\">$(MSBuildThisFileDirectory)..\\NPlugCorrected\\src\\</NPlugRoot>";
+              + "\n    <NPlugRoot Condition=\"'$(NPlugRoot)' == ''\">$(MSBuildThisFileDirectory)..\\NPlug\\src\\</NPlugRoot>";
 
         private string AssetItems => $$"""
               <ItemGroup>
@@ -952,7 +952,7 @@ public static class ProjectScaffolder
                 ## Build
 
                 {{build}}
-                It expects the patched NPlug and PluginUI sources at the paths set in the project file (`NPlugRoot`, `PluginUIRoot`).
+                It expects the NPlug and PluginUI sources at the paths set in the project file (`NPlugRoot`, `PluginUIRoot`).
                 {{live}}
                 """;
         }

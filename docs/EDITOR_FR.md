@@ -1,4 +1,4 @@
-<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 
 # PluginUIEditor — concepteur visuel
 
@@ -221,7 +221,7 @@ MySynth/
     └── assets/                 Images et SVG du design (ressources incorporées « assets/… »)
 ```
 
-Les dossiers de NPlug et de PluginUI sont pris dans *Outils ▸ Options* et écrits relativement au projet quand c'est possible ; sans eux, le fichier projet attend PluginUI dans `..\PluginUI\` (dossier voisin du projet) et prend les sources de NPlug dans son sous-module (`external\NPlug\src\`), ou à défaut dans `..\NPlugCorrected\src\` ; les propriétés MSBuild `NPlugRoot` et `PluginUIRoot` les remplacent. Les paramètres du design deviennent des paramètres NPlug (linéaire, logarithmique, entier, interrupteur, liste). Le processeur d'un effet laisse passer l'audio et l'instrument joue une sinusoïde monophonique : remplacez-les par votre DSP.
+Les dossiers de NPlug et de PluginUI sont pris dans *Outils ▸ Options* et écrits relativement au projet quand c'est possible ; sans eux, le fichier projet attend PluginUI dans `..\PluginUI\` (dossier voisin du projet) et prend les sources de NPlug dans son sous-module (`external\NPlug\src\`), ou à défaut dans un clone voisin `..\NPlug\src\` ; les propriétés MSBuild `NPlugRoot` et `PluginUIRoot` les remplacent. Les paramètres du design deviennent des paramètres NPlug (linéaire, logarithmique, entier, interrupteur, liste). Le processeur d'un effet laisse passer l'audio et l'instrument joue une sinusoïde monophonique : remplacez-les par votre DSP.
 
 ## Lien de design en direct
 

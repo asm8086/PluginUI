@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 
 # PluginUI DemoSynth
 
@@ -74,7 +74,7 @@ dotnet publish -c Release -r win-x64       # NativeAOT : PluginUI.DemoSynth.vst3
 dotnet publish -c Release -r win-x64 -p:IlcInstructionSet=x86-64-v2   # pour les processeurs sans AVX2
 ```
 
-Copiez le `.vst3` dans `C:\Program Files\Common Files\VST3`, puis relancez la détection des plugins dans le DAW. Le projet a besoin des sources corrigées de NPlug : le sous-module `external/NPlug` du dépôt, le dossier voisin `..\NPlugCorrected`, ou `NPlugRoot`. Des bundles prêts à l'emploi (x64 et ARM64) sont joints à chaque [version](https://github.com/asm8086/PluginUI/releases).
+Copiez le `.vst3` dans `C:\Program Files\Common Files\VST3`, puis relancez la détection des plugins dans le DAW. Le projet a besoin des sources de NPlug : le sous-module `external/NPlug` du dépôt, un clone voisin `..\NPlug`, ou `NPlugRoot`. Des bundles prêts à l'emploi (x64 et ARM64) sont joints à chaque [version](https://github.com/asm8086/PluginUI/releases).
 
 Routage du sidechain :
 

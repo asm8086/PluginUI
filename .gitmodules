@@ -1,5 +1,4 @@
-# 2026/10/18 17:31:00 UTC - PluginUI
+# 2026/10/19 07:48:00 UTC - PluginUI
 [submodule "external/NPlug"]
 	path = external/NPlug
-	url = https://github.com/asm8086/NPlug.git
-	branch = integration/pluginui
+	url = https://github.com/xoofx/NPlug.git

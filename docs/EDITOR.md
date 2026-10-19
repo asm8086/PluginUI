@@ -1,4 +1,4 @@
-<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
+<!-- 2026/10/19 07:48:00 UTC - PluginUI -->
 
 # PluginUIEditor — visual designer
 
@@ -221,7 +221,7 @@ MySynth/
     └── assets/                 Images and SVG of the design (embedded resources "assets/…")
 ```
 
-The NPlug and PluginUI folders are taken from *Tools ▸ Options* and written relative to the project when possible; without them, the project file expects PluginUI in `..\PluginUI\` (a sibling folder of the project) and takes the NPlug sources from its submodule (`external\NPlug\src\`), or else from `..\NPlugCorrected\src\`; the `NPlugRoot` and `PluginUIRoot` MSBuild properties override them. The design parameters become NPlug parameters (linear, logarithmic, integer, toggle, list). The processor of an effect passes the audio through and the instrument plays a monophonic sine: replace them with your DSP.
+The NPlug and PluginUI folders are taken from *Tools ▸ Options* and written relative to the project when possible; without them, the project file expects PluginUI in `..\PluginUI\` (a sibling folder of the project) and takes the NPlug sources from its submodule (`external\NPlug\src\`), or else from a sibling clone `..\NPlug\src\`; the `NPlugRoot` and `PluginUIRoot` MSBuild properties override them. The design parameters become NPlug parameters (linear, logarithmic, integer, toggle, list). The processor of an effect passes the audio through and the instrument plays a monophonic sine: replace them with your DSP.
 
 ## Live design bridge
 
