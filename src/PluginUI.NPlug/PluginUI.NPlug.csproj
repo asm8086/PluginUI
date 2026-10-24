@@ -1,4 +1,4 @@
-<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- 2026/10/24 18:46:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -14,6 +14,8 @@
     <Description>Hosts PluginUI editors in NPlug (VST3) plug-ins: IAudioPluginView adapter and parameter binding.</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- ComponentHandlerAbi calls the host's IComponentHandler vtable directly. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <!--

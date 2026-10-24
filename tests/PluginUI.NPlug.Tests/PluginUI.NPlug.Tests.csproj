@@ -1,4 +1,4 @@
-<!-- 2026/10/19 16:55:00 UTC - PluginUI -->
+<!-- 2026/10/24 18:46:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -11,6 +11,8 @@
     <NPlugFactoryExport>false</NPlugFactoryExport>
     <!-- Logic, DSP and validator tests: no window needed, they also run on Linux CI. -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <!-- PerformEditTests builds a native IComponentHandler. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 

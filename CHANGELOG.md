@@ -1,4 +1,4 @@
-<!-- 2026/10/24 14:21:00 UTC - PluginUI -->
+<!-- 2026/10/24 18:46:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -50,6 +50,15 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Fixed
 
+- **Edits made in the editor did not reach the processor on Windows x64**: NPlug 0.6.1 calls the host's
+  `IComponentHandler::performEdit` with the value declared as `LibVst.ParamValue`, a struct wrapping a `double`. The
+  Windows x64 calling convention passes an 8-byte struct in an integer register, while the host reads the `double` from
+  a floating-point register, so the host received 0 (or garbage) for every knob, switch and list change: the editor
+  showed the change, the audio did not follow, and automation recorded wrong values. `PluginUIController` now calls the
+  host's `performEdit` itself with a `double` (`ComponentHandlerAbi`), falling back on NPlug when its handler proxy is
+  not found. ARM64 and the System V platforms pass such a struct in a floating-point register and were not affected.
+  NPlug's other calls of this kind (`IParamValueQueue::addPoint` for output parameter changes, `IProgress::update`)
+  are not used by PluginUI and are left as they are.
 - **Typing in a text box of a plug-in editor**: the DAW forwards the keys through `IPlugView::onKeyDown` with their
   character; digits and letters were converted to key events that the focused text box claimed, so they never arrived
   as text (only characters without a key equivalent, such as `é` or `&` on an AZERTY keyboard, did), and the numeric
