@@ -1,4 +1,4 @@
-// 2026/10/18 17:31:00 UTC - PluginUI
+// 2026/10/24 14:21:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -194,29 +194,52 @@ public abstract class PluginEditorView : IAudioPluginView, IDisposable
     /// </summary>
     public bool ForwardHostKeysToControls { get; set; }
 
-    private bool WantsHostKeys(Key key, ModifierKeys mods)
+    private bool WantsHostKeys(Key key, ModifierKeys mods) => WantsHostKeys(Host, key, mods, ForwardHostKeysToControls);
+
+    private static bool WantsHostKeys(UIHost host, Key key, ModifierKeys mods, bool forwardToControls)
     {
-        if (ForwardHostKeysToControls) return true;
-        if (Host.FocusedElement is TextBox) return true;
-        foreach (var popup in Host.Popups)
+        if (forwardToControls) return true;
+        if (host.FocusedElement is TextBox) return true;
+        foreach (var popup in host.Popups)
         {
             if (popup.CapturesKeyboard || popup.IsModal) return true;
         }
-        if (Host.IsLiveEditEnabled) return true;
-        return Host.LiveEditShortcutEnabled && key == Key.E && mods == (ModifierKeys.Control | ModifierKeys.Shift);
+        if (host.IsLiveEditEnabled) return true;
+        return host.LiveEditShortcutEnabled && key == Key.E && mods == (ModifierKeys.Control | ModifierKeys.Shift);
     }
 
     /// <inheritdoc />
     public bool OnKeyDown(ushort key, short keyCode, short modifiers)
     {
         if (!_attached) return false;
+        return RouteHostKeyDown(Host, key, keyCode, modifiers, ForwardHostKeysToControls);
+    }
+
+    /// <summary>
+    /// Routes a key sent by the DAW (<c>IPlugView::onKeyDown</c>) into <paramref name="host"/>: the key event, then the
+    /// character as text input.
+    /// </summary>
+    /// <param name="host">The editor host.</param>
+    /// <param name="key">VST3 character (0 when none).</param>
+    /// <param name="keyCode">VST3 virtual key code.</param>
+    /// <param name="modifiers">VST3 modifier flags.</param>
+    /// <param name="forwardToControls">See <see cref="ForwardHostKeysToControls"/>.</param>
+    /// <returns><see langword="true"/> when the editor consumed the key (the DAW must not use it).</returns>
+    internal static bool RouteHostKeyDown(UIHost host, ushort key, short keyCode, short modifiers, bool forwardToControls)
+    {
         var mods = MapModifiers(modifiers);
         var k = MapKey(key, keyCode);
-        if (!WantsHostKeys(k, mods)) return false;
-        bool handled = k != Key.None && Host.DispatchKeyDown(new KeyEventArgs(k, mods));
-        if (!handled && key >= 32 && (mods & (ModifierKeys.Control | ModifierKeys.Alt)) == 0 && Host.FocusedElement is not null)
+        if (!WantsHostKeys(host, k, mods, forwardToControls)) return false;
+        bool handled = k != Key.None && host.DispatchKeyDown(new KeyEventArgs(k, mods));
+        // The DAW sends the key and its character in one call (no WM_CHAR follows when the key is consumed): a printable
+        // character is also delivered as text input, even when the key itself was claimed (a text box claims every key
+        // so that the DAW never sees it, and expects the characters through text input). Keypad keys may come without
+        // a character. Ctrl+Alt (AltGr) still types; Ctrl or Alt alone is a shortcut.
+        char ch = TextCharacter(key, keyCode);
+        bool chord = (mods & (ModifierKeys.Control | ModifierKeys.Alt)) is ModifierKeys.Control or ModifierKeys.Alt;
+        if (ch != '\0' && !chord && host.FocusedElement is not null)
         {
-            handled = Host.DispatchTextInput(((char)key).ToString());
+            handled |= host.DispatchTextInput(ch.ToString());
         }
         return handled;
     }
@@ -364,6 +387,25 @@ public abstract class PluginEditorView : IAudioPluginView, IDisposable
     }
 
     /// <summary>Maps a VST3 key event (character + VirtualKeyCodes) to a <see cref="Key"/>.</summary>
+    /// <summary>The character typed by a host key: the VST3 character when printable, else the keypad character.</summary>
+    /// <param name="character">VST3 character (0 when none).</param>
+    /// <param name="keyCode">VST3 virtual key code.</param>
+    /// <returns>The character, or '\0'.</returns>
+    internal static char TextCharacter(ushort character, short keyCode)
+    {
+        if (character >= 32 && character != 127) return (char)character;
+        return keyCode switch
+        {
+            >= 24 and <= 33 => (char)('0' + keyCode - 24),   // KEY_NUMPAD0…9
+            34 => '*',
+            35 => '+',
+            37 => '-',
+            38 => '.',
+            39 => '/',
+            _ => '\0',
+        };
+    }
+
     internal static Key MapKey(ushort character, short keyCode)
     {
         switch (keyCode)

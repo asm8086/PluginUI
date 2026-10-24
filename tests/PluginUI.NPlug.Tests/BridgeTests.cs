@@ -1,4 +1,4 @@
-// 2026/10/18 17:31:00 UTC - PluginUI
+// 2026/10/24 14:21:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -234,6 +234,49 @@ public class BridgeTests
             Assert.That(PluginEditorView.MapKey(0, 56), Is.EqualTo(Key.Alt));
             Assert.That(PluginEditorView.MapKey(0, 57), Is.EqualTo(Key.None), "KEY_EQUALS without a character");
             Assert.That(PluginEditorView.MapKey('a', 0), Is.EqualTo(Key.A));
+        });
+    }
+
+    [Test]
+    public void HostDigitsAndKeypadReachAFocusedTextBox()
+    {
+        // Reaper and most DAWs forward the keys through IPlugView::onKeyDown with the character: digits and letters map to
+        // keys that the text box claims, so the character must still arrive as text input. Keypad keys come without one.
+        var box = new TextBox();
+        box.SetBounds(0f, 0f, 120f, 24f);
+        var root = new Canvas();
+        root.Add(box);
+        using var host = new UIHost(root, new Size(200f, 100f));
+        Assert.That(host.Focus(box), Is.True);
+        const short shift = 1;                                     // KeyModifier.ShiftKey
+        foreach (char c in "12")
+            Assert.That(PluginEditorView.RouteHostKeyDown(host, c, 0, shift, forwardToControls: false), Is.True);
+        Assert.That(PluginEditorView.RouteHostKeyDown(host, 0, 38, 0, false), Is.True, "KEY_DECIMAL");
+        Assert.That(PluginEditorView.RouteHostKeyDown(host, 0, 29, 0, false), Is.True, "KEY_NUMPAD5");
+        Assert.That(PluginEditorView.RouteHostKeyDown(host, 'k', 0, 0, false), Is.True);
+        Assert.That(PluginEditorView.RouteHostKeyDown(host, 'é', 0, 0, false), Is.True);
+        Assert.That(box.Text, Is.EqualTo("12.5ké"));
+        Assert.That(PluginEditorView.RouteHostKeyDown(host, 0, 1, 0, false), Is.True, "KEY_BACK");
+        Assert.That(box.Text, Is.EqualTo("12.5k"));
+    }
+
+    [Test]
+    public void HostKeysStayWithTheDawWithoutATextBox()
+    {
+        var root = new Canvas();
+        var knob = new Knob();
+        knob.SetBounds(0f, 0f, 50f, 50f);
+        root.Add(knob);
+        using var host = new UIHost(root, new Size(200f, 100f));
+        host.Focus(knob);
+        Assert.That(PluginEditorView.RouteHostKeyDown(host, '5', 0, 0, false), Is.False, "transport shortcuts keep working");
+        Assert.Multiple(() =>
+        {
+            Assert.That(PluginEditorView.TextCharacter('7', 0), Is.EqualTo('7'));
+            Assert.That(PluginEditorView.TextCharacter(0, 24), Is.EqualTo('0'));
+            Assert.That(PluginEditorView.TextCharacter(0, 33), Is.EqualTo('9'));
+            Assert.That(PluginEditorView.TextCharacter(0, 37), Is.EqualTo('-'));
+            Assert.That(PluginEditorView.TextCharacter(0, 1), Is.EqualTo('\0'));
         });
     }
 

@@ -1,4 +1,4 @@
-// 2026/10/19 20:27:00 UTC - PluginUI
+// 2026/10/24 14:21:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -48,6 +48,14 @@ public class FrequencyResponseViewTests
         Assert.That(_view.FrequencyToX(20000, _area), Is.EqualTo(_area.Right).Within(1e-3));
         Assert.That(_view.XToFrequency(_view.FrequencyToX(632.5, _area), _area), Is.EqualTo(632.5).Within(1e-2));
         _view.FrequencyScale = FrequencyScale.Linear;
+        Assert.Multiple(() =>
+        {
+            // The linear axis honours the limits as well.
+            Assert.That(_view.AxisMinFrequency, Is.EqualTo(20.0));
+            Assert.That(_view.AxisMaxFrequency, Is.EqualTo(20000.0));
+        });
+        _view.MinFrequency = 0.0;
+        _view.MaxFrequency = double.PositiveInfinity;   // up to Nyquist
         Assert.Multiple(() =>
         {
             Assert.That(_view.AxisMinFrequency, Is.EqualTo(0.0));
@@ -171,6 +179,72 @@ public class FrequencyResponseViewTests
             Assert.That(_view.SpectrumLevel(1500), Is.EqualTo(0.0).Within(0.05));
             Assert.That(_view.SpectrumLevel(6000), Is.LessThan(-80.0));
         });
+    }
+
+    [Test]
+    public void SpectrumCanShareTheScaleOfTheLeftAxis()
+    {
+        _view.LeftMin = -36.0;
+        _view.LeftMax = 36.0;
+        _view.SpectrumMaxDb = 0.0;
+        Assert.That(_view.EffectiveSpectrumMinDb, Is.EqualTo(-120.0), "independent scale by default");
+        _view.SpectrumFollowsLeftAxis = true;
+        Assert.That(_view.EffectiveSpectrumMinDb, Is.EqualTo(-72.0), "72 dB of depth, as the response curves");
+    }
+
+    [Test]
+    public void CentredRightAxisKeepsZeroAtMidHeight()
+    {
+        _view.RightAxisCentered = true;
+        var (lo, hi, step) = _view.RightScale(-0.5, 37.0);
+        Assert.Multiple(() =>
+        {
+            Assert.That(lo, Is.EqualTo(-hi));
+            Assert.That(hi, Is.GreaterThanOrEqualTo(37.0));
+            Assert.That(hi / step, Is.InRange(2.0, 6.0));
+        });
+        _view.RightAxisTicks = RightAxisTicks.PiMultiples;
+        (lo, hi, _) = _view.RightScale(-7.0, 0.1);
+        Assert.That(lo, Is.EqualTo(-hi));
+        Assert.That(hi / Math.PI, Is.EqualTo(Math.Round(hi / Math.PI * 2.0) / 2.0).Within(1e-9), "multiples of π/2");
+    }
+
+    [Test]
+    public void SkipToLatestDropsUnreadSamples()
+    {
+        var ring = new AudioRingBuffer(64);
+        ring.Write(new float[40]);
+        ring.SkipToLatest();
+        Assert.That(ring.Available, Is.Zero);
+        ring.Write(new float[5]);
+        Assert.That(ring.Read(new float[64]), Is.EqualTo(5));
+    }
+
+    [Test]
+    public void ColouredSquareAndWaveGlyphToggleRender()
+    {
+        Assume.That(OperatingSystem.IsWindows(), "Direct2D rendering needs Windows");
+        var enable = new ToggleButton { OnColor = Color.FromRgb(0xFF7043), OffColor = Color.FromRgb(0x55585F) };
+        enable.SetBounds(10f, 400f, 12f, 12f);
+        var curve = new ToggleButton { Glyph = ButtonGlyph.Wave, OnColor = Color.FromRgb(0xFF7043) };
+        curve.SetBounds(30f, 400f, 20f, 16f);
+        var labelled = new ToggleButton("CURVE") { Glyph = ButtonGlyph.Wave };
+        labelled.SetBounds(60f, 400f, 80f, 20f);
+        _root.Children.Add(enable);
+        _root.Children.Add(curve);
+        _root.Children.Add(labelled);
+        enable.IsOn = false;
+        curve.IsOn = true;
+        string path = Path.Combine(Path.GetTempPath(), $"pluginui-toggle-{Guid.NewGuid():N}.png");
+        try
+        {
+            _host.RenderToPng(path);
+            Assert.That(new FileInfo(path).Length, Is.GreaterThan(0));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Test]

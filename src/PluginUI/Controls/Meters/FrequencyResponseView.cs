@@ -1,4 +1,4 @@
-// 2026/10/19 22:45:00 UTC - PluginUI
+// 2026/10/24 14:21:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -275,11 +275,11 @@ public class FrequencyResponseView : Control
     [Category("Data")]
     public FrequencyScale FrequencyScale { get; set; } = FrequencyScale.Logarithmic;
 
-    /// <summary>Lowest frequency of the logarithmic axis, in Hz.</summary>
+    /// <summary>Lowest displayed frequency, in Hz (at least 1 Hz on the logarithmic axis, 0 allowed on the linear one).</summary>
     [Category("Data")]
     public double MinFrequency { get; set; } = 20.0;
 
-    /// <summary>Highest frequency of the logarithmic axis, in Hz (limited to the Nyquist frequency).</summary>
+    /// <summary>Highest displayed frequency, in Hz (limited to the Nyquist frequency: <see cref="double.PositiveInfinity"/> = Nyquist).</summary>
     [Category("Data")]
     public double MaxFrequency { get; set; } = 20000.0;
 
@@ -347,9 +347,25 @@ public class FrequencyResponseView : Control
     [Browsable(false)]
     public Func<double, double>? SpectrumFilter { get; set; }
 
-    /// <summary>Spectrum level at the bottom of the plot.</summary>
+    /// <summary>Spectrum level at the bottom of the plot (ignored when <see cref="SpectrumFollowsLeftAxis"/>).</summary>
     [Category("Data")]
     public double SpectrumMinDb { get; set; } = -120.0;
+
+    /// <summary>
+    /// Draws the spectra with the decibels per pixel of the left axis, <see cref="SpectrumMaxDb"/> at the top: the gap
+    /// between the filtered and the input spectrum then matches the response curves exactly. The visible depth is
+    /// <see cref="LeftMax"/> − <see cref="LeftMin"/>.
+    /// </summary>
+    [Category("Data")]
+    public bool SpectrumFollowsLeftAxis { get; set; }
+
+    /// <summary>Bottom of the spectrum scale actually used (see <see cref="SpectrumFollowsLeftAxis"/>).</summary>
+    [Browsable(false)]
+    public double EffectiveSpectrumMinDb => SpectrumFollowsLeftAxis ? SpectrumMaxDb - Math.Max(1e-9, LeftMax - LeftMin) : SpectrumMinDb;
+
+    /// <summary>Keeps the zero of the right axis at mid-height (symmetric range).</summary>
+    [Category("Data")]
+    public bool RightAxisCentered { get; set; }
 
     /// <summary>Spectrum level at the top of the plot.</summary>
     [Category("Data")]
@@ -407,10 +423,14 @@ public class FrequencyResponseView : Control
     // ---------------------------------------------------------------- geometry
 
     /// <summary>Lowest displayed frequency in Hz.</summary>
-    public double AxisMinFrequency => FrequencyScale == FrequencyScale.Linear ? 0.0 : Math.Max(1.0, Math.Min(MinFrequency, Nyquist * 0.5));
+    public double AxisMinFrequency => FrequencyScale == FrequencyScale.Linear
+        ? Math.Clamp(double.IsFinite(MinFrequency) ? MinFrequency : 0.0, 0.0, Nyquist * 0.5)
+        : Math.Max(1.0, Math.Min(MinFrequency, Nyquist * 0.5));
 
     /// <summary>Highest displayed frequency in Hz.</summary>
-    public double AxisMaxFrequency => FrequencyScale == FrequencyScale.Linear ? Nyquist : Math.Max(AxisMinFrequency * 2.0, Math.Min(MaxFrequency, Nyquist));
+    public double AxisMaxFrequency => FrequencyScale == FrequencyScale.Linear
+        ? Math.Max(AxisMinFrequency + 1.0, Math.Min(MaxFrequency, Nyquist))
+        : Math.Max(AxisMinFrequency * 2.0, Math.Min(MaxFrequency, Nyquist));
 
     private double Nyquist => Math.Max(1.0, SampleRate * 0.5);
 
@@ -497,6 +517,12 @@ public class FrequencyResponseView : Control
 
     private void Refresh(double elapsed)
     {
+        // No analysis while the editor cannot be seen (minimized or hidden window): the samples are dropped.
+        if (Host is { IsShownOnScreen: false })
+        {
+            SpectrumSource?.SkipToLatest();
+            return;
+        }
         AnalyzeSpectrum();
         double version = Nodes.Count * 1.0 + Curves.Count * 7.0 + (int)FrequencyScale * 3.0 + SampleRate;
         foreach (var n in Nodes)
@@ -528,7 +554,7 @@ public class FrequencyResponseView : Control
             _frame = new float[size];
             _bins = new float[size / 2];
             _smoothed = new float[size / 2];
-            Array.Fill(_smoothed, (float)SpectrumMinDb);
+            Array.Fill(_smoothed, (float)EffectiveSpectrumMinDb);
             _historyFill = 0;
             _pendingHop = 0;
             _analyzedSource = source;
@@ -573,7 +599,7 @@ public class FrequencyResponseView : Control
         float convert = DecibelConvention == DecibelConvention.SixLog2 ? (float)(6.0 / (20.0 * Math.Log10(2.0))) : 1f;
         double tau = SpectrumReleaseSeconds;
         float release = tau <= 0.0 ? 1f : (float)(1.0 - Math.Exp(-hop / (Math.Max(1.0, SampleRate) * tau)));
-        float floor = (float)SpectrumMinDb - 6f;
+        float floor = (float)Math.Min(SpectrumMinDb, EffectiveSpectrumMinDb) - 6f;
         for (int k = 0; k < _bins.Length; k++)
         {
             float db = MathF.Max(floor, _bins[k] * convert);
@@ -710,7 +736,7 @@ public class FrequencyResponseView : Control
         int columns = freqs.Length - 1;
         var pts = new Point[columns + 3];
         double binHz = SampleRate / (2.0 * _smoothed.Length);
-        double spMin = SpectrumMinDb, spMax = SpectrumMaxDb;
+        double spMin = EffectiveSpectrumMinDb, spMax = SpectrumMaxDb;
         for (int c = 0; c <= columns; c++)
         {
             // Highest bin inside the column, or the interpolated level when the column holds no bin.
@@ -809,7 +835,7 @@ public class FrequencyResponseView : Control
             dc.DrawText(LeftUnit, new Rect(area.X + 3f, area.Y + 2f, 60f, 10f), label, p.TextDim.WithAlpha(0.85f));
     }
 
-    private (double Lo, double Hi, double Step) RightScale(double min, double max)
+    internal (double Lo, double Hi, double Step) RightScale(double min, double max)
     {
         if (!double.IsFinite(min) || !double.IsFinite(max)) { min = -1.0; max = 1.0; }
         double unit = RightAxisTicks == RightAxisTicks.PiMultiples ? Math.PI : 1.0;
@@ -821,6 +847,14 @@ public class FrequencyResponseView : Control
             min = c - unit;
             max = c + unit;
             span = max - min;
+        }
+        if (RightAxisCentered)
+        {
+            double m = Math.Max(Math.Abs(min), Math.Abs(max));
+            if (!(m > 1e-12)) m = unit;
+            double half = NiceStep(m / unit / 3.0) * unit;
+            double top = Math.Ceiling(m / half - 1e-9) * half;
+            return (-top, top, half);
         }
         double step = NiceStep(span / unit / 6.0) * unit;
         double lo = Math.Floor(min / step) * step, hi = Math.Ceiling(max / step) * step;

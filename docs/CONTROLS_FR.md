@@ -1,4 +1,4 @@
-<!-- 2026/10/19 20:27:00 UTC - PluginUI -->
+<!-- 2026/10/24 14:21:00 UTC - PluginUI -->
 
 # Catalogue des éléments
 
@@ -32,7 +32,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | Élément | Points clés | Équivalent |
 |---|---|---|
 | `Button` | Texte et/ou icône (bitmap, SVG, `IconRenderer`), apparences `Normal`/`Accent`/`Flat`/`Outline`, répétition tant que pressé, paramètre momentané | `CKickButton`, `CTextButton`, `IVButtonControl`, `IBButtonControl` (+ `ImageStateSkin`), `ISVGButtonControl` (+ `SvgStateSkin`) |
-| `ToggleButton` | `OnText`/`OffText`, LED, couleur d'état ; avec un `FilmStripSkin`, équivalent de `CMovieButton` | `COnOffButton`, `CMovieButton`, `IVToggleControl`, `ITextToggleControl`, `ISVGToggleControl` |
+| `ToggleButton` | `OnText`/`OffText`, LED, couleurs allumé et éteint (`OffColor` : carré d'activation coloré), icône (`Glyph` : `Wave`) ; avec un `FilmStripSkin`, équivalent de `CMovieButton` | `COnOffButton`, `CMovieButton`, `IVToggleControl`, `ITextToggleControl`, `ISVGToggleControl` |
 | `CheckBox` | Case animée + texte | `CCheckBox` |
 | `Switch` | N positions, vertical/horizontal, sélection directe ou cyclique, film-strip par index d'état | `CHorizontalSwitch`, `IVSwitchControl`, `CVerticalSwitch`, `IBSwitchControl` (+ `FilmStripSkin`), `ISVGSwitchControl` |
 | `SlideSwitch` | Interrupteur « pilule » animé | `IVSlideSwitchControl` |
@@ -80,7 +80,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `FpsCounter` | Images par seconde et durée d'image (débogage) | `IFPSDisplayControl` |
 | `HistoryGraph` | Historique défilant d'une valeur (réduction de gain, enveloppe, LFO) : ligne, rempli ou barres, source `PeakValue` sans verrou ou fonction interrogée | `IVDisplayControl` |
 | `ParametricEqEditor`, `EqBand` | Égaliseur paramétrique : courbe exacte des biquads RBJ, nœuds déplaçables (fréquence et gain en gestes parallèles), Q à la molette, menu de forme par bande, ajout et suppression, spectre en fond | — (bonus) |
-| `FrequencyResponseView`, `ResponseCurve`, `ResponseNode` | Affichage de réponse pour tout filtre : courbes fournies par l'appelant, axe des fréquences logarithmique ou linéaire, axe gauche fixe et axe droit à échelle automatique (phase en multiples de π, retards), spectre d'entrée analysé (recouvrement 50 %, lissage en relâchement, dB en 20·log10 ou 6·log2) et spectre façonné par une réponse sans seconde FFT, nœuds liés aux paramètres, nœuds de bande définis par deux bords avec leurs propres poignées | — (bonus) |
+| `FrequencyResponseView`, `ResponseCurve`, `ResponseNode` | Affichage de réponse pour tout filtre : courbes fournies par l'appelant, axe des fréquences logarithmique ou linéaire, axe gauche fixe et axe droit à échelle automatique (phase en multiples de π, retards), spectre d'entrée analysé (recouvrement 50 %, lissage en relâchement, dB en 20·log10 ou 6·log2) et spectre façonné par une réponse sans seconde FFT, nœuds liés aux paramètres, nœuds de bande définis par deux bords avec leurs propres poignées ; au choix, spectres à l'échelle en décibels des courbes (`SpectrumFollowsLeftAxis`) et axe droit centré sur zéro (`RightAxisCentered`) ; aucune analyse quand l'éditeur est caché | — (bonus) |
 | `CompressorCurve` | Courbe de transfert (seuil, ratio, genou doux), seuil et ratio réglables à la souris, niveau d'entrée en direct | — (bonus) |
 | `LoudnessMeter` + `Dsp.LoudnessAnalyzer` | Sonie EBU R128 / BS.1770-4 : momentanée, court terme, intégrée (avec seuils), plage LRA, crête ; cible et tolérance | — (bonus) |
 | `Goniometer`, `CorrelationMeter` | Image stéréo (Lissajous M/S) et corrélation de phase −1…+1 | — (bonus) |

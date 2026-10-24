@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/24 14:21:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -40,6 +40,15 @@ public class ToggleButton : ValueControl
     /// <summary>LED / on color (null = style accent).</summary>
     [Category("Appearance")]
     public Color? OnColor { get; set; }
+
+    /// <summary>Fill of the off state (null = the normal button box). A small square with an
+    /// <see cref="OnColor"/> and a grey <see cref="OffColor"/> makes a colored enable switch.</summary>
+    [Category("Appearance")]
+    public Color? OffColor { get; set; }
+
+    /// <summary>Icon drawn centered (no caption) or left of the caption.</summary>
+    [Category("Appearance")]
+    public ButtonGlyph Glyph { get; set; }
 
     /// <summary>Text style (null = theme normal text, centered).</summary>
     [Category("Text")]
@@ -108,13 +117,31 @@ public class ToggleButton : ValueControl
             dc.FillRoundedRect(widget, radius, IsPressed ? accent.Darken(0.15f) : IsMouseOver ? accent.Lighten(0.08f) : accent);
             fg = accent.Contrasting;
         }
+        else if (OffColor is { } off)
+        {
+            dc.FillRoundedRect(widget, radius, IsPressed ? off.Darken(0.15f) : IsMouseOver ? off.Lighten(0.12f) : off);
+            fg = off.Contrasting.WithAlpha(0.75f);
+        }
         else
         {
             DrawBox(dc, widget, style, IsPressed, IsMouseOver);
             fg = p.TextDim;
         }
         if (!IsEffectivelyEnabled) fg = p.TextDisabled;
-        dc.DrawText(CurrentText, widget.Deflate(new Thickness(4f, 0f)), EffectiveTextStyle, fg);
+        var text = CurrentText;
+        var content = widget.Deflate(new Thickness(4f, 0f));
+        if (Glyph != ButtonGlyph.None)
+        {
+            float size = MathF.Min(widget.Height, widget.Width) * 0.62f;
+            if (string.IsNullOrEmpty(text))
+            {
+                Glyphs.Draw(dc, Glyph, widget.Center, size, fg);
+                return;
+            }
+            Glyphs.Draw(dc, Glyph, new Point(widget.X + 4f + size * 0.5f, widget.Center.Y), size, fg);
+            content = Rect.FromEdges(widget.X + 8f + size, widget.Y, widget.Right - 4f, widget.Bottom);
+        }
+        dc.DrawText(text, content, EffectiveTextStyle, fg);
     }
 
     /// <inheritdoc />

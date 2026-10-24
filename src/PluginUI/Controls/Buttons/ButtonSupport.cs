@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/24 14:21:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,15 @@ public enum ButtonAppearance
     Flat,
     /// <summary>Frame only.</summary>
     Outline,
+}
+
+/// <summary>Icon drawn by a <see cref="ToggleButton"/> instead of (or left of) its caption.</summary>
+public enum ButtonGlyph
+{
+    /// <summary>No icon.</summary>
+    None,
+    /// <summary>One period of a sine wave (show/hide a curve, oscillator, signal).</summary>
+    Wave,
 }
 
 /// <summary>Small vector glyphs shared by buttons, menus and pickers.</summary>
@@ -66,6 +75,36 @@ public static class Glyphs
         float w = size * 0.5f, h = size * 0.35f * (up ? -1f : 1f);
         ReadOnlySpan<Point> pts = [new(c.X - w, c.Y - h), new(c.X + w, c.Y - h), new(c.X, c.Y + h)];
         dc.FillPolygon(pts, color);
+    }
+
+    /// <summary>Draws one period of a sine wave fitting a square of side <paramref name="size"/> centered at <paramref name="c"/>.</summary>
+    public static void Wave(DrawingContext dc, Point c, float size, Color color, float thickness = 1.5f)
+    {
+        // Filled as a ribbon (offset along the normals) rather than stroked: no join artefacts at small sizes.
+        const int Steps = 24;
+        Span<Point> ribbon = stackalloc Point[2 * (Steps + 1)];
+        float w = size * 0.5f, h = size * 0.3f, half = 0.5f * thickness;
+        for (int i = 0; i <= Steps; i++)
+        {
+            float t = (float)i / Steps;
+            float x = c.X - w + 2f * w * t, y = c.Y - h * MathF.Sin(2f * MathF.PI * t);
+            // Tangent (2w, −2πh·cos 2πt), normalized; the normal is the tangent turned by 90°.
+            float tx = 2f * w, ty = -2f * MathF.PI * h * MathF.Cos(2f * MathF.PI * t);
+            float len = MathF.Sqrt(tx * tx + ty * ty);
+            float nx = -ty / len * half, ny = tx / len * half;
+            ribbon[i] = new Point(x + nx, y + ny);
+            ribbon[2 * Steps + 1 - i] = new Point(x - nx, y - ny);
+        }
+        dc.FillPolygon(ribbon, color);
+    }
+
+    /// <summary>Draws <paramref name="glyph"/> fitting a square of side <paramref name="size"/> centered at <paramref name="c"/>.</summary>
+    public static void Draw(DrawingContext dc, ButtonGlyph glyph, Point c, float size, Color color)
+    {
+        switch (glyph)
+        {
+            case ButtonGlyph.Wave: Wave(dc, c, size, color); break;
+        }
     }
 
     /// <summary>Draws a glowing LED dot.</summary>

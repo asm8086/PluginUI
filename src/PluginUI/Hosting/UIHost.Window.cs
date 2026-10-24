@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/24 14:21:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -25,6 +25,21 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
     /// Exceptions never propagate into the host application; by default they are written to the debug output.
     /// </summary>
     public static Action<Exception, string>? UnhandledException { get; set; }
+
+    /// <summary>
+    /// True when the editor can be seen: its window is visible and its top-level window is not minimized. Hosts without a
+    /// window (off-screen rendering, tests) report <see langword="true"/>. Analyzers can skip their work while it is false.
+    /// </summary>
+    public bool IsShownOnScreen
+    {
+        get
+        {
+            if (_hwnd == HWND.NULL) return true;
+            if (!IsWindowVisible(_hwnd)) return false;
+            HWND root = GetAncestor(_hwnd, 2u);   // GA_ROOT
+            return root == HWND.NULL || !IsIconic(root);
+        }
+    }
 
     internal static void ReportException(Exception ex, string where)
     {

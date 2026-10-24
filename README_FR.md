@@ -1,4 +1,4 @@
-<!-- 2026/10/19 22:45:00 UTC - PluginUI -->
+<!-- 2026/10/24 14:21:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -67,8 +67,8 @@ PluginUI/
 ├── samples/PluginUI.Gallery/       Application de démonstration (fenêtre autonome + mode capture PNG)
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
 ├── samples/Designs/                Designs d'exemple (.pluginui), dont la disposition de DemoSynth
-├── tests/PluginUI.Tests/           132 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception)
-├── tests/PluginUI.NPlug.Tests/     22 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
+├── tests/PluginUI.Tests/           136 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception)
+├── tests/PluginUI.NPlug.Tests/     24 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
 └── tests/PluginUI.Design.Tests/    25 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
 ```
 
@@ -288,8 +288,8 @@ Les tests n'ouvrent aucune fenêtre : ils simulent les entrées via `UIHost.Disp
 Ce qui a été vérifié pendant le développement :
 
 - compilation des projets PluginUI sans avertissement, avec les analyseurs NativeAOT et trimming actifs et les avertissements traités comme des erreurs ;
-- 132 tests unitaires, y compris les cultures fr-FR / de-DE / en-US / ru-RU, la langue de l'interface, les conventions de conception, et les noyaux SIMD exécutés avec AVX2 / AVX-512, SSE seul et en scalaire ;
-- 22 tests du pont NPlug et de DemoSynth (file de notes, codes de touches de l'hôte, valeurs saisies, MIDI learn et sa persistance, enveloppes, filtre, oscillateurs, polyphonie, sidechain) ;
+- 136 tests unitaires (dont un rendu, exécuté sous Windows seulement), y compris les cultures fr-FR / de-DE / en-US / ru-RU, la langue de l'interface, les conventions de conception, et les noyaux SIMD exécutés avec AVX2 / AVX-512, SSE seul et en scalaire ;
+- 24 tests du pont NPlug et de DemoSynth (file de notes, codes de touches de l'hôte et saisie au clavier via le DAW, valeurs saisies, MIDI learn et sa persistance, enveloppes, filtre, oscillateurs, polyphonie, sidechain) ;
 - 25 tests des designs et de l'éditeur (aller-retour JSON de toutes les valeurs par défaut et du contenu inconnu, registre complet, chargeur, capture, code généré compilé par Roslyn et identique au chargeur, y compris avec des noms et valeurs hostiles, lien en direct, projets générés, commandes de l'éditeur, extensions) ;
 - validateur VST3 officiel de Steinberg : 47/47 sur DemoSynth (x86-64-v3, x86-64-v2, bundle universel sur x64 et sur ARM64), et sur les projets d'effet et d'instrument créés par PluginUIEditor ;
 - PluginUIEditor exécuté sous Wine et piloté par des événements souris et clavier simulés : glisser-déposer depuis la boîte à outils, sélection, suppression, annuler, déplacement au clavier, copier-coller, aperçu interactif, saisie dans la grille des propriétés et dans le tableau des paramètres, génération de code, création de projet (qui compile), enregistrement ;

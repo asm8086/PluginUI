@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/10/24 14:21:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -117,6 +117,9 @@ public sealed class AudioRingBuffer
         _data.AsSpan(start, first).CopyTo(destination);
         _data.AsSpan(0, destination.Length - first).CopyTo(destination[first..]);
     }
+
+    /// <summary>UI thread: discards the unread samples (the next <see cref="Read"/> returns only newer ones).</summary>
+    public void SkipToLatest() => _readPosition = Volatile.Read(ref _writePosition);
 
     /// <summary>Number of unread samples (for <see cref="Read"/>).</summary>
     public int Available => (int)Math.Min(_data.Length, Volatile.Read(ref _writePosition) - _readPosition);

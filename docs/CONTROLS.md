@@ -1,4 +1,4 @@
-<!-- 2026/10/19 20:27:00 UTC - PluginUI -->
+<!-- 2026/10/24 14:21:00 UTC - PluginUI -->
 
 # Element catalog
 
@@ -32,7 +32,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | Element | Key points | Equivalent |
 |---|---|---|
 | `Button` | Text and/or icon (bitmap, SVG, `IconRenderer`), `Normal`/`Accent`/`Flat`/`Outline` appearances, repeat while pressed, momentary parameter | `CKickButton`, `CTextButton`, `IVButtonControl`, `IBButtonControl` (+ `ImageStateSkin`), `ISVGButtonControl` (+ `SvgStateSkin`) |
-| `ToggleButton` | `OnText`/`OffText`, LED, state color; with a `FilmStripSkin`, equivalent to `CMovieButton` | `COnOffButton`, `CMovieButton`, `IVToggleControl`, `ITextToggleControl`, `ISVGToggleControl` |
+| `ToggleButton` | `OnText`/`OffText`, LED, on and off colors (`OffColor`: colored enable square), icon (`Glyph`: `Wave`); with a `FilmStripSkin`, equivalent to `CMovieButton` | `COnOffButton`, `CMovieButton`, `IVToggleControl`, `ITextToggleControl`, `ISVGToggleControl` |
 | `CheckBox` | Animated box + text | `CCheckBox` |
 | `Switch` | N positions, vertical/horizontal, direct or cyclic selection, film strip by state index | `CHorizontalSwitch`, `IVSwitchControl`, `CVerticalSwitch`, `IBSwitchControl` (+ `FilmStripSkin`), `ISVGSwitchControl` |
 | `SlideSwitch` | Animated "pill" switch | `IVSlideSwitchControl` |
@@ -80,7 +80,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `FpsCounter` | Frames per second and frame time (debugging) | `IFPSDisplayControl` |
 | `HistoryGraph` | Scrolling history of a value (gain reduction, envelope, LFO): line, filled or bars, lock-free `PeakValue` source or polled function | `IVDisplayControl` |
 | `ParametricEqEditor`, `EqBand` | Parametric equalizer: exact curve of the RBJ biquads, draggable nodes (frequency and gain in parallel gestures), Q with the mouse wheel, shape menu per band, adding and removing bands, spectrum in the background | — (bonus) |
-| `FrequencyResponseView`, `ResponseCurve`, `ResponseNode` | Response display for any filter: consumer-supplied curves, log or linear frequency axis, fixed left axis and auto-scaled right axis (phase in multiples of π, delays), analyzed input spectrum (50 % overlap, release smoothing, 20·log10 or 6·log2 dB) and the spectrum shaped by a response without a second FFT, nodes bound to parameters, band nodes defined by two edges with their own handles | — (bonus) |
+| `FrequencyResponseView`, `ResponseCurve`, `ResponseNode` | Response display for any filter: consumer-supplied curves, log or linear frequency axis, fixed left axis and auto-scaled right axis (phase in multiples of π, delays), analyzed input spectrum (50 % overlap, release smoothing, 20·log10 or 6·log2 dB) and the spectrum shaped by a response without a second FFT, nodes bound to parameters, band nodes defined by two edges with their own handles; optionally the spectra on the decibel scale of the curves (`SpectrumFollowsLeftAxis`) and a right axis centred on zero (`RightAxisCentered`); no analysis while the editor is hidden | — (bonus) |
 | `CompressorCurve` | Transfer curve (threshold, ratio, soft knee), threshold and ratio adjustable with the mouse, live input level | — (bonus) |
 | `LoudnessMeter` + `Dsp.LoudnessAnalyzer` | EBU R128 / BS.1770-4 loudness: momentary, short-term, integrated (with gating), LRA range, peak; target and tolerance | — (bonus) |
 | `Goniometer`, `CorrelationMeter` | Stereo image (M/S Lissajous) and phase correlation −1…+1 | — (bonus) |
