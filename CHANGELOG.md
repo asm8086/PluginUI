@@ -1,4 +1,4 @@
-<!-- 2026/10/24 18:46:00 UTC - PluginUI -->
+<!-- 2026/11/04 17:16:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -39,6 +39,9 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Changed
 
+- **Build**: `global.json` requires the .NET SDK 10.0.403 or a later 10.0 band. Earlier SDKs bring
+  `Microsoft.DotNet.ILCompiler` and runtime packs below 10.0.14, affected by GHSA-p3jp-9v83-76w9 (CVE-2026-111497, Brotli
+  decoder), which NativeAOT links into the published plug-ins and tools; NuGet audit (NU1903) fails their restore.
 - **FrequencyResponseView**: the linear frequency axis honours `MinFrequency` and `MaxFrequency` too (it always spanned
   0 Hz to Nyquist); set `MinFrequency = 0` and `MaxFrequency = double.PositiveInfinity` for the former behavior.
 - NPlug comes from its NuGet packages: `NPlug` 0.6.1 (with `NPlug.Proxy` 2.0.2, which writes ARM64 plug-ins to

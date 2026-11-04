@@ -1,4 +1,4 @@
-<!-- 2026/10/18 16:20:00 UTC - PluginUI -->
+<!-- 2026/11/04 17:16:00 UTC - PluginUI -->
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/PluginUI/PluginUI.csproj" />
@@ -57,5 +57,6 @@
     <File Path="Directory.Build.targets" />
     <File Path=".gitignore" />
     <File Path="dotnet-tools.json" />
+    <File Path="global.json" />
   </Folder>
 </Solution>
