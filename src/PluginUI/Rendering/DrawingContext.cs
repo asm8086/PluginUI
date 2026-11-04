@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/04 20:14:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -384,24 +384,37 @@ public sealed unsafe class DrawingContext
     // Images
     // =====================================================================================
 
-    /// <summary>Draws an image (or a pixel region of it) into a destination rectangle.</summary>
+    /// <summary>
+    /// Draws an image (or a pixel region of it) into a destination rectangle. Smooth drawing uses Direct2D's
+    /// high-quality cubic interpolation, which prefilters the image when it is drawn smaller than its pixel size (a
+    /// large logo shown as an icon stays smooth instead of aliased); bilinear when the device has no
+    /// <c>ID2D1DeviceContext</c>. <paramref name="smooth"/> = <c>false</c> keeps the pixels sharp (pixel art, bitmap fonts).
+    /// </summary>
     public void DrawImage(ImageSource image, Rect destination, float opacity = 1f, Rect? sourcePixels = null, bool smooth = true)
     {
         var bitmap = _renderer.GetBitmap(image);
         if (bitmap is null) return;
         var dest = ToD2D(destination);
-        var mode = smooth ? D2D1_BITMAP_INTERPOLATION_MODE_LINEAR : D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR;
+        float alpha = Math.Clamp(opacity * _alpha, 0f, 1f);
+        D2D_RECT_F s = default;
+        D2D_RECT_F* source = null;
         if (sourcePixels is Rect src)
         {
             // Source rectangles are expressed in DIPs of the bitmap (pixels / PixelsPerDip).
             float k = 1f / image.PixelsPerDip;
-            var s = new D2D_RECT_F { left = src.X * k, top = src.Y * k, right = src.Right * k, bottom = src.Bottom * k };
-            Target->DrawBitmap(bitmap, &dest, Math.Clamp(opacity * _alpha, 0f, 1f), mode, &s);
+            s = new D2D_RECT_F { left = src.X * k, top = src.Y * k, right = src.Right * k, bottom = src.Bottom * k };
+            source = &s;
         }
-        else
+        // Bilinear interpolation reads only the four nearest pixels: a strong reduction then skips most of the image
+        // and looks like nearest neighbour. The high-quality cubic mode of the device context filters it first.
+        var context = smooth ? _renderer.SvgContext : null;
+        if (context is not null)
         {
-            Target->DrawBitmap(bitmap, &dest, Math.Clamp(opacity * _alpha, 0f, 1f), mode, null);
+            context->DrawBitmap(bitmap, &dest, alpha, D2D1_INTERPOLATION_MODE.D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, source, null);
+            return;
         }
+        var mode = smooth ? D2D1_BITMAP_INTERPOLATION_MODE_LINEAR : D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR;
+        Target->DrawBitmap(bitmap, &dest, alpha, mode, source);
     }
 
     /// <summary>Draws one frame of a film-strip.</summary>

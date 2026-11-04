@@ -1,4 +1,4 @@
-<!-- 2026/11/04 18:12:00 UTC - PluginUI -->
+<!-- 2026/11/04 20:14:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -53,6 +53,9 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Fixed
 
+- **Images drawn smaller than their pixel size** (`ImageView`, `AboutBox` logo, `DrawingContext.DrawImage` with
+  `smooth`): Direct2D's high-quality cubic interpolation, which prefilters the reduction, replaces bilinear
+  interpolation, which reads only four pixels and made a large logo shown small look like nearest neighbour.
 - **PresetBar**: a long preset name no longer covers the bank name shown on its left; it moves to the right of the
   bank (trimmed with an ellipsis if needed), and the bank is left out when the name would keep less than 80 points.
 - **In-place value editing** (`UIHost.BeginTextEdit`, the text entry of knobs, sliders, value displays, tables and the
