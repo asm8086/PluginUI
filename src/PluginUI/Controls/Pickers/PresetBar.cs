@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/04 18:09:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -130,11 +130,26 @@ public class PresetBar : Control
 
         string text = CurrentName + (_provider?.IsModified == true ? " *" : string.Empty);
         var nameArea = name.Deflate(new Thickness(8f, 0f, 18f, 0f));
-        dc.DrawText(text, nameArea, NameStyle, enabled ? p.Text : p.TextDisabled);
+        var nameStyle = NameStyle;
         if (_provider is not null && _provider.CurrentIndex >= 0 && _provider.GetBank(_provider.CurrentIndex) is { Length: > 0 } bank && name.Width > 160f)
         {
-            dc.DrawText(bank, name.Deflate(new Thickness(8f, 0f)), Theme.Typography.Small with { Align = HorizontalAlignment.Left }, p.TextDim);
+            // The bank on the left, the name centered. A long name moves to the right of the bank instead of covering
+            // it (trimmed with an ellipsis if needed); the bank is left out when the name would not keep 80 points.
+            var bankStyle = Theme.Typography.Small with { Align = HorizontalAlignment.Left };
+            float bankRight = nameArea.X + TextMeasurer.Measure(bank, bankStyle).Width + 6f;
+            float textWidth = TextMeasurer.Measure(text, nameStyle).Width;
+            bool fitsCentered = nameArea.Center.X - textWidth * 0.5f >= bankRight;
+            if (fitsCentered || nameArea.Right - bankRight >= MathF.Min(textWidth, 80f))
+            {
+                dc.DrawText(bank, nameArea, bankStyle, p.TextDim);
+                if (!fitsCentered)
+                {
+                    nameArea = Rect.FromEdges(bankRight, nameArea.Y, nameArea.Right, nameArea.Bottom);
+                    nameStyle = nameStyle with { Align = HorizontalAlignment.Left };
+                }
+            }
         }
+        dc.DrawText(text, nameArea, nameStyle, enabled ? p.Text : p.TextDisabled);
         Glyphs.Chevron(dc, new Point(name.Right - 11f, name.Center.Y), 7f, enabled ? p.TextDim : p.TextDisabled, up: _menuOpen);
     }
 

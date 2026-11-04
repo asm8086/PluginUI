@@ -1,4 +1,4 @@
-<!-- 2026/11/04 17:52:00 UTC - PluginUI -->
+<!-- 2026/11/04 18:12:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -53,6 +53,8 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Fixed
 
+- **PresetBar**: a long preset name no longer covers the bank name shown on its left; it moves to the right of the
+  bank (trimmed with an ellipsis if needed), and the bank is left out when the name would keep less than 80 points.
 - **In-place value editing** (`UIHost.BeginTextEdit`, the text entry of knobs, sliders, value displays, tables and the
   preset bar): the box is focused and its text selected as soon as it opens, instead of after a posted message, so
   that the first typed character replaces the value; typing while the focus is still elsewhere goes to the box.
