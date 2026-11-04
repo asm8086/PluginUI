@@ -1,4 +1,4 @@
-// 2026/10/24 18:46:00 UTC - PluginUI
+// 2026/11/04 20:40:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -11,8 +11,8 @@ using PluginUI.DemoSynth.Plugin;
 namespace PluginUI.NPlug.Tests;
 
 /// <summary>
-/// Edits made in the editor reach the host's <c>IComponentHandler::performEdit</c> with the value as a double (NPlug
-/// 0.6.1 passes it in an integer register on Windows x64; see <see cref="ComponentHandlerAbi"/>).
+/// Edits made in the editor reach the host's <c>IComponentHandler::performEdit</c> with the value as a double
+/// (regression test: NPlug 0.6.1 passed it in an integer register on Windows x64, fixed in NPlug 0.6.2).
 /// </summary>
 public unsafe class PerformEditTests
 {
@@ -58,8 +58,6 @@ public unsafe class PerformEditTests
         Calls.Clear();
         void* native = NativeHandler();
         var proxy = NPlugProxy(native);
-        Assert.That(ComponentHandlerAbi.IsAvailable, Is.True, "NPlug's handler proxy keeps the native pointer");
-        Assert.That((nint)ComponentHandlerAbi.NativeHandler(proxy), Is.EqualTo((nint)native));
 
         var controller = new DemoSynthController();
         ((IAudioController)controller).SetControllerHandler(proxy);

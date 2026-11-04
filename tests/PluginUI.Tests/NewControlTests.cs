@@ -1,4 +1,4 @@
-// 2026/10/19 17:23:00 UTC - PluginUI
+// 2026/11/04 20:47:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -192,6 +192,7 @@ public class NewControlTests
         var knob = Add(new Knob(p), 10f, 10f, 64f, 84f);
         var service = new MidiLearnService();
         _host.MidiLearn = service;
+        _host.Language = UILanguages.English;   // the default follows the system language ("Apprentissage MIDI" in French)
         Assert.That(_host.GetParameterMenuItems(p).Select(i => i.Text), Is.EqualTo(new[] { "MIDI Learn" }));
 
         _host.DispatchMouseDown(knob.Bounds.Center, MouseButton.Right, 1, ModifierKeys.None);

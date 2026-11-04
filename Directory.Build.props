@@ -1,4 +1,4 @@
-<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- 2026/11/04 20:40:00 UTC - PluginUI -->
 <!-- SPDX-FileCopyrightText: 2026 asm8086 -->
 <!-- SPDX-License-Identifier: MIT -->
 <Project>
@@ -15,7 +15,7 @@
 
   <!-- Version, authorship and package metadata (only PluginUI, PluginUI.Design and PluginUI.NPlug are packed). -->
   <PropertyGroup>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.2.0</VersionPrefix>
     <Authors>asm8086</Authors>
     <Company>asm8086</Company>
     <Product>PluginUI</Product>

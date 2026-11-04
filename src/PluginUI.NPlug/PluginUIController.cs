@@ -1,4 +1,4 @@
-// 2026/10/24 18:46:00 UTC - PluginUI
+// 2026/11/04 20:40:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -88,18 +88,14 @@ public abstract class PluginUIController<TModel> : AudioController<TModel>, IPar
 
     /// <inheritdoc />
     /// <remarks>
-    /// Without a host connection (tests, snapshots, standalone use) changes are kept in the model only. With a host, the
-    /// edits are sent with <c>performEdit</c> through <see cref="ComponentHandlerAbi"/>, which works around an NPlug
-    /// 0.6.1 calling-convention bug on Windows x64.
+    /// Without a host connection (tests, snapshots, standalone use) changes are kept in the model only; with a host,
+    /// NPlug sends the edits with <c>performEdit</c>.
     /// </remarks>
     protected override void OnParameterValueChanged(AudioParameter parameter, bool parameterValueChangedFromHost)
     {
         if (!parameterValueChangedFromHost)
         {
             if (Handler is null) return;
-            // NPlug 0.6.1 passes the value of performEdit in the wrong register on Windows x64 (the host receives 0):
-            // call the host directly when possible (see ComponentHandlerAbi).
-            if (IsEditingParameter(parameter) && ComponentHandlerAbi.TryPerformEdit(Handler, parameter.Id, parameter.NormalizedValue)) return;
         }
         base.OnParameterValueChanged(parameter, parameterValueChangedFromHost);
     }
