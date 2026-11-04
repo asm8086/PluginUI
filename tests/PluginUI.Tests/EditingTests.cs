@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/04 17:52:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -71,6 +71,69 @@ public class EditingTests
         {
             Assert.That(cancelled, Is.True);
             Assert.That(result, Is.EqualTo("123"));
+        });
+    }
+
+    [Test]
+    public void BeginTextEditSelectsTheTextSoThatTypingReplacesIt()
+    {
+        var host = new UIHost(new Canvas(), new Size(300f, 100f));
+        string? result = null;
+        var popup = host.BeginTextEdit(new Rect(10f, 10f, 80f, 20f), "2.40 s", t => result = t);
+        // Focused and selected at once, before the posted actions run.
+        Assert.That(popup.Box.IsFocused, Is.True);
+        Assert.That(popup.Box.SelectedText, Is.EqualTo("2.40 s"));
+        host.DispatchTextInput("3");
+        host.ProcessPostedActions();
+        host.DispatchTextInput(".5");
+        host.DispatchKeyDown(new KeyEventArgs(Key.Enter, ModifierKeys.None));
+        Assert.That(result, Is.EqualTo("3.5"));
+    }
+
+    [Test]
+    public void TheFirstClickIntoAnEditorKeepsTheTextSelected()
+    {
+        var host = new UIHost(new Canvas(), new Size(300f, 100f));
+        string? result = null;
+        var popup = host.BeginTextEdit(new Rect(10f, 10f, 80f, 20f), "2435", t => result = t);
+        host.ProcessPostedActions();
+        host.UpdateLayout();
+        var inside = new Point(popup.Box.Bounds.Right - 4f, popup.Box.Bounds.Center.Y);
+
+        // A click into the box (to make sure it has the keyboard) must not drop the selection...
+        host.DispatchMouseDown(inside, MouseButton.Left, 1, ModifierKeys.None);
+        host.DispatchMouseUp(inside, MouseButton.Left, ModifierKeys.None);
+        Assert.That(popup.Box.SelectedText, Is.EqualTo("2435"));
+        // ...the next one places the caret.
+        host.DispatchMouseDown(inside, MouseButton.Left, 1, ModifierKeys.None);
+        host.DispatchMouseUp(inside, MouseButton.Left, ModifierKeys.None);
+        Assert.That(popup.Box.SelectionLength, Is.Zero);
+
+        host.DispatchKeyDown(new KeyEventArgs(Key.A, ModifierKeys.Control));
+        host.DispatchTextInput("100");
+        host.DispatchKeyDown(new KeyEventArgs(Key.Enter, ModifierKeys.None));
+        Assert.That(result, Is.EqualTo("100"));
+    }
+
+    [Test]
+    public void TypingGoesToTheEditorEvenWhenTheFocusIsElsewhere()
+    {
+        var root = new Canvas();
+        var other = new TextBox();
+        other.SetBounds(0f, 60f, 100f, 20f);
+        root.Add(other);
+        var host = new UIHost(root, new Size(300f, 100f));
+        host.UpdateLayout();
+        string? result = null;
+        var popup = host.BeginTextEdit(new Rect(10f, 10f, 80f, 20f), "12", t => result = t);
+        host.Focus(null); // e.g. a gesture moved the focus after the editor opened
+        host.DispatchTextInput("7");
+        host.DispatchKeyDown(new KeyEventArgs(Key.Enter, ModifierKeys.None));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.EqualTo("7"), "focused and selected by the first character, which replaces the text");
+            Assert.That(popup.IsOpen, Is.False);
+            Assert.That(other.Text, Is.Empty);
         });
     }
 

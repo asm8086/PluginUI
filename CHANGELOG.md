@@ -1,4 +1,4 @@
-<!-- 2026/11/04 17:16:00 UTC - PluginUI -->
+<!-- 2026/11/04 17:52:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -53,6 +53,12 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Fixed
 
+- **In-place value editing** (`UIHost.BeginTextEdit`, the text entry of knobs, sliders, value displays, tables and the
+  preset bar): the box is focused and its text selected as soon as it opens, instead of after a posted message, so
+  that the first typed character replaces the value; typing while the focus is still elsewhere goes to the box.
+- **TextBox** with `SelectAllOnFocus`: the click that gives the focus, or the first click after it, keeps the whole
+  text selected instead of placing the caret (the next click places it), so that typing replaces the text; a click
+  into a focused box takes back the Win32 keyboard focus from the DAW.
 - **Edits made in the editor did not reach the processor on Windows x64**: NPlug 0.6.1 calls the host's
   `IComponentHandler::performEdit` with the value declared as `LibVst.ParamValue`, a struct wrapping a `double`. The
   Windows x64 calling convention passes an 8-byte struct in an integer register, while the host reads the `double` from

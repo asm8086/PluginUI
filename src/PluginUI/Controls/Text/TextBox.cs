@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/04 17:52:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -23,6 +23,7 @@ public class TextBox : Control
     private int _anchor;
     private float _scroll;
     private bool _selecting;
+    private bool _selectAllPending;
     private CaretBlinker? _blinker;
     private bool _caretVisible = true;
 
@@ -79,7 +80,11 @@ public class TextBox : Control
     [Category("Behavior")]
     public bool IsSearchBox { get; set; }
 
-    /// <summary>Selects everything when the box receives the focus.</summary>
+    /// <summary>
+    /// Selects everything when the box receives the focus, so that typing replaces the text. The click that gives the
+    /// focus (or the first click after it) keeps the whole text selected instead of placing the caret, as in a browser
+    /// address bar; the next click places the caret.
+    /// </summary>
     [Category("Behavior")]
     public bool SelectAllOnFocus { get; set; }
 
@@ -231,6 +236,17 @@ public class TextBox : Control
             return;
         }
         Focus();
+        // The DAW may own the Win32 keyboard focus even though this box is already focused: take it back.
+        Host?.RequestKeyboardFocus();
+        if (_selectAllPending && e.ClickCount == 1 && !e.Shift)
+        {
+            // First click into a box that selected everything on focus: keep the selection, typing replaces it.
+            _selectAllPending = false;
+            SelectAll();
+            ResetBlink();
+            return;
+        }
+        _selectAllPending = false;
         int index = IndexAt(e.Position);
         if (e.ClickCount == 2)
         {
@@ -278,7 +294,11 @@ public class TextBox : Control
     {
         base.OnGotFocus();
         Host?.RequestKeyboardFocus();
-        if (SelectAllOnFocus) SelectAll();
+        if (SelectAllOnFocus)
+        {
+            SelectAll();
+            _selectAllPending = true;
+        }
         _blinker ??= new CaretBlinker(this);
         ResetBlink();
         Host?.AddTicker(_blinker);
@@ -289,6 +309,7 @@ public class TextBox : Control
     {
         base.OnLostFocus();
         if (_blinker is not null) Host?.RemoveTicker(_blinker);
+        _selectAllPending = false;
         _anchor = _caret;
         if (CommitOnFocusLost) Committed?.Invoke(this, _text);
     }
@@ -329,6 +350,7 @@ public class TextBox : Control
         if (e.Handled) return;
         bool shift = e.Shift, ctrl = e.Control;
         e.Handled = true;
+        _selectAllPending = false;
         switch (e.Key)
         {
             case Key.Left: MoveCaret(ctrl ? WordLeft(_caret) : (SelectionLength > 0 && !shift ? SelectionStart : _caret - 1), shift); break;
@@ -378,6 +400,7 @@ public class TextBox : Control
         base.OnTextInput(e);
         if (e.Handled || IsReadOnly) return;
         e.Handled = true;
+        _selectAllPending = false;
         foreach (char c in e.Text)
         {
             if (char.IsControl(c)) return;
@@ -467,7 +490,24 @@ public sealed class TextEditPopup : Popup
     protected override void OnAttached()
     {
         base.OnAttached();
+        // Focused at once by UIHost.BeginTextEdit (children are attached after this call), and again once posted, in
+        // case the gesture that opened the editor moved the focus.
         Host!.Post(() => Box.Focus());
+    }
+
+    /// <summary>Typing while the focus is elsewhere (e.g. still on the control that opened the editor) goes to the box.</summary>
+    protected internal override void OnTextInput(TextInputEventArgs e)
+    {
+        base.OnTextInput(e);
+        if (e.Handled || Box.IsFocused || !Box.Focus()) return;
+        Box.OnTextInput(e);
+    }
+
+    /// <summary>Keys pressed while the focus is elsewhere go to the box (Enter commits, Escape cancels).</summary>
+    protected internal override void OnKeyDown(KeyEventArgs e)
+    {
+        if (!e.Handled && !Box.IsFocused && Box.Focus()) Box.OnKeyDown(e);
+        base.OnKeyDown(e);
     }
 
     private void Finish(string? text)
@@ -553,6 +593,9 @@ public sealed partial class UIHost
         ArgumentNullException.ThrowIfNull(tryCommit);
         var popup = new TextEditPopup(bounds, text ?? string.Empty, style, tryCommit, cancel, filter);
         ShowPopup(popup);
+        // Focus (and select) at once: the first typed character must already replace the text, even when the DAW
+        // delivers the posted messages late.
+        popup.Box.Focus();
         return popup;
     }
 }
