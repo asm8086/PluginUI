@@ -488,7 +488,29 @@ public class DesktopTests
     }
 
     [Test]
-    public void DesktopApplicationSavesItsState()
+    public void DesktopApplicationSavesItsState() => OnThread(ApartmentState.STA, SavesItsState);
+
+    /// <summary>Runs on a thread of the given apartment on Windows (like a [STAThread] Main); directly elsewhere.</summary>
+    internal static void OnThread(ApartmentState apartment, Action body)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            body();
+            return;
+        }
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try { body(); }
+            catch (Exception ex) { failure = ex; }
+        });
+        thread.SetApartmentState(apartment);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+    }
+
+    private static void SavesItsState()
     {
         string dir = Path.Combine(Path.GetTempPath(), "pluginui-app-" + Guid.NewGuid().ToString("N"));
         try
@@ -508,6 +530,22 @@ public class DesktopTests
         {
             if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
         }
+    }
+}
+
+public class DesktopApplicationApartmentTests
+{
+    [Test]
+    public void DesktopApplicationRefusesAMultithreadedApartmentOnWindows()
+    {
+        if (!OperatingSystem.IsWindows()) Assert.Ignore("Apartments exist on Windows only.");
+        Exception? thrown = null;
+        DesktopTests.OnThread(ApartmentState.MTA, () =>
+        {
+            try { _ = new DesktopApplication("Test App", dataFolder: Path.GetTempPath()); }
+            catch (InvalidOperationException ex) { thrown = ex; }
+        });
+        Assert.That(thrown?.Message, Does.Contain("STAThread"));
     }
 }
 

@@ -71,7 +71,7 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer : application de bureau (IL ou NativeAOT) construite avec PluginUI.Desktop
 ├── samples/Designs/                Designs d'exemple (.pluginui), dont la disposition de DemoSynth
-├── tests/PluginUI.Tests/           161 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau)
+├── tests/PluginUI.Tests/           162 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau)
 ├── tests/PluginUI.NPlug.Tests/     25 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
 └── tests/PluginUI.Design.Tests/    25 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
 ```
