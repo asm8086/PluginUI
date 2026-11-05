@@ -1,4 +1,4 @@
-<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
+<!-- 2026/11/05 22:35:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -49,7 +49,7 @@ PluginUI/
 │   │   ├── Layout/                 Canvas, StackPanel, Grid, WrapPanel, DockPanel, UniformGrid, Border
 │   │   ├── Hosting/                UIHost (fenêtre, entrées, DPI, popups, minuteurs), Popup, MenuPopup,
 │   │   │                           LiveEditor, StandaloneWindow
-│   │   ├── Parameters/             IParameter, LocalParameter (lin., log., puissance, listes)
+│   │   ├── Parameters/             IParameter, LocalParameter (lin., log., puissance, listes), MappedParameter, BandCenterParameter
 │   │   ├── Localization/           UIStrings (textes de l'interface en anglais / français), UILanguages
 │   │   ├── Theming/                Theme, Palette, Typography, Metrics, VectorStyle
 │   │   ├── Skins/                  Film-strip, images par état, SVG, neuf-tranches, délégué
@@ -71,8 +71,8 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer : application de bureau (IL ou NativeAOT) construite avec PluginUI.Desktop
 ├── samples/Designs/                Designs d'exemple (.pluginui), dont la disposition de DemoSynth
-├── tests/PluginUI.Tests/           165 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau)
-├── tests/PluginUI.NPlug.Tests/     25 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
+├── tests/PluginUI.Tests/           174 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau)
+├── tests/PluginUI.NPlug.Tests/     29 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
 └── tests/PluginUI.Design.Tests/    26 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
 ```
 

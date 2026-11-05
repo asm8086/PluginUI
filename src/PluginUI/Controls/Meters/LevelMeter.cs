@@ -1,4 +1,4 @@
-// 2026/10/19 17:23:00 UTC - PluginUI
+// 2026/11/05 22:35:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -83,6 +83,13 @@ public class LevelMeter : Control
     /// <summary>Unit of the values passed to <see cref="SetLevels"/>.</summary>
     [Category("Text")]
     public LevelUnit InputUnit { get; set; } = LevelUnit.Linear;
+
+    /// <summary>
+    /// Conversion of linear inputs (<see cref="LevelUnit.Linear"/>, <see cref="Sources"/>) to the dB scale:
+    /// 20·log10 by default, or 6·log2 (exactly 6 dB per factor of two).
+    /// </summary>
+    [Category("Text")]
+    public DecibelConvention DecibelConvention { get; set; } = DecibelConvention.TwentyLog10;
 
     /// <summary>Number of channels.</summary>
     [Category("Data")]
@@ -243,10 +250,14 @@ public class LevelMeter : Control
     {
         if (Mode == MeterMode.GainReduction)
         {
-            return InputUnit == LevelUnit.Decibels ? MathF.Abs(v) : -Decibels.FromGain(MathF.Max(1e-6f, MathF.Abs(v)));
+            return InputUnit == LevelUnit.Decibels ? MathF.Abs(v) : -GainToDb(MathF.Max(1e-6f, MathF.Abs(v)), -120f);
         }
-        return InputUnit == LevelUnit.Decibels ? v : Decibels.FromGain(MathF.Abs(v), -200f);
+        return InputUnit == LevelUnit.Decibels ? v : GainToDb(MathF.Abs(v), -200f);
     }
+
+    private float GainToDb(float gain, float floorDb) => DecibelConvention == DecibelConvention.SixLog2
+        ? (gain <= 0f ? floorDb : MathF.Max(floorDb, 6f * MathF.Log2(gain)))
+        : Decibels.FromGain(gain, floorDb);
 
     private void SetInputs(ReadOnlySpan<float> levels, float[] inputs, LevelBallistics[] ballistics, bool checkClip)
     {

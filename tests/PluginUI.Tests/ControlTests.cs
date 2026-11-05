@@ -234,6 +234,15 @@ public class ControlTests
         var meter = Add(new LevelMeter { ChannelCount = 1, Sources = [peak] }, 0f, 0f, 20f, 100f);
         peak.Push(1f);
         _host.StepFrame(0.016);
-        Assert.That(meter, Is.Not.Null);
+        Assert.That(meter.GetDisplayedLevel(0), Is.EqualTo(0f).Within(1e-4f));
+    }
+
+    [TestCase(DecibelConvention.TwentyLog10, -6.0206f)]
+    [TestCase(DecibelConvention.SixLog2, -6f)]
+    public void LevelMeterUsesItsDecibelConvention(DecibelConvention convention, float halfDb)
+    {
+        var meter = Add(new LevelMeter { ChannelCount = 1, DecibelConvention = convention }, 0f, 0f, 20f, 100f);
+        meter.SetLevels(0.5f);
+        Assert.That(meter.GetDisplayedLevel(0), Is.EqualTo(halfDb).Within(1e-3f));
     }
 }

@@ -233,6 +233,10 @@ public class BridgeTests
             Assert.That(PluginEditorView.MapKey(0, 55), Is.EqualTo(Key.Control));
             Assert.That(PluginEditorView.MapKey(0, 56), Is.EqualTo(Key.Alt));
             Assert.That(PluginEditorView.MapKey(0, 57), Is.EqualTo(Key.None), "KEY_EQUALS without a character");
+            Assert.That(PluginEditorView.MapKey(0x16, 0), Is.EqualTo(Key.V), "Ctrl+V as its control character");
+            Assert.That(PluginEditorView.MapKey(0x03, 0), Is.EqualTo(Key.C));
+            Assert.That(PluginEditorView.MapKey(13, 0), Is.EqualTo(Key.Enter));
+            Assert.That(PluginEditorView.MapKey('v', 0), Is.EqualTo(Key.V));
             Assert.That(PluginEditorView.MapKey('a', 0), Is.EqualTo(Key.A));
         });
     }

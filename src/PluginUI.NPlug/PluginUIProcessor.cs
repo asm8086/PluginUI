@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 22:59:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -83,10 +83,26 @@ public abstract class PluginUIProcessor<TModel> : AudioProcessor<TModel>
     protected bool TryConsumeStateRestored() => Interlocked.Exchange(ref _stateRestored, 0) != 0;
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Tolerant of states written by other versions (<see cref="ModelState.Load"/>): parameters appended since take
+    /// their default value, then <see cref="UpgradeState"/> runs.
+    /// </remarks>
     protected override void RestoreState(PortableBinaryReader reader)
     {
-        base.RestoreState(reader);
+        int stored = ModelState.Load(Model, reader);
+        if (stored > 0 && stored < Model.ParameterCount) UpgradeState(stored);
         Volatile.Write(ref _stateRestored, 1);
+    }
+
+    /// <summary>
+    /// Called after loading a state that held fewer parameters than the model (written by an older version, before
+    /// parameters were appended): those parameters have their default value; override to give them the value that
+    /// reproduces the older behavior. The controller has the same hook (<see cref="PluginUIController{TModel}.UpgradeState"/>):
+    /// both should apply the same rule, typically a method of the model.
+    /// </summary>
+    /// <param name="storedParameterCount">Number of parameter values found in the state.</param>
+    protected virtual void UpgradeState(int storedParameterCount)
+    {
     }
 
     /// <inheritdoc />

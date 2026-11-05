@@ -1,4 +1,4 @@
-// 2026/11/04 20:40:00 UTC - PluginUI
+// 2026/11/05 22:59:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -131,6 +131,26 @@ public abstract class PluginUIController<TModel> : AudioController<TModel>, IPar
             return;
         }
         base.OnMessage(message);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Tolerant of states written by other versions (<see cref="ModelState.Load"/>): parameters appended since take
+    /// their default value, then <see cref="UpgradeState"/> runs.
+    /// </remarks>
+    protected override void RestoreComponentState(PortableBinaryReader reader)
+    {
+        int stored = ModelState.Load(Model, reader);
+        if (stored > 0 && stored < Model.ParameterCount) UpgradeState(stored);
+    }
+
+    /// <summary>
+    /// Called after loading a component state that held fewer parameters than the model (written by an older
+    /// version): same rule as <see cref="PluginUIProcessor{TModel}.UpgradeState"/> of the processor.
+    /// </summary>
+    /// <param name="storedParameterCount">Number of parameter values found in the state.</param>
+    protected virtual void UpgradeState(int storedParameterCount)
+    {
     }
 
     /// <inheritdoc />

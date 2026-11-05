@@ -88,6 +88,17 @@ public sealed class ResponseCurve
 
     /// <summary>Opacity of the area between the curve and the left-axis zero (0 = no fill). Left-axis curves only.</summary>
     public float FillOpacity { get; set; }
+
+    /// <summary>
+    /// Optional smallest and largest values over a frequency interval [f1, f2] in Hz (left-axis curves). When set, each
+    /// pixel column shows the whole range of the curve over the frequencies it covers instead of one sample: a curve
+    /// with more detail than pixels (a comb with hundreds of teeth) is drawn as its exact envelope, without aliasing.
+    /// <see cref="Evaluate"/> still gives the value at one frequency (fill, hit tests).
+    /// </summary>
+    public Func<double, double, (double Min, double Max)>? EvaluateRange { get; set; }
+
+    /// <summary>Opacity of the area between the two envelopes of a range curve (<see cref="EvaluateRange"/>).</summary>
+    public float RangeFillOpacity { get; set; } = 0.6f;
 }
 
 /// <summary>
@@ -96,8 +107,9 @@ public sealed class ResponseCurve
 /// <remarks>
 /// <para>A node has either one frequency (<see cref="FrequencyParameter"/> / <see cref="Frequency"/>) or, when
 /// <see cref="UsesBandEdges"/> is set, two band edges (<see cref="LowFrequencyParameter"/>,
-/// <see cref="HighFrequencyParameter"/>): it then sits at their geometric centre, dragging it shifts both edges with a
-/// constant ratio, the wheel changes the ratio around the centre and two small handles move each edge alone.</para>
+/// <see cref="HighFrequencyParameter"/>): it then sits at their centre (<see cref="BandCenter"/>: geometric by default),
+/// dragging it shifts both edges with a constant ratio, the wheel changes the ratio around the centre and two small
+/// handles move each edge alone.</para>
 /// <para>The vertical position is <see cref="Value"/> on the left axis; it is draggable only when
 /// <see cref="IsValueEditable"/> is set (a gain), otherwise the node stays at <see cref="Value"/> (0 dB by default).</para>
 /// <para>Parameter values are read with <see cref="IParameter.ToPlain"/> (Hz, dB) and written inside edit gestures.</para>
@@ -120,6 +132,15 @@ public sealed class ResponseNode
 
     /// <summary>The node is defined by two band edges instead of one frequency.</summary>
     public bool UsesBandEdges { get; set; }
+
+    /// <summary>
+    /// Centre of the band edges (<see cref="BandCenters.Geometric"/> when <c>null</c>); <see cref="BandCenters.Bilinear"/>
+    /// puts the node on the peak of bilinear band designs.
+    /// </summary>
+    public IBandCenter? BandCenter { get; set; }
+
+    /// <summary>The centre rule in use.</summary>
+    internal IBandCenter Centers => BandCenter ?? BandCenters.Geometric;
 
     /// <summary>Frequency parameter (plain value in Hz), or <c>null</c>.</summary>
     public IParameter? FrequencyParameter { get; set; }
@@ -148,10 +169,10 @@ public sealed class ResponseNode
     /// <summary>Free user data.</summary>
     public object? Tag { get; set; }
 
-    /// <summary>Frequency in Hz: the geometric centre of the band edges when <see cref="UsesBandEdges"/> is set.</summary>
+    /// <summary>Frequency in Hz: the centre of the band edges (<see cref="BandCenter"/>) when <see cref="UsesBandEdges"/> is set.</summary>
     public double Frequency
     {
-        get => UsesBandEdges ? Math.Sqrt(LowFrequency * HighFrequency) : Read(FrequencyParameter, _frequency);
+        get => UsesBandEdges ? Centers.Center(LowFrequency, HighFrequency) : Read(FrequencyParameter, _frequency);
         set { if (FrequencyParameter is { } p) Write(p, value); else _frequency = value; }
     }
 
@@ -695,6 +716,12 @@ public class FrequencyResponseView : Control
                 dc.FillPolygon(fill, curve.Color.WithAlpha(curve.FillOpacity));
             }
 
+            if (curve.Axis == ResponseAxis.Left && curve.EvaluateRange is { } range)
+            {
+                DrawRangeCurve(dc, area, freqs, range, curve);
+                continue;
+            }
+
             int count = 0;
             for (int i = 0; i <= columns; i++)
             {
@@ -723,6 +750,51 @@ public class FrequencyResponseView : Control
             dc.DrawText(text, new Rect(area.X + 40f, area.Y + 3f, area.Width - 90f, 13f),
                 Theme.Typography.Small with { Size = 10f, Align = HorizontalAlignment.Center }, Nodes[show].Color.Lighten(0.2f));
         }
+    }
+
+    // Envelope of a range curve: per column, the extremes over the frequencies between the neighbouring column centres;
+    // the area between the upper and the lower envelope is filled, both are stroked (they merge where the curve is
+    // smooth at the pixel scale).
+    private void DrawRangeCurve(DrawingContext dc, Rect area, double[] freqs, Func<double, double, (double Min, double Max)> range, ResponseCurve curve)
+    {
+        int columns = freqs.Length - 1;
+        var upper = new Point[columns + 1];
+        var lower = new Point[columns + 1];
+        double span = LeftMax - LeftMin;
+        int start = 0, count = 0;
+        for (int c = 0; c <= columns; c++)
+        {
+            double fa = c == 0 ? freqs[0] : 0.5 * (freqs[c - 1] + freqs[c]);
+            double fb = c == columns ? freqs[c] : 0.5 * (freqs[c] + freqs[c + 1]);
+            var (min, max) = range(Math.Min(fa, fb), Math.Max(fa, fb));
+            if (!double.IsFinite(min) || !double.IsFinite(max))
+            {
+                FlushRange(dc, upper, lower, start, count, curve);
+                start = c + 1;
+                count = 0;
+                continue;
+            }
+            float x = area.X + area.Width * c / columns;
+            upper[c] = new Point(x, LeftToY(Math.Clamp(Math.Max(min, max), LeftMin - span, LeftMax + span), area));
+            lower[c] = new Point(x, LeftToY(Math.Clamp(Math.Min(min, max), LeftMin - span, LeftMax + span), area));
+            count++;
+        }
+        FlushRange(dc, upper, lower, start, count, curve);
+    }
+
+    private static void FlushRange(DrawingContext dc, Point[] upper, Point[] lower, int start, int count, ResponseCurve curve)
+    {
+        if (count < 2) return;
+        var outline = new Point[2 * count];
+        for (int i = 0; i < count; i++)
+        {
+            outline[i] = upper[start + i];
+            outline[2 * count - 1 - i] = lower[start + i];
+        }
+        if (curve.RangeFillOpacity > 0f) dc.FillPolygon(outline, curve.Color.WithAlpha(curve.RangeFillOpacity));
+        var style = curve.Stroke ?? StrokeStyle.Round;
+        dc.DrawPolyline(upper.AsSpan(start, count), curve.Color, curve.Thickness, style);
+        dc.DrawPolyline(lower.AsSpan(start, count), curve.Color, curve.Thickness, style);
     }
 
     private static void Flush(DrawingContext dc, Point[] points, ref int count, ResponseCurve curve)
@@ -1003,8 +1075,7 @@ public class FrequencyResponseView : Control
         if (node.UsesBandEdges)
         {
             double ratio = Math.Max(MinBandRatio, node.HighFrequency / Math.Max(1e-9, node.LowFrequency));
-            double half = Math.Sqrt(ratio);
-            double low = centre / half, high = centre * half;
+            var (low, high) = node.Centers.Edges(centre, ratio);
             double minF = Math.Max(1.0, AxisMinFrequency), maxF = AxisMaxFrequency;
             if (low < minF) { low = minF; high = low * ratio; }
             if (high > maxF) { high = maxF; low = high / ratio; }
@@ -1098,9 +1169,9 @@ public class FrequencyResponseView : Control
             double ratio = node.HighFrequency / Math.Max(1e-9, node.LowFrequency);
             double factor = Math.Pow(e.Shift ? 1.02 : 1.12, -e.WheelDelta);
             double newRatio = Math.Clamp(ratio * factor, MinBandRatio, MaxBandRatio);
-            double centre = node.Frequency, half = Math.Sqrt(newRatio);
-            double low = Math.Max(Math.Max(1.0, AxisMinFrequency), centre / half);
-            double high = Math.Min(AxisMaxFrequency, centre * half);
+            var (low, high) = node.Centers.Edges(node.Frequency, newRatio);
+            low = Math.Max(Math.Max(1.0, AxisMinFrequency), low);
+            high = Math.Min(AxisMaxFrequency, high);
             Gesture(node.LowFrequencyParameter, node.HighFrequencyParameter, () => { node.LowFrequency = low; node.HighFrequency = high; });
         }
         else if (node.WheelParameter is { } wp)

@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 22:35:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -11,10 +11,19 @@ namespace PluginUI;
 /// <summary>Unicode text clipboard (UI thread).</summary>
 public static unsafe class Clipboard
 {
+    // Tests: an in-process clipboard instead of the Windows one.
+    internal static bool UseTestStore;
+    internal static string? TestText;
+
     /// <summary>Replaces the clipboard content with <paramref name="text"/>. Returns <c>false</c> if the clipboard is busy.</summary>
     public static bool SetText(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
+        if (UseTestStore)
+        {
+            TestText = text;
+            return true;
+        }
         // EmptyClipboard with a NULL owner makes SetClipboardData fail: own it through a message-only window.
         HWND owner = CreateOwnerWindow();
         if (!Open(owner))
@@ -66,6 +75,7 @@ public static unsafe class Clipboard
     /// <summary>Clipboard text, or null if there is none.</summary>
     public static string? GetText()
     {
+        if (UseTestStore) return TestText;
         if (IsClipboardFormatAvailable(Win32.CF_UNICODETEXT) == BOOL.FALSE || !Open(HWND.NULL)) return null;
         try
         {
@@ -90,7 +100,7 @@ public static unsafe class Clipboard
     }
 
     /// <summary><c>true</c> if the clipboard holds text.</summary>
-    public static bool ContainsText => IsClipboardFormatAvailable(Win32.CF_UNICODETEXT) != BOOL.FALSE;
+    public static bool ContainsText => UseTestStore ? TestText is not null : IsClipboardFormatAvailable(Win32.CF_UNICODETEXT) != BOOL.FALSE;
 
     private static bool Open(HWND owner)
     {

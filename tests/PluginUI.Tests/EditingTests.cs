@@ -75,6 +75,54 @@ public class EditingTests
     }
 
     [Test]
+    public void ValueEditorsPasteWithTheKeyboardAndTheEditMenu()
+    {
+        Clipboard.UseTestStore = true;
+        try
+        {
+            var host = new UIHost(new Canvas(), new Size(300f, 100f));
+            string? result = null;
+            Clipboard.TestText = "440.5";
+            var popup = host.BeginTextEdit(new Rect(10f, 10f, 80f, 20f), "1000", t => result = t, filter: c => char.IsDigit(c) || c == '.');
+            host.ProcessPostedActions();
+            host.DispatchKeyDown(new KeyEventArgs(Key.V, ModifierKeys.Control));
+            Assert.That(popup.Box.Text, Is.EqualTo("440.5"), "Ctrl+V replaces the selected text");
+            host.DispatchKeyDown(new KeyEventArgs(Key.A, ModifierKeys.Control));
+            host.DispatchKeyDown(new KeyEventArgs(Key.C, ModifierKeys.Control));
+            Clipboard.TestText = "12";
+            host.DispatchKeyDown(new KeyEventArgs(Key.A, ModifierKeys.Control));
+            host.DispatchKeyDown(new KeyEventArgs(Key.Insert, ModifierKeys.Shift));
+            Assert.That(popup.Box.Text, Is.EqualTo("12"), "Shift+Insert");
+
+            // Right click: the edit menu opens over the editor, which stays open; Paste and Enter commit.
+            host.UpdateLayout();
+            var at = popup.Box.Bounds.Center;
+            host.DispatchMouseDown(at, MouseButton.Right, 1, ModifierKeys.None);
+            host.DispatchMouseUp(at, MouseButton.Right, ModifierKeys.None);
+            var menu = popup.Box.ContextMenu!;
+            Assert.Multiple(() =>
+            {
+                Assert.That(popup.IsOpen, Is.True, "the editor survives the menu");
+                Assert.That(host.Popups.Count(), Is.GreaterThanOrEqualTo(2), "menu shown");
+                Assert.That(menu.Select(i => i.IsSeparator ? "-" : i.DisplayText), Is.EqualTo(new[] { "Cut", "Copy", "Paste", "Delete", "-", "Select All" }));
+                Assert.That(menu[2].IsEnabled, Is.True);
+            });
+            host.DispatchKeyDown(new KeyEventArgs(Key.Escape, ModifierKeys.None));   // closes the menu only
+            Assert.That(popup.IsOpen, Is.True);
+            Clipboard.TestText = "2,5 kHz";   // filtered by the editor: digits and points only
+            popup.Box.SelectAll();
+            menu[2].Action!();
+            host.DispatchKeyDown(new KeyEventArgs(Key.Enter, ModifierKeys.None));
+            Assert.That(result, Is.EqualTo("25"));
+        }
+        finally
+        {
+            Clipboard.UseTestStore = false;
+            Clipboard.TestText = null;
+        }
+    }
+
+    [Test]
     public void BeginTextEditSelectsTheTextSoThatTypingReplacesIt()
     {
         var host = new UIHost(new Canvas(), new Size(300f, 100f));

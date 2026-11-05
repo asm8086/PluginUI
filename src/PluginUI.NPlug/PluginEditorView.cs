@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 22:35:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -437,6 +437,15 @@ public abstract class PluginEditorView : IAudioPluginView, IDisposable
             case 54: return Key.Shift;    // KEY_SHIFT
             case 55: return Key.Control;  // KEY_CONTROL
             case 56: return Key.Alt;      // KEY_ALT
+        }
+        // Ctrl+letter may come as its control character (Ctrl+V = 0x16), as Windows translates it.
+        switch (character)
+        {
+            case 8: return Key.Back;
+            case 9: return Key.Tab;
+            case 10 or 13: return Key.Enter;
+            case 27: return Key.Escape;
+            case >= 1 and <= 26: return (Key)('A' + character - 1);
         }
         if (character is >= 'a' and <= 'z') return (Key)(character - 'a' + 'A');
         if (character is >= 'A' and <= 'Z' or >= '0' and <= '9') return (Key)character;

@@ -1,4 +1,4 @@
-// 2026/11/05 15:08:00 UTC - PluginUI
+// 2026/11/05 22:35:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -91,6 +91,10 @@ public sealed record UIStrings
         RedoPlain = "&Rétablir",
         MenuFile = "&Fichier",
         MenuEdit = "&Edition",
+        EditCut = "Co&uper",
+        EditCopy = "&Copier",
+        EditPaste = "C&oller",
+        EditSelectAll = "&Tout sélectionner",
         MenuView = "&Affichage",
         MenuHelp = "&Aide",
         MenuNew = "&Nouveau",
@@ -258,6 +262,18 @@ public sealed record UIStrings
 
     /// <summary>Edit menu title.</summary>
     public string MenuEdit { get; init; } = "&Edit";
+
+    /// <summary>Edit / Cut (menus of the text boxes).</summary>
+    public string EditCut { get; init; } = "Cu&t";
+
+    /// <summary>Edit / Copy.</summary>
+    public string EditCopy { get; init; } = "&Copy";
+
+    /// <summary>Edit / Paste.</summary>
+    public string EditPaste { get; init; } = "&Paste";
+
+    /// <summary>Edit / Select All.</summary>
+    public string EditSelectAll { get; init; } = "Select &All";
 
     /// <summary>View menu title.</summary>
     public string MenuView { get; init; } = "&View";

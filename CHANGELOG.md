@@ -1,4 +1,4 @@
-<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
+<!-- 2026/11/05 22:35:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -54,6 +54,27 @@ Before 1.0, minor versions may contain breaking changes.
 - **Project creation**: new kind `ScaffoldKind.DesktopApplication` (PluginUIEditor: *Desktop application*): menu bar,
   tool bar, status bar, documents saving the parameter values of the design, undo, recent files, settings.
 
+- **MappedParameter**: a view of an `IParameter` through a normalized remapping, optionally driving linked parameters
+  in the same gesture (`Link`). `MappedParameter.Ranges(inner, (min, max), …)`: a knob covering several ranges end to
+  end, skipping the gaps (for instance a feedback restricted to 0.5 ≤ |FB| ≤ 0.999). The host still sees the inner
+  parameter only.
+- **BandCenterParameter** and **IBandCenter** / **BandCenters**: the centre of a band given by two edge parameters as
+  a parameter of its own (a CENTER knob moves both edges with their ratio, kept for the whole gesture);
+  `BandCenters.Geometric` and `BandCenters.Bilinear(sampleRate)` (peak of the bilinear band designs, cos ω0 =
+  cos((ω1 + ω2)/2)/cos((ω2 − ω1)/2)). `ResponseNode.BandCenter` puts a band node on that centre.
+- **ResponseCurve.EvaluateRange**: optional smallest and largest values over the frequencies of each pixel column;
+  the view fills the area between the two envelopes, so a curve with more detail than pixels (a comb with hundreds
+  of teeth) is drawn without aliasing. `RangeFillOpacity`.
+- **LevelMeter.DecibelConvention**: 20·log10 (default) or 6·log2 for linear inputs and sources.
+- **TextBox** edit menu on a right click (Cut, Copy, Paste, Delete, Select All, in English and French;
+  `ShowsEditMenu`), `Copy`, `Cut`, `Paste` methods, Ctrl+Insert, Shift+Insert and Shift+Delete. `UIStrings.EditCut`,
+  `EditCopy`, `EditPaste`, `EditSelectAll`.
+- **ModelState.Load** (PluginUI.NPlug): loads a model state written by another version. NPlug refuses a state with
+  fewer values than parameters (every preset and project saved before parameters were appended); here the appended
+  parameters take their default value, extra values are ignored, corrupted values are repaired. `PluginUIProcessor`
+  and `PluginUIController` use it, with an `UpgradeState(storedParameterCount)` hook to restore the behavior of the
+  older version.
+
 ### Changed
 
 - **Project creation**: the standalone application template has an `[STAThread]` `Main` and an `app.manifest`
@@ -66,6 +87,8 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Fixed
 
+- **Paste in value editors inside a DAW**: hosts that send Ctrl+letter to `IPlugView::onKeyDown` as its control
+  character (Ctrl+V = 0x16) now reach the text box (`PluginEditorView.MapKey`); before, the key went back to the DAW.
 - **MenuPopup**: a menu opened with an entry highlighted before its first layout no longer starts scrolled.
 
 ## [0.2.0] - 2026-11-04

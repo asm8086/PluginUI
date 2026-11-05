@@ -1,4 +1,4 @@
-// 2026/11/04 17:52:00 UTC - PluginUI
+// 2026/11/05 22:35:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -223,11 +223,69 @@ public class TextBox : Control
 
     private int IndexAt(Point p) => TextMeasurer.HitTest(_text, EffectiveTextStyle, p.X - TextArea.X + _scroll);
 
+    /// <summary>
+    /// Shows the edit menu (Cut, Copy, Paste, Delete, Select All) on a right click when no <see cref="UIElement.ContextMenu"/>
+    /// is set (default <c>true</c>).
+    /// </summary>
+    [Category("Behavior")]
+    public bool ShowsEditMenu { get; set; } = true;
+
+    private bool _ownsMenu;
+
+    /// <summary>Copies the selection to the clipboard.</summary>
+    public void Copy()
+    {
+        if (SelectionLength > 0) Clipboard.SetText(SelectedText);
+    }
+
+    /// <summary>Moves the selection to the clipboard.</summary>
+    public void Cut()
+    {
+        if (SelectionLength == 0 || IsReadOnly) return;
+        Clipboard.SetText(SelectedText);
+        ReplaceSelection(string.Empty);
+    }
+
+    /// <summary>Replaces the selection with the clipboard text (on one line).</summary>
+    public void Paste()
+    {
+        if (!IsReadOnly && Clipboard.GetText() is { } paste) Insert(paste.Replace("\r", string.Empty).Replace('\n', ' '));
+    }
+
+    // Built at each right click: the enabled states follow the selection and the clipboard.
+    private List<MenuItem> EditMenu()
+    {
+        var strings = Host?.Strings ?? UIStrings.English;
+        bool selection = SelectionLength > 0;
+        return
+        [
+            new MenuItem(strings.EditCut, () => { Cut(); Focus(); }) { IsEnabled = selection && !IsReadOnly, ShortcutText = "Ctrl+X" },
+            new MenuItem(strings.EditCopy, () => { Copy(); Focus(); }) { IsEnabled = selection, ShortcutText = "Ctrl+C" },
+            new MenuItem(strings.EditPaste, () => { Paste(); Focus(); }) { IsEnabled = !IsReadOnly && Clipboard.ContainsText, ShortcutText = "Ctrl+V" },
+            new MenuItem(strings.Delete, () => { if (!IsReadOnly) ReplaceSelection(string.Empty); Focus(); }) { IsEnabled = selection && !IsReadOnly, ShortcutText = "Del" },
+            MenuItem.Separator(),
+            new MenuItem(strings.EditSelectAll, () => { SelectAll(); Focus(); }) { IsEnabled = _text.Length > 0, ShortcutText = "Ctrl+A" },
+        ];
+    }
+
     /// <inheritdoc />
     protected internal override void OnMouseDown(MouseEventArgs e)
     {
         base.OnMouseDown(e);
-        if (e.Handled || e.Button != MouseButton.Left) return;
+        if (e.Handled) return;
+        if (e.Button == MouseButton.Right)
+        {
+            // The menu opens on the release (UIHost); the selection is kept, the text it acts on.
+            if (ShowsEditMenu && (ContextMenu is null || _ownsMenu))
+            {
+                ContextMenu = EditMenu();
+                _ownsMenu = true;
+            }
+            _selectAllPending = false;
+            Focus();
+            return;
+        }
+        if (e.Button != MouseButton.Left) return;
         e.Handled = true;
         if (IsSearchBox && _text.Length > 0 && ClearButtonRect.Contains(e.Position) && !IsReadOnly)
         {
@@ -362,20 +420,23 @@ public class TextBox : Control
                 if (SelectionLength == 0) _anchor = ctrl ? WordLeft(_caret) : Math.Max(0, _caret - 1);
                 ReplaceSelection(string.Empty);
                 break;
-            case Key.Delete:
+            case Key.Delete when !shift:
                 if (IsReadOnly) break;
                 if (SelectionLength == 0) _anchor = ctrl ? WordRight(_caret) : Math.Min(_text.Length, _caret + 1);
                 ReplaceSelection(string.Empty);
                 break;
             case Key.A when ctrl: SelectAll(); break;
             case Key.C when ctrl:
-                if (SelectionLength > 0) Clipboard.SetText(SelectedText);
+            case Key.Insert when ctrl:
+                Copy();
                 break;
             case Key.X when ctrl:
-                if (SelectionLength > 0 && !IsReadOnly) { Clipboard.SetText(SelectedText); ReplaceSelection(string.Empty); }
+            case Key.Delete when shift:
+                Cut();
                 break;
             case Key.V when ctrl:
-                if (!IsReadOnly && Clipboard.GetText() is { } paste) Insert(paste.Replace("\r", string.Empty).Replace('\n', ' '));
+            case Key.Insert when shift:
+                Paste();
                 break;
             case Key.Enter:
                 Committed?.Invoke(this, _text);
