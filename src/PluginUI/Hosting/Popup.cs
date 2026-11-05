@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -73,12 +73,16 @@ public class Popup : ContentPanel
     /// <summary>Called after the popup closed (raises <see cref="Closed"/>).</summary>
     protected internal virtual void OnClosed() => Closed?.Invoke(this);
 
+    /// <summary><c>true</c> when the popup was closed by the Escape key (read it in <see cref="Closed"/>).</summary>
+    public bool ClosedByEscape { get; private set; }
+
     /// <summary>Keyboard routed to the popup when <see cref="CapturesKeyboard"/> is set; Escape closes by default.</summary>
     protected internal override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
         if (!e.Handled && e.Key == Key.Escape)
         {
+            ClosedByEscape = true;
             Close();
             e.Handled = true;
         }

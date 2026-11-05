@@ -1,4 +1,4 @@
-<!-- 2026/11/04 20:40:00 UTC - PluginUI -->
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -37,6 +37,7 @@ PluginUI/
 │   ├── CONTROLS.md                 Catalogue des éléments (avec équivalents VSTGUI / iPlug2)
 │   ├── EXTENDING.md                Étendre la bibliothèque : thèmes, habillages, contrôles, conteneurs, popups
 │   ├── EDITOR.md                   Guide du concepteur visuel PluginUIEditor et du format .pluginui
+│   ├── DESKTOP.md                  Applications de bureau avec PluginUI.Desktop (barre de menus, commandes, documents)
 │   └── images/                     Captures (anglais ; françaises dans images/fr/)
 ├── docfx/                          Site de documentation (DocFX) : articles + référence de l'API
 ├── src/
@@ -61,14 +62,17 @@ PluginUI/
 │   │                               MSEG, séquenceur, molettes, A/B, police bitmap, calques)
 │   ├── PluginUI.NPlug/             Adaptateur NPlug (VST3) : PluginEditorView, NPlugParameter, PluginUIController,
 │   │                               PluginUIProcessor (notes de l'éditeur, état partagé), NPlugMidiLearn
-│   └── PluginUI.Design/            Designs .pluginui : document, JSON, registre de types compatible AOT, chargeur,
-│                                   capture, génération de code C#, thèmes, lien de design en direct, création de projets
+│   ├── PluginUI.Design/            Designs .pluginui : document, JSON, registre de types compatible AOT, chargeur,
+│   │                               capture, génération de code C#, thèmes, lien de design en direct, création de projets
+│   └── PluginUI.Desktop/           Applications de bureau : DesktopApplication, DocumentSession, UndoStack,
+│                                   AppSettings (JSON AOT), RecentFiles, MessageDialog
 ├── tools/PluginUIEditor/           Concepteur visuel WinForms (boîte à outils, propriétés, aperçu, code, nouveaux projets)
 ├── samples/PluginUI.Gallery/       Application de démonstration (fenêtre autonome + mode capture PNG)
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
+├── samples/PluginUI.DesktopDemo/   Biquad Designer : application de bureau (IL ou NativeAOT) construite avec PluginUI.Desktop
 ├── samples/Designs/                Designs d'exemple (.pluginui), dont la disposition de DemoSynth
-├── tests/PluginUI.Tests/           136 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception)
-├── tests/PluginUI.NPlug.Tests/     24 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
+├── tests/PluginUI.Tests/           161 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau)
+├── tests/PluginUI.NPlug.Tests/     25 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
 └── tests/PluginUI.Design.Tests/    25 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
 ```
 
@@ -81,7 +85,7 @@ Environ 34 000 lignes de C# pour les bibliothèques. Tous les membres publics on
 - Visual Studio 2026, SDK .NET **10.0.403 ou ultérieur** (imposé par `global.json` : les SDK antérieurs apportent un compilateur NativeAOT et des packs du runtime touchés par l'avis GHSA-p3jp-9v83-76w9).
 - `TerraFX.Interop.Windows` 10.0.26100.6 (NuGet), pour des liaisons Win32 / Direct2D / DirectWrite / WIC sans marshalling, compatibles NativeAOT.
 - `PluginUI.NPlug` uniquement : [NPlug](https://github.com/xoofx/NPlug) 0.6.2 ou ultérieur (paquet NuGet `NPlug`, apporté par `PluginUI.NPlug`).
-- Paquets NuGet : `PluginUI`, `PluginUI.Design` et `PluginUI.NPlug`.
+- Paquets NuGet : `PluginUI`, `PluginUI.Design`, `PluginUI.NPlug` et `PluginUI.Desktop`.
 
 ## Téléchargements
 
@@ -93,6 +97,7 @@ Chaque [version](https://github.com/asm8086/PluginUI/releases) fournit :
 | `…-vst3-x64-v3.zip`, `…-vst3-x64-v2.zip`, `…-vst3-arm64.zip` | Une seule version par bundle, sans chargeur |
 | `PluginUIEditor-<version>-win-x64.zip`, `…-win-arm64.zip` | Le concepteur visuel (nécessite le .NET 10 Desktop Runtime) |
 | `PluginUI.Gallery-<version>-win-x64.zip`, `…-win-arm64.zip` | La galerie, compilée en NativeAOT (aucun runtime nécessaire) |
+| `BiquadDesigner-<version>-win-x64.zip`, `…-win-arm64.zip` | L'application de bureau de démonstration, compilée en NativeAOT (aucun runtime nécessaire) |
 | `*.nupkg`, `SHA256SUMS.txt` | Paquets NuGet (aussi poussés sur nuget.org une fois la publication activée) et sommes de contrôle |
 
 `build/Build-Release.ps1` produit les mêmes fichiers en local ; voir [CONTRIBUTING_FR.md](CONTRIBUTING_FR.md#publication-des-versions).
@@ -175,6 +180,29 @@ StandaloneWindow.EnablePerMonitorDpiAwareness();
 var host = new UIHost(root, new Size(640, 400), SizingMode.ScaleToFit);
 return new StandaloneWindow(host, "Mon application").Run();
 ```
+
+### Application de bureau
+
+PluginUI peut aussi être l'interface complète d'une application Windows, compilée en IL (`dotnet run`, débogage) ou en
+NativeAOT (`dotnet publish -p:PublishAot=true`, un seul `.exe` natif). La bibliothèque de base fournit la barre de menus
+(`MenuBar`, Alt / F10 / lettres soulignées), les commandes et raccourcis (`Command`, `KeyGesture`, `CommandSet`), les
+fenêtres modales (`StandaloneWindow.ShowDialog`), la barre de titre sombre, l'icône et la position mémorisée ; le paquet
+**PluginUI.Desktop** ajoute l'objet application, les documents (Nouveau / Ouvrir / Enregistrer / Enregistrer sous,
+« enregistrer les modifications ? »), annuler / rétablir, les fichiers récents et des réglages JSON sans réflexion.
+
+```csharp
+[STAThread]
+static int Main()
+{
+    var app = new DesktopApplication("Mon outil", company: "Moi");
+    var host = new UIHost(root, new Size(1000, 700), SizingMode.Relayout);
+    return app.Run(new StandaloneWindow(host, app.Name));
+}
+```
+
+Guide : [docs/DESKTOP_FR.md](docs/DESKTOP_FR.md). Exemple : `samples/PluginUI.DesktopDemo` (Biquad Designer).
+
+![Biquad Designer](docs/images/fr/desktop-menu.png)
 
 ## Concepts
 

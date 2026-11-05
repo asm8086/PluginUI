@@ -1,4 +1,4 @@
-# 2026/10/18 16:20:00 UTC - PluginUI
+# 2026/11/05 14:06:00 UTC - PluginUI
 - name: Overview
   href: ../../README.md
 - name: Getting started
@@ -9,8 +9,12 @@
   href: ../../docs/EXTENDING.md
 - name: Visual designer (PluginUIEditor)
   href: ../../docs/EDITOR.md
+- name: Desktop applications (PluginUI.Desktop)
+  href: ../../docs/DESKTOP.md
 - name: Sample instrument (DemoSynth)
   href: ../../samples/PluginUI.DemoSynth/README.md
+- name: Sample desktop application (Biquad Designer)
+  href: ../../samples/PluginUI.DesktopDemo/README.md
 - name: Contributing
   href: ../../CONTRIBUTING.md
 - name: Changelog

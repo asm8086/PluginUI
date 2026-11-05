@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -240,37 +240,86 @@ public sealed class ElementCollection : IList<UIElement>, IReadOnlyList<UIElemen
 /// </summary>
 public sealed class MenuItem
 {
+    private string? _text;
+    private string? _shortcutText;
+    private bool _isChecked;
+    private bool _isEnabled = true;
+
     /// <summary>Creates an entry.</summary>
+    /// <param name="text">Text, with an optional mnemonic ("&amp;Open…"); see <see cref="Mnemonics"/>.</param>
+    /// <param name="action">Action run when the entry is chosen.</param>
     public MenuItem(string text, Action? action = null)
     {
-        Text = text;
+        _text = text;
         Action = action;
     }
 
-    private MenuItem() => Text = string.Empty;
+    /// <summary>Creates an entry that shows and runs a command (text, shortcut, enabled and checked states).</summary>
+    public MenuItem(Command command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        Command = command;
+    }
+
+    private MenuItem() => _text = string.Empty;
 
     /// <summary>A separator line.</summary>
     public static MenuItem Separator() => new() { IsSeparator = true };
 
-    /// <summary>Displayed text.</summary>
+    /// <summary>Displayed text, with an optional '&amp;' mnemonic marker. Defaults to the command text.</summary>
     [Category("Text")]
-    public string Text { get; set; }
+    public string Text
+    {
+        get => _text ?? Command?.Text ?? string.Empty;
+        set => _text = value;
+    }
 
-    /// <summary>Shortcut hint displayed on the right (informative only).</summary>
+    /// <summary>Text without the mnemonic marker.</summary>
+    [Browsable(false)]
+    public string DisplayText => Mnemonics.Strip(Text);
+
+    /// <summary>Mnemonic character in upper case ('\0' if none).</summary>
+    [Browsable(false)]
+    public char Mnemonic => Mnemonics.Get(Text);
+
+    /// <summary>Shortcut hint displayed on the right (informative only). Defaults to the command shortcut.</summary>
     [Category("Text")]
-    public string? ShortcutText { get; set; }
+    public string? ShortcutText
+    {
+        get => _shortcutText ?? Command?.Gesture?.ToString();
+        set => _shortcutText = value;
+    }
 
-    /// <summary>Invoked when the entry is chosen.</summary>
+    /// <summary>Shortcut hint in the language of <paramref name="strings"/> (the command shortcut is localized).</summary>
+    public string? GetShortcutText(UIStrings? strings) => _shortcutText ?? Command?.Gesture?.ToDisplayString(strings);
+
+    /// <summary>Invoked when the entry is chosen (before the command, if any).</summary>
     [Browsable(false)]
     public Action? Action { get; set; }
 
-    /// <summary>Shows a check mark.</summary>
-    [Category("Value")]
-    public bool IsChecked { get; set; }
+    /// <summary>Command shown and run by this entry, or null.</summary>
+    [Browsable(false)]
+    public Command? Command { get; set; }
 
-    /// <summary>Selectable when <c>true</c>.</summary>
+    /// <summary>Shows a check mark. For a checkable command, its state.</summary>
+    [Category("Value")]
+    public bool IsChecked
+    {
+        get => Command is { IsCheckable: true } c ? c.IsChecked : _isChecked;
+        set
+        {
+            if (Command is { IsCheckable: true } c) c.IsChecked = value;
+            else _isChecked = value;
+        }
+    }
+
+    /// <summary>Selectable when <c>true</c> (and when the command, if any, can run).</summary>
     [Category("Behavior")]
-    public bool IsEnabled { get; set; } = true;
+    public bool IsEnabled
+    {
+        get => _isEnabled && (Command?.CanExecute() ?? true);
+        set => _isEnabled = value;
+    }
 
     /// <summary>Separator entry.</summary>
     [Category("Behavior")]
@@ -285,4 +334,14 @@ public sealed class MenuItem
 
     /// <summary><c>true</c> if the entry opens a sub-menu.</summary>
     public bool HasSubmenu => Items.Count > 0;
+
+    /// <summary>Runs the entry as if it were chosen: <see cref="Action"/>, then <see cref="Command"/>.</summary>
+    /// <returns><c>false</c> if the entry is disabled, a separator or a sub-menu.</returns>
+    public bool Invoke()
+    {
+        if (IsSeparator || HasSubmenu || !IsEnabled) return false;
+        Action?.Invoke();
+        Command?.Execute();
+        return true;
+    }
 }

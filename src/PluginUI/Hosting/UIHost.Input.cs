@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -49,6 +49,12 @@ public sealed unsafe partial class UIHost
 
     /// <summary>Raised before a key is dispatched to the focused element (global shortcuts). Set Handled to stop it.</summary>
     public event Action<UIHost, KeyEventArgs>? PreviewKeyDown;
+
+    /// <summary>Raised before a key release is dispatched (menu bars watch the Alt key). Set Handled to stop it.</summary>
+    public event Action<UIHost, KeyEventArgs>? PreviewKeyUp;
+
+    // Incremented on every mouse press: tells a released Alt key apart from an Alt+click.
+    internal int MousePressCount { get; private set; }
 
     /// <summary>Raised when files are dropped where no element accepted them.</summary>
     public event Action<UIHost, FilesDroppedEventArgs>? FilesDropped;
@@ -229,6 +235,7 @@ public sealed unsafe partial class UIHost
     public void DispatchMouseDown(Point p, MouseButton button, int clickCount, ModifierKeys modifiers)
     {
         _lastMouse = p;
+        MousePressCount++;
         HideToolTip();
         _suppressToolTip = true;
         if (TakeFocusOnClick) RequestKeyboardFocus();
@@ -437,6 +444,8 @@ public sealed unsafe partial class UIHost
     /// <summary>Dispatches a key release.</summary>
     public bool DispatchKeyUp(KeyEventArgs e)
     {
+        PreviewKeyUp?.Invoke(this, e);
+        if (e.Handled) return true;
         var start = TopKeyboardPopup() is { } popup && (_focused is null || !popup.IsAncestorOf(_focused)) ? popup : _focused;
         Bubble(start, e, static (el, args) => el.OnKeyUp(args));
         return e.Handled;

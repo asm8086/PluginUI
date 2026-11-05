@@ -1,0 +1,32 @@
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PluginUI.Desktop</RootNamespace>
+    <AssemblyName>PluginUI.Desktop</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
+    <Description>Desktop applications with PluginUI: application object, JSON settings, recent files, undo stack, document session, message dialogs. NativeAOT or IL.</Description>
+    <IsAotCompatible>true</IsAotCompatible>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PluginUI\PluginUI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PluginUI.Tests" />
+  </ItemGroup>
+
+</Project>

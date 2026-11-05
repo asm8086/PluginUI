@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -38,6 +38,15 @@ public class MenuPopup : Popup
     /// <summary>Raised on the root menu when an entry is chosen.</summary>
     public event Action<MenuPopup, MenuItem>? ItemChosen;
 
+    /// <summary>
+    /// Raised on the root menu when Left (-1) or Right (+1) asks for the neighbouring menu of a menu bar: Left in the
+    /// root menu, Right on an entry without sub-menu. Without handler the keys do nothing there.
+    /// </summary>
+    public event Action<MenuPopup, int>? NavigateSibling;
+
+    /// <summary>Underlines the mnemonic characters (menus opened from the keyboard). Sub-menus inherit it.</summary>
+    public bool ShowMnemonics { get; set; }
+
     /// <summary>Index of the highlighted entry (-1 = none).</summary>
     public int HighlightedIndex
     {
@@ -63,8 +72,8 @@ public class MenuPopup : Popup
         {
             if (item.IsSeparator) { height += SeparatorHeight; continue; }
             height += ItemHeight;
-            textWidth = MathF.Max(textWidth, TextMeasurer.Measure(item.Text, ItemStyle).Width);
-            if (item.ShortcutText is { Length: > 0 } s) shortcutWidth = MathF.Max(shortcutWidth, TextMeasurer.Measure(s, ItemStyle).Width + 24f);
+            textWidth = MathF.Max(textWidth, TextMeasurer.Measure(item.DisplayText, ItemStyle).Width);
+            if (item.GetShortcutText(Host?.Strings) is { Length: > 0 } s) shortcutWidth = MathF.Max(shortcutWidth, TextMeasurer.Measure(s, ItemStyle).Width + 24f);
             anySubmenu |= item.HasSubmenu;
         }
         float width = Pad * 2f + CheckColumn + textWidth + shortcutWidth + (anySubmenu ? ArrowColumn : 10f);
@@ -100,7 +109,7 @@ public class MenuPopup : Popup
 
     private void EnsureVisible(int index)
     {
-        if (index < 0) return;
+        if (index < 0 || Bounds.Height <= 0f) return; // not laid out yet: the first layout shows the top
         var r = ItemRect(index);
         if (r.Y < Bounds.Y + Pad) _scroll -= Bounds.Y + Pad - r.Y;
         else if (r.Bottom > Bounds.Bottom - Pad) _scroll += r.Bottom - (Bounds.Bottom - Pad);
@@ -142,8 +151,10 @@ public class MenuPopup : Popup
                 dc.DrawPolyline(tick, highlighted ? p.Text : p.Accent, 1.6f, StrokeStyle.Round);
             }
             var textArea = Rect.FromEdges(ir.X + CheckColumn, ir.Y, ir.Right - (item.HasSubmenu ? ArrowColumn : 6f), ir.Bottom);
-            dc.DrawText(item.Text, textArea, style, color);
-            if (item.ShortcutText is { Length: > 0 } shortcut)
+            string text = Mnemonics.Parse(item.Text, out int mnemonic);
+            dc.DrawText(text, textArea, style, color);
+            if (ShowMnemonics && mnemonic >= 0) DrawMnemonic(dc, TextMeasurer, text, mnemonic, textArea, style, color);
+            if (item.GetShortcutText(Host?.Strings) is { Length: > 0 } shortcut)
             {
                 dc.DrawText(shortcut, textArea, style with { Align = HorizontalAlignment.Right }, !item.IsEnabled ? p.TextDisabled : p.TextDim);
             }
@@ -163,6 +174,23 @@ public class MenuPopup : Popup
             float t = _scroll / MathF.Max(1f, ContentHeight - r.Height);
             dc.FillRoundedRect(new Rect(r.Right - 4f, r.Y + 4f + (trackH - thumbH) * t, 2f, thumbH), 1f, p.TextDim.WithAlpha(0.5f));
         }
+    }
+
+    /// <summary>Underlines character <paramref name="index"/> of a left-aligned, vertically centred single line.</summary>
+    internal static void DrawMnemonic(DrawingContext dc, ITextMeasurer measurer, string text, int index, Rect area, TextStyle style, Color color)
+    {
+        var left = style with { Align = HorizontalAlignment.Left };
+        // Prefix widths rather than caret positions: same result, and robust where hit-testing is approximate.
+        float x0 = index == 0 ? 0f : measurer.Measure(text[..index], left).Width;
+        float x1 = measurer.Measure(text[..(index + 1)], left).Width;
+        float x = style.Align switch
+        {
+            HorizontalAlignment.Center => area.X + (area.Width - measurer.Measure(text, left).Width) * 0.5f,
+            HorizontalAlignment.Right => area.Right - measurer.Measure(text, left).Width,
+            _ => area.X,
+        };
+        float y = MathF.Round(area.Center.Y + style.Size * 0.58f) + 0.5f;
+        dc.DrawLine(new Point(x + x0, y), new Point(x + x1, y), color);
     }
 
     // ---------------------------------------------------------------- mouse
@@ -229,27 +257,41 @@ public class MenuPopup : Popup
                 e.Handled = true;
                 return;
             case Key.Right:
-                if (_highlight >= 0 && Items[_highlight].HasSubmenu) OpenSubmenu(_highlight, focusFirst: true);
+                if (_highlight >= 0 && Items[_highlight].HasSubmenu && Items[_highlight].IsEnabled) OpenSubmenu(_highlight, focusFirst: true);
+                else Root.NavigateSibling?.Invoke(Root, +1);
                 e.Handled = true;
                 return;
             case Key.Left when ParentMenu is not null:
                 Close();
                 e.Handled = true;
                 return;
+            case Key.Left:
+                NavigateSibling?.Invoke(this, -1);
+                e.Handled = true;
+                return;
         }
-        // Type-ahead: first letter selects the next matching entry.
-        if (e.Key is >= Key.A and <= Key.Z or >= Key.D0 and <= Key.D9)
+        // Mnemonics: a unique match runs (or opens) its entry; otherwise, and for entries without mnemonic, the first
+        // letter selects the next matching entry.
+        if (e.Modifiers is ModifierKeys.None or ModifierKeys.Shift or ModifierKeys.Alt && e.Key is >= Key.A and <= Key.Z or >= Key.D0 and <= Key.D9)
         {
             char c = (char)e.Key;
+            int first = -1, count = 0;
             for (int k = 1; k <= Items.Count; k++)
             {
                 int i = (Math.Max(_highlight, -1) + k) % Items.Count;
                 var it = Items[i];
-                if (!it.IsSeparator && it.IsEnabled && it.Text.Length > 0 && char.ToUpperInvariant(it.Text[0]) == c)
-                {
-                    HighlightedIndex = i;
-                    break;
-                }
+                if (it.IsSeparator || !it.IsEnabled) continue;
+                char m = it.Mnemonic;
+                string plain = it.DisplayText;
+                bool match = m != '\0' ? m == c : plain.Length > 0 && char.ToUpperInvariant(plain[0]) == c;
+                if (!match) continue;
+                if (first < 0) first = i;
+                count++;
+            }
+            if (first >= 0)
+            {
+                HighlightedIndex = first;
+                if (count == 1 && Items[first].Mnemonic == c) Activate(first);
             }
             e.Handled = true;
             return;
@@ -278,18 +320,27 @@ public class MenuPopup : Popup
             OpenSubmenu(index, focusFirst: true);
             return;
         }
-        var root = this;
-        while (root.ParentMenu is not null) root = root.ParentMenu;
+        var root = Root;
         var host = Host;
         root.Close();
         try
         {
-            item.Action?.Invoke();
+            item.Invoke();
             root.ItemChosen?.Invoke(root, item);
         }
         finally
         {
             host?.Invalidate();
+        }
+    }
+
+    private MenuPopup Root
+    {
+        get
+        {
+            var root = this;
+            while (root.ParentMenu is not null) root = root.ParentMenu;
+            return root;
         }
     }
 
@@ -306,6 +357,7 @@ public class MenuPopup : Popup
         var sub = new MenuPopup(item.Items)
         {
             ParentMenu = this,
+            ShowMnemonics = ShowMnemonics,
             Anchor = ItemRect(index).Inflate(Pad, Pad),
             Placement = PopupPlacement.Right,
         };

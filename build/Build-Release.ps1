@@ -1,18 +1,18 @@
-# 2026/10/19 13:37:00 UTC - PluginUI
+# 2026/11/05 14:06:00 UTC - PluginUI
 # SPDX-FileCopyrightText: 2026 asm8086
 # SPDX-License-Identifier: MIT
 
 <#
 .SYNOPSIS
     Builds the PluginUI release packages: the DemoSynth VST3 bundle for x64 (x86-64-v3 and x86-64-v2) and ARM64,
-    PluginUIEditor, the gallery and the NuGet packages.
+    PluginUIEditor, the gallery, the Biquad Designer desktop demo and the NuGet packages.
 
 .DESCRIPTION
     Stages, run in this order (the release workflow runs Build on one machine per architecture, then Package and
     Validate on an x64 machine):
 
-      Build     Publishes, for each target, the NativeAOT plug-in (and, for x64-v2 / arm64, the gallery and the editor)
-                into artifacts/stage/<target>/.
+      Build     Publishes, for each target, the NativeAOT plug-in and desktop demo (and, for x64-v2 / arm64, the
+                gallery and the editor) into artifacts/stage/<target>/.
       Package   Builds the x64 VST3 loader (build/vst3shim), assembles the bundles, the zip files, the NuGet packages
                 and SHA256SUMS.txt into artifacts/release/.
       Validate  Runs the Steinberg validator on the bundles for the architecture of this machine (x64: both builds,
@@ -102,6 +102,11 @@ function Invoke-Build([string]$t) {
     Invoke-Native dotnet (@('publish', (Join-Path $Root "samples/$PluginName")) + $common + @('-o', (Join-Path $dir 'plugin')))
     $vst3 = Join-Path $dir "plugin/$PluginName.vst3"
     if (-not (Test-Path $vst3)) { throw "NativeAOT output not found: $vst3" }
+
+    # The desktop demo (PluginUI.Desktop), NativeAOT for every target: on x64-v3 too, so that the CI build (which only
+    # builds that target) compiles a PluginUI desktop application ahead of time. Packaged for x64-v2 and ARM64 below.
+    Invoke-Native dotnet (@('publish', (Join-Path $Root 'samples/PluginUI.DesktopDemo'), '-p:PublishAot=true') + $common + @('-o', (Join-Path $dir 'biquad')))
+    if (-not (Test-Path (Join-Path $dir 'biquad/BiquadDesigner.exe'))) { throw "NativeAOT output not found: $dir/biquad/BiquadDesigner.exe" }
 
     # The applications, once per architecture (the x64-v2 build runs on every x64 processor).
     if ($t -ne 'x64-v3') {
@@ -261,7 +266,7 @@ function Invoke-Package {
     # Applications.
     foreach ($t in 'x64-v2', 'arm64') {
         $rid = Get-Rid $t
-        foreach ($app in @(@{ Dir = 'editor'; Name = 'PluginUIEditor' }, @{ Dir = 'gallery'; Name = 'PluginUI.Gallery' })) {
+        foreach ($app in @(@{ Dir = 'editor'; Name = 'PluginUIEditor' }, @{ Dir = 'gallery'; Name = 'PluginUI.Gallery' }, @{ Dir = 'biquad'; Name = 'BiquadDesigner' })) {
             $dir = Join-Path $StageDir "$t/$($app.Dir)"
             if (Test-Path $dir) {
                 Get-ChildItem $dir -Filter '*.pdb' -Recurse | Remove-Item -Force
@@ -272,9 +277,9 @@ function Invoke-Package {
         }
     }
 
-    # NuGet packages (PluginUI, PluginUI.Design, PluginUI.NPlug).
+    # NuGet packages (PluginUI, PluginUI.Design, PluginUI.NPlug, PluginUI.Desktop).
     if (-not $SkipNuGet) {
-        foreach ($project in 'PluginUI', 'PluginUI.Design', 'PluginUI.NPlug') {
+        foreach ($project in 'PluginUI', 'PluginUI.Design', 'PluginUI.NPlug', 'PluginUI.Desktop') {
             Invoke-Native dotnet @('pack', (Join-Path $Root "src/$project/$project.csproj"), '-c', $Configuration, "-p:Version=$Version", '-o', (Join-Path $ReleaseDir 'nuget'))
         }
     }

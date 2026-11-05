@@ -1,4 +1,4 @@
-// 2026/10/24 14:21:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -367,8 +367,9 @@ public abstract class PluginEditorView : IAudioPluginView, IDisposable
                 var flags = AudioContextMenuItemFlags.None;
                 if (!item.IsEnabled) flags |= AudioContextMenuItemFlags.IsDisabled;
                 if (item.IsChecked) flags |= AudioContextMenuItemFlags.IsChecked;
-                var action = item.Action;
-                menu.AddItem(new AudioContextMenuItem(item.Text, tag++, flags), action is null ? null : _ => action());
+                var entry = item;
+                bool runs = item.Action is not null || item.Command is not null;
+                menu.AddItem(new AudioContextMenuItem(item.DisplayText, tag++, flags), runs ? _ => entry.Invoke() : null);
             }
         }
         float s = Host.Scale;

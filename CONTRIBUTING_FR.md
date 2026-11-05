@@ -1,4 +1,4 @@
-<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
 
 # Contribuer à PluginUI
 
@@ -42,6 +42,7 @@ Autres commandes utiles :
 |---|---|
 | `dotnet run --project samples/PluginUI.Gallery` | Tous les éléments dans une fenêtre (`-- --lang fr` en français) |
 | `dotnet run --project tools/PluginUIEditor` | Le concepteur visuel |
+| `dotnet run --project samples/PluginUI.DesktopDemo` | Biquad Designer, la démonstration d'application de bureau (`-- --lang fr` en français) |
 | `dotnet tool restore` puis `dotnet docfx docfx/docfx.json --serve` | Le site de documentation |
 | `pwsh build/Build-Release.ps1` | Les paquets de version, comme les produit le workflow de publication (Windows) |
 

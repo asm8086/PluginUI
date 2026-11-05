@@ -1,13 +1,15 @@
-<!-- 2026/11/04 17:16:00 UTC - PluginUI -->
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/PluginUI/PluginUI.csproj" />
     <Project Path="src/PluginUI.NPlug/PluginUI.NPlug.csproj" />
     <Project Path="src/PluginUI.Design/PluginUI.Design.csproj" />
+    <Project Path="src/PluginUI.Desktop/PluginUI.Desktop.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/PluginUI.Gallery/PluginUI.Gallery.csproj" />
     <Project Path="samples/PluginUI.DemoSynth/PluginUI.DemoSynth.csproj" />
+    <Project Path="samples/PluginUI.DesktopDemo/PluginUI.DesktopDemo.csproj" />
     <File Path="samples/Designs/DemoSynth.pluginui" />
   </Folder>
   <Folder Name="/tools/">
@@ -37,6 +39,8 @@
     <File Path="docs/EXTENDING_FR.md" />
     <File Path="docs/EDITOR.md" />
     <File Path="docs/EDITOR_FR.md" />
+    <File Path="docs/DESKTOP.md" />
+    <File Path="docs/DESKTOP_FR.md" />
   </Folder>
   <Folder Name="/docfx/">
     <File Path="docfx/docfx.json" />

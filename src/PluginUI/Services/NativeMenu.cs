@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -22,14 +22,14 @@ public static unsafe class NativeMenu
         if (!host.IsAttached || items.Count == 0) return null;
 
         var map = new List<MenuItem>();
-        HMENU menu = Build(items, map);
+        HMENU menu = Build(items, map, host.Strings);
         try
         {
             var (x, y) = host.DipToScreen(at);
             int command = TrackPopupMenuEx(menu, Win32.TPM_RETURNCMD | Win32.TPM_RIGHTBUTTON | Win32.TPM_NONOTIFY, x, y, (HWND)host.WindowHandle, null);
             if (command <= 0 || command > map.Count) return null;
             var chosen = map[command - 1];
-            chosen.Action?.Invoke();
+            chosen.Invoke();
             return chosen;
         }
         finally
@@ -38,7 +38,7 @@ public static unsafe class NativeMenu
         }
     }
 
-    private static HMENU Build(IList<MenuItem> items, List<MenuItem> map)
+    private static HMENU Build(IList<MenuItem> items, List<MenuItem> map, UIStrings strings)
     {
         HMENU menu = CreatePopupMenu();
         foreach (var item in items)
@@ -51,12 +51,13 @@ public static unsafe class NativeMenu
             uint flags = Win32.MF_STRING;
             if (!item.IsEnabled) flags |= Win32.MF_GRAYED;
             if (item.IsChecked) flags |= Win32.MF_CHECKED;
-            string text = item.ShortcutText is { Length: > 0 } shortcut ? item.Text + "\t" + shortcut : item.Text;
+            string label = Mnemonics.ToWin32(item.Text);
+            string text = item.GetShortcutText(strings) is { Length: > 0 } shortcut ? label + "\t" + shortcut : label;
             fixed (char* p = text)
             {
                 if (item.HasSubmenu)
                 {
-                    HMENU sub = Build(item.Items, map);
+                    HMENU sub = Build(item.Items, map, strings);
                     AppendMenuW(menu, flags | Win32.MF_POPUP, (nuint)sub.Value, p);
                 }
                 else

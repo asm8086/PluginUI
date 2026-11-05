@@ -1,4 +1,4 @@
-// 2026/10/24 14:21:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -314,7 +314,11 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
             case Win32.WM_SYSKEYDOWN:
             {
                 var e = new KeyEventArgs((Key)(int)wParam, CurrentModifiers(), (lParam & (1 << 30)) != 0);
-                if (DispatchKeyDown(e)) return true;
+                bool handled = DispatchKeyDown(e);
+                // Alt+letter handled here (menu bar mnemonics): drop the WM_SYSCHAR that follows, or DefWindowProc
+                // would look for a native menu and beep.
+                _swallowSysChar = handled && msg == Win32.WM_SYSKEYDOWN;
+                if (handled) return true;
                 return ForwardToParent(hwnd, msg, wParam, lParam, ref result);
             }
 
@@ -335,6 +339,10 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
                 if (DispatchTextInput(text)) return true;
                 return ForwardToParent(hwnd, msg, wParam, lParam, ref result);
             }
+
+            case Win32.WM_SYSCHAR when _swallowSysChar:
+                _swallowSysChar = false;
+                return true;
 
             case Win32.WM_TIMER:
                 OnNativeTimer(wParam);
@@ -368,6 +376,7 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
     private const nuint PaintRetryTimerId = 3;
     private int _paintFailures;
     private char _pendingHighSurrogate;
+    private bool _swallowSysChar;
     private Action<DrawingContext>? _paintCallback;
 
     private static bool ForwardToParent(HWND hwnd, uint msg, nuint wParam, nint lParam, ref nint result)

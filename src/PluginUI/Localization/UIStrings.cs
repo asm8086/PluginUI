@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -81,6 +81,29 @@ public sealed record UIStrings
         BandNotch = "Réjection",
         BandBandPass = "Passe-bande",
         Bypass = "Contourner",
+        KeyNames = KeyNameTables.French,
+        Untitled = "Sans titre",
+        SaveChangesQuestion = "Voulez-vous enregistrer les modifications de « {0} » ?",
+        DontSave = "Ne pas enregistrer",
+        UndoFormat = "&Annuler {0}",
+        RedoFormat = "&Rétablir {0}",
+        UndoPlain = "&Annuler",
+        RedoPlain = "&Rétablir",
+        MenuFile = "&Fichier",
+        MenuEdit = "&Edition",
+        MenuView = "&Affichage",
+        MenuHelp = "&Aide",
+        MenuNew = "&Nouveau",
+        MenuOpen = "&Ouvrir…",
+        MenuSave = "&Enregistrer",
+        MenuSaveAs = "Enregistrer &sous…",
+        MenuExit = "&Quitter",
+        MenuAbout = "À &propos de {0}…",
+        AllFiles = "Tous les fichiers",
+        RecentFiles = "Fichiers récents",
+        ClearRecentFiles = "Effacer la liste",
+        NoRecentFiles = "(aucun)",
+        FileNotFound = "Le fichier « {0} » est introuvable.",
         LiveEditHelp = "ÉDITION EN DIRECT — clic : sélection · Alt+clic : parent · glisser / poignées : déplacer / redimensionner · flèches : décaler (Ctrl : taille) · Ctrl+Z : annuler · Ctrl+C : copier le code · Échap : quitter",
         LiveEditHelpSave = "ÉDITION EN DIRECT — clic : sélection · glisser / poignées : déplacer / redimensionner · flèches : décaler (Ctrl : taille) · Ctrl+Z : annuler · Ctrl+S : enregistrer le design · Ctrl+C : copier le code · Échap : quitter",
     };
@@ -193,6 +216,104 @@ public sealed record UIStrings
     /// <summary>Menu entry that bypasses (disables) an element, e.g. an equalizer band.</summary>
     public string Bypass { get; init; } = "Bypass";
 
+    /// <summary>
+    /// Names of keys in shortcut texts (modifiers <see cref="Key.Control"/>, <see cref="Key.Shift"/>,
+    /// <see cref="Key.Alt"/> included). Keys missing from the table use the English names.
+    /// </summary>
+    public IReadOnlyDictionary<Key, string> KeyNames { get; init; } = KeyNameTables.English;
+
+    /// <summary>Default name of a document that was never saved.</summary>
+    public string Untitled { get; init; } = "Untitled";
+
+    /// <summary>Question asked before closing a modified document ({0}: document name).</summary>
+    public string SaveChangesQuestion { get; init; } = "Do you want to save the changes to \u201C{0}\u201D?";
+
+    /// <summary>Button that closes a modified document without saving it.</summary>
+    public string DontSave { get; init; } = "Don't Save";
+
+    /// <summary>Undo menu entry with the name of the action ({0}), with its mnemonic.</summary>
+    public string UndoFormat { get; init; } = "&Undo {0}";
+
+    /// <summary>Redo menu entry with the name of the action ({0}).</summary>
+    public string RedoFormat { get; init; } = "&Redo {0}";
+
+    /// <summary>Undo menu entry when nothing can be undone.</summary>
+    public string UndoPlain { get; init; } = "&Undo";
+
+    /// <summary>Redo menu entry when nothing can be redone.</summary>
+    public string RedoPlain { get; init; } = "&Redo";
+
+    /// <summary>File menu title (with its '&amp;' mnemonic, like the other menu texts).</summary>
+    public string MenuFile { get; init; } = "&File";
+
+    /// <summary>Edit menu title.</summary>
+    public string MenuEdit { get; init; } = "&Edit";
+
+    /// <summary>View menu title.</summary>
+    public string MenuView { get; init; } = "&View";
+
+    /// <summary>Help menu title.</summary>
+    public string MenuHelp { get; init; } = "&Help";
+
+    /// <summary>File / New.</summary>
+    public string MenuNew { get; init; } = "&New";
+
+    /// <summary>File / Open.</summary>
+    public string MenuOpen { get; init; } = "&Open…";
+
+    /// <summary>File / Save.</summary>
+    public string MenuSave { get; init; } = "&Save";
+
+    /// <summary>File / Save As.</summary>
+    public string MenuSaveAs { get; init; } = "Save &As…";
+
+    /// <summary>File / Exit.</summary>
+    public string MenuExit { get; init; } = "E&xit";
+
+    /// <summary>Help / About ({0}: application name).</summary>
+    public string MenuAbout { get; init; } = "&About {0}…";
+
+    /// <summary>Name of the "*.*" file dialog filter.</summary>
+    public string AllFiles { get; init; } = "All Files";
+
+    /// <summary>Sub-menu listing the recently opened files.</summary>
+    public string RecentFiles { get; init; } = "Recent Files";
+
+    /// <summary>Entry that empties the recent files list.</summary>
+    public string ClearRecentFiles { get; init; } = "Clear List";
+
+    /// <summary>Placeholder entry of an empty recent files list.</summary>
+    public string NoRecentFiles { get; init; } = "(empty)";
+
+    /// <summary>Message shown when a recent file no longer exists ({0}: path).</summary>
+    public string FileNotFound { get; init; } = "The file \u201C{0}\u201D cannot be found.";
+
+    /// <summary>Displayed name of a key (<see cref="KeyNames"/>, then English, then the enum name).</summary>
+    /// <param name="key">The key.</param>
+    /// <returns>The name, e.g. "Ctrl", "Del", "F5", "A".</returns>
+    public string KeyName(Key key)
+    {
+        if (KeyNames.TryGetValue(key, out var name) || KeyNameTables.English.TryGetValue(key, out name)) return name;
+        if (key is >= Key.A and <= Key.Z or >= Key.D0 and <= Key.D9) return ((char)key).ToString();
+        if (key is >= Key.NumPad0 and <= (Key)0x69) return "Num " + (char)('0' + (key - Key.NumPad0));
+        return key.ToString();
+    }
+
+    /// <summary>Formats <see cref="SaveChangesQuestion"/> with a document name.</summary>
+    public string FormatSaveChangesQuestion(string documentName) => string.Format(CultureInfo.InvariantCulture, SaveChangesQuestion, documentName);
+
+    /// <summary>Formats the Undo entry: <see cref="UndoFormat"/> with an action name, <see cref="UndoPlain"/> without.</summary>
+    public string FormatUndo(string? actionName) => string.IsNullOrEmpty(actionName) ? UndoPlain : string.Format(CultureInfo.InvariantCulture, UndoFormat, Mnemonics.Escape(actionName));
+
+    /// <summary>Formats the Redo entry: <see cref="RedoFormat"/> with an action name, <see cref="RedoPlain"/> without.</summary>
+    public string FormatRedo(string? actionName) => string.IsNullOrEmpty(actionName) ? RedoPlain : string.Format(CultureInfo.InvariantCulture, RedoFormat, Mnemonics.Escape(actionName));
+
+    /// <summary>Formats <see cref="MenuAbout"/> with the application name.</summary>
+    public string FormatAbout(string applicationName) => string.Format(CultureInfo.InvariantCulture, MenuAbout, Mnemonics.Escape(applicationName));
+
+    /// <summary>Formats <see cref="FileNotFound"/> with a path.</summary>
+    public string FormatFileNotFound(string path) => string.Format(CultureInfo.InvariantCulture, FileNotFound, path);
+
     /// <summary>Formats <see cref="MidiForget"/> with an assignment.</summary>
     /// <param name="assignment">The assignment text (e.g. "CC 74").</param>
     /// <returns>The menu text.</returns>
@@ -294,4 +415,28 @@ public static class UILanguages
 
     /// <summary>French.</summary>
     public const string French = "fr";
+}
+
+// Separate class: its fields are initialized before UIStrings.English and .French read them.
+internal static class KeyNameTables
+{
+    public static readonly Dictionary<Key, string> English = new()
+    {
+        [Key.Control] = "Ctrl", [Key.Shift] = "Shift", [Key.Alt] = "Alt",
+        [Key.Back] = "Backspace", [Key.Tab] = "Tab", [Key.Enter] = "Enter", [Key.Escape] = "Esc", [Key.Space] = "Space",
+        [Key.PageUp] = "PgUp", [Key.PageDown] = "PgDn", [Key.End] = "End", [Key.Home] = "Home",
+        [Key.Left] = "Left", [Key.Up] = "Up", [Key.Right] = "Right", [Key.Down] = "Down",
+        [Key.Insert] = "Ins", [Key.Delete] = "Del",
+        [Key.Multiply] = "Num *", [Key.Add] = "Num +", [Key.Subtract] = "Num -", [Key.Decimal] = "Num .", [Key.Divide] = "Num /",
+        [Key.OemSemicolon] = ";", [Key.OemPlus] = "+", [Key.OemComma] = ",", [Key.OemMinus] = "-", [Key.OemPeriod] = ".",
+    };
+
+    public static readonly Dictionary<Key, string> French = new()
+    {
+        [Key.Control] = "Ctrl", [Key.Shift] = "Maj", [Key.Alt] = "Alt",
+        [Key.Back] = "Retour arrière", [Key.Tab] = "Tab", [Key.Enter] = "Entrée", [Key.Escape] = "Échap", [Key.Space] = "Espace",
+        [Key.PageUp] = "Pg.Préc", [Key.PageDown] = "Pg.Suiv", [Key.End] = "Fin", [Key.Home] = "Origine",
+        [Key.Left] = "Gauche", [Key.Up] = "Haut", [Key.Right] = "Droite", [Key.Down] = "Bas",
+        [Key.Insert] = "Inser", [Key.Delete] = "Suppr",
+    };
 }

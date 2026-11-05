@@ -1,4 +1,4 @@
-<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
 
 # Contributing to PluginUI
 
@@ -40,6 +40,7 @@ Other useful commands:
 |---|---|
 | `dotnet run --project samples/PluginUI.Gallery` | Every element in a window (`-- --lang fr` in French) |
 | `dotnet run --project tools/PluginUIEditor` | The visual designer |
+| `dotnet run --project samples/PluginUI.DesktopDemo` | Biquad Designer, the desktop application demo (`-- --lang fr` in French) |
 | `dotnet tool restore` then `dotnet docfx docfx/docfx.json --serve` | The documentation site |
 | `pwsh build/Build-Release.ps1` | The release packages, as the release workflow builds them (Windows) |
 

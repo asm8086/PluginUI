@@ -1,4 +1,4 @@
-// 2026/11/04 18:09:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -179,7 +179,7 @@ public class PresetBar : Control
         for (int i = 0; i < provider.Count; i++)
         {
             int index = i;
-            var item = new MenuItem(provider.GetName(i), () => provider.Load(index)) { IsChecked = i == provider.CurrentIndex };
+            var item = new MenuItem(Mnemonics.Escape(provider.GetName(i)), () => provider.Load(index)) { IsChecked = i == provider.CurrentIndex };
             string? bank = provider.GetBank(i);
             if (string.IsNullOrEmpty(bank))
             {
@@ -188,7 +188,7 @@ public class PresetBar : Control
             }
             if (!banks.TryGetValue(bank, out var group))
             {
-                group = new MenuItem(bank);
+                group = new MenuItem(Mnemonics.Escape(bank));
                 banks[bank] = group;
                 root.Add(group);
             }

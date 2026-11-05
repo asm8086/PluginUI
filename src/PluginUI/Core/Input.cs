@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -166,6 +166,16 @@ public enum Key
     F10, /// <summary>F11.</summary>
     F11, /// <summary>F12.</summary>
     F12,
+    /// <summary>';' key on US layouts (OEM_1).</summary>
+    OemSemicolon = 0xBA,
+    /// <summary>'+' key of the main block (OEM_PLUS), on every layout.</summary>
+    OemPlus = 0xBB,
+    /// <summary>',' key (OEM_COMMA), on every layout.</summary>
+    OemComma = 0xBC,
+    /// <summary>'-' key of the main block (OEM_MINUS), on every layout.</summary>
+    OemMinus = 0xBD,
+    /// <summary>'.' key (OEM_PERIOD), on every layout.</summary>
+    OemPeriod = 0xBE,
 }
 
 /// <summary>Base class of routed input events.</summary>

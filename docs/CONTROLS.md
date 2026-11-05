@@ -1,4 +1,4 @@
-<!-- 2026/10/24 14:21:00 UTC - PluginUI -->
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
 
 # Element catalog
 
@@ -49,6 +49,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 |---|---|---|
 | `DropDown` | Items from the parameter or an explicit list, submenus via a separator (`"Group/Item"`), mouse wheel and arrows, unavailable items hidden (`IsItemAvailable`) | `COptionMenu`, `IVMenuButtonControl` |
 | `MenuButton` | Arbitrary menu (`MenuItem`), hamburger / dots / text + chevron styles | `IVMenuButtonControl` |
+| `MenuBar` | Application menu bar: click, Alt+letter, lone Alt / F10, arrows between menus, `&` mnemonics, shortcuts of every entry, entries built from `Command` (text, shortcut, enabled and checked states). See [DESKTOP.md](DESKTOP.md) | — (native menu bar of the standalone wrappers) |
 | `MenuPopup` | Drawn menu: check marks, shortcuts, separators, submenus, keyboard, type-ahead, scrolling | `IPopupMenuControl` |
 | `NativeMenu` | Native Win32 menu (`UIHost.UseNativeMenus`) | `COptionMenu` (native) |
 | DAW context menu | Right-click on a bound control: VST3 host menu (`IComponentHandler3`), custom entries can be added | built into VSTGUI and iPlug2 |

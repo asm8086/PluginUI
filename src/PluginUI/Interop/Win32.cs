@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -30,6 +30,7 @@ internal static partial class Win32
     public const uint WM_KEYUP = 0x0101;
     public const uint WM_CHAR = 0x0102;
     public const uint WM_SYSKEYDOWN = 0x0104;
+    public const uint WM_SYSCHAR = 0x0106;
     public const uint WM_SYSKEYUP = 0x0105;
     public const uint WM_TIMER = 0x0113;
     public const uint WM_MOUSEMOVE = 0x0200;
@@ -81,6 +82,20 @@ internal static partial class Win32
     public const uint SWP_HIDEWINDOW = 0x0080;
     public const int SW_SHOW = 5;
     public const int SW_HIDE = 0;
+    public const int SW_SHOWMAXIMIZED = 3;
+    public const int SW_SHOWMINIMIZED = 2;
+    public const int SW_RESTORE = 9;
+    public const int SW_SHOWNORMAL = 1;
+    public const int SM_CXICON = 11;
+    public const int SM_CXSMICON = 49;
+    public const uint IMAGE_ICON = 1;
+    public const uint LR_LOADFROMFILE = 0x0010;
+    public const uint WM_SETICON = 0x0080;
+    public const uint MONITOR_DEFAULTTONEAREST = 2;
+    public const uint MONITOR_DEFAULTTONULL = 0;
+    public const uint WPF_RESTORETOMAXIMIZED = 0x0002;
+    public const nuint ICON_BIG = 1;
+    public const nuint ICON_SMALL = 0;
 
     // ---- Mouse/keyboard ----
     public const nuint MK_LBUTTON = 0x0001;

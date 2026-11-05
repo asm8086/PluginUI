@@ -1,4 +1,4 @@
-// 2026/10/19 20:27:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -138,13 +138,13 @@ public class DropDown : ValueControl
             if (IsItemAvailable is { } available && !available(i)) continue;
             int index = i;
             string label = labels[i];
-            var item = new MenuItem(DisplayName(label), () => SelectByUser(index)) { IsChecked = i == selected };
+            var item = new MenuItem(Mnemonics.Escape(DisplayName(label)), () => SelectByUser(index)) { IsChecked = i == selected };
             if (SubmenuSeparator is char sep && label.LastIndexOf(sep) is int cut and > 0)
             {
                 string group = label[..cut];
                 if (!groups.TryGetValue(group, out var parent))
                 {
-                    parent = new MenuItem(group);
+                    parent = new MenuItem(Mnemonics.Escape(group));
                     groups[group] = parent;
                     root.Add(parent);
                 }

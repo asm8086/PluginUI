@@ -1,4 +1,4 @@
-<!-- 2026/10/19 09:59:00 UTC - PluginUI -->
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PluginUI\PluginUI.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.Desktop\PluginUI.Desktop.csproj" />
   </ItemGroup>
 
   <ItemGroup>

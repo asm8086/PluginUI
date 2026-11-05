@@ -1,33 +1,43 @@
-// 2026/10/19 22:45:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using PluginUI;
 using PluginUI.Gallery;
 
-// Usage:
-//   PluginUI.Gallery [--lang en|fr]                         interactive window (English by default)
-//   PluginUI.Gallery --snapshot <dir> [scale] [--lang fr]   renders every page (and a few popups) to PNG files, no window
-var arguments = new List<string>(args);
-int langIndex = arguments.IndexOf("--lang");
-if (langIndex >= 0)
+/// <summary>Entry point.</summary>
+internal static class Program
 {
-    L.French = langIndex + 1 < arguments.Count && arguments[langIndex + 1].StartsWith("fr", StringComparison.OrdinalIgnoreCase);
-    arguments.RemoveRange(langIndex, Math.Min(2, arguments.Count - langIndex));
-}
-// The texts drawn by PluginUI itself (tooltips, dialogs, menus) follow the same language.
-UIHost.DefaultLanguage = L.French ? "fr" : "en";
+    // Usage:
+    //   PluginUI.Gallery [--lang en|fr]                         interactive window (English by default)
+    //   PluginUI.Gallery --snapshot <dir> [scale] [--lang fr]   renders every page (and a few popups) to PNG files, no window
+    // [STAThread]: the file dialogs (FilePathBox), the clipboard and drag and drop are COM / OLE services that need a
+    // single-threaded apartment; top-level statements cannot carry the attribute.
+    [STAThread]
+    private static int Main(string[] args)
+    {
+        var arguments = new List<string>(args);
+        int langIndex = arguments.IndexOf("--lang");
+        if (langIndex >= 0)
+        {
+            L.French = langIndex + 1 < arguments.Count && arguments[langIndex + 1].StartsWith("fr", StringComparison.OrdinalIgnoreCase);
+            arguments.RemoveRange(langIndex, Math.Min(2, arguments.Count - langIndex));
+        }
+        // The texts drawn by PluginUI itself (tooltips, dialogs, menus) follow the same language.
+        UIHost.DefaultLanguage = L.French ? "fr" : "en";
 
-if (arguments.Count >= 1 && arguments[0] == "--snapshot")
-{
-    string dir = arguments.Count >= 2 ? arguments[1] : "snapshots";
-    float scale = arguments.Count >= 3 && float.TryParse(arguments[2], System.Globalization.CultureInfo.InvariantCulture, out var s) ? s : 1.5f;
-    return Snapshots.Run(dir, scale);
-}
+        if (arguments.Count >= 1 && arguments[0] == "--snapshot")
+        {
+            string dir = arguments.Count >= 2 ? arguments[1] : "snapshots";
+            float scale = arguments.Count >= 3 && float.TryParse(arguments[2], System.Globalization.CultureInfo.InvariantCulture, out var s) ? s : 1.5f;
+            return Snapshots.Run(dir, scale);
+        }
 
-StandaloneWindow.EnablePerMonitorDpiAwareness();
-var app = new GalleryApp();
-return new StandaloneWindow(app.Host, L.T("PluginUI — gallery", "PluginUI — galerie")).Run();
+        StandaloneWindow.EnablePerMonitorDpiAwareness();
+        var app = new GalleryApp();
+        return new StandaloneWindow(app.Host, L.T("PluginUI — gallery", "PluginUI — galerie")).Run();
+    }
+}
 
 /// <summary>Offscreen rendering of the gallery pages (documentation and visual regression checks).</summary>
 internal static class Snapshots

@@ -1,0 +1,31 @@
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Desktop application whose whole interface is PluginUI. Two ways to ship it, chosen at publish time:
+      IL (JIT):    dotnet publish -c Release                      (needs the .NET 10 runtime; -p:SelfContained=true embeds it)
+      NativeAOT:   dotnet publish -c Release -p:PublishAot=true   (one native .exe, no .NET install needed)
+    dotnet run / F5 always runs the IL build, with the debugger.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>PluginUI.DesktopDemo</RootNamespace>
+    <AssemblyName>BiquadDesigner</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsAotCompatible>true</IsAotCompatible>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PluginUI\PluginUI.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.Desktop\PluginUI.Desktop.csproj" />
+  </ItemGroup>
+
+</Project>

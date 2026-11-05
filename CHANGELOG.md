@@ -1,4 +1,4 @@
-<!-- 2026/11/04 20:40:00 UTC - PluginUI -->
+<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -7,6 +7,53 @@ All notable changes to this project are documented in this file. The format foll
 Before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
+
+### Added
+
+- **PluginUI.Desktop** (new NuGet package): complete Windows desktop applications with PluginUI as their whole
+  interface, compiled as IL or NativeAOT. `DesktopApplication` (DPI awareness, `%APPDATA%` data folder, main window
+  placement and recent files saved in `state.json`, application commands, crash report; requires an STA `Main`),
+  `DocumentSession` (file path, modified state, title bar, New / Open / Save / Save As commands with their dialogs,
+  "save changes?" before New, Open and closing), `UndoStack` (undo / redo with merge keys, saved point, Ctrl+Z / Ctrl+Y
+  commands named after the step, `Track(LocalParameter)` records one step per gesture), `AppSettings<T>` (JSON through
+  source generation, atomic save, unreadable files kept as `.bad`), `RecentFiles` (sub-menu with `&1`… entries,
+  compacted paths), `MessageDialog` (synchronous drawn message boxes, `AskSaveChanges`). Guide: `docs/DESKTOP.md`.
+- **MenuBar**: drawn application menu bar. Click and hover between menus, Alt+letter, lone Alt or F10 for the keyboard
+  mode (Left / Right / Down / Enter / Escape), shortcuts of every entry run from anywhere in the window (`Command`
+  gestures or parsable `ShortcutText`), `Opening` event for dynamic menus, `HandlesAltKey` off in plug-in editors.
+  Registered for PluginUIEditor designs.
+- **Commands and shortcuts**: `Command` (text, `KeyGesture`, alternate gestures, `CanExecuteWhen`, `IsCheckedWhen`,
+  `AllowsRepeat`, `Executed`), `KeyGesture` (parse / format "Ctrl+Shift+S", English and French key names, localized
+  display through `UIStrings.KeyNames`), `CommandSet` (routes key presses of a host to its commands), `Mnemonics`
+  (`&` markers). `MenuItem(Command)` shows the command's text, shortcut, enabled and checked states when the menu opens;
+  `MenuItem.Invoke`, `DisplayText`, `Mnemonic`, `GetShortcutText`.
+- **Menus**: drawn menus underline mnemonics when opened from the keyboard (`MenuPopup.ShowMnemonics`), run the entry
+  of a unique mnemonic, and raise `NavigateSibling` for Left / Right in a menu bar. Native menus use the same `&`
+  notation (literal `&` kept).
+- **StandaloneWindow**: `ShowDialog` (modal, owner disabled, nested loop, `DialogResult`, `Close(int)`), `Owner`,
+  `StartPosition` (`WindowStartPosition`), `Placement` (`WindowPlacement`, restored only on an existing monitor),
+  `DarkTitleBar` (follows the theme by default) and `UpdateTitleBarTheme`, icon from `IconPath` or the executable's
+  `<ApplicationIcon>`, `MinimizeBox` / `MaximizeBox`, `Activate`, `RequestClose`, `RunMessageLoopUntil`.
+- **UIHost.PreviewKeyUp**; `Popup.ClosedByEscape`; `Key.OemPlus`, `OemMinus`, `OemComma`, `OemPeriod`,
+  `OemSemicolon`.
+- **UIStrings**: key names, menu texts with mnemonics (File, Edit, View, Help, New, Open, Save, Save As, Exit, About),
+  Undo / Redo with the step name, "Untitled", the save-changes question and its Don't Save button, recent files, file
+  not found, "All Files" — in English and French.
+- **Biquad Designer** (`samples/PluginUI.DesktopDemo`): desktop demo application (four-section RBJ biquad designer with
+  draggable response, coefficients, `.bqd` files, undo, recent files, light theme, French interface), built with
+  NativeAOT by `build/Build-Release.ps1` and shipped as `BiquadDesigner-<version>-win-<arch>.zip`.
+
+### Changed
+
+- **MenuItem**: an `&` followed by a letter or a digit is now a mnemonic marker in drawn menus too (it already was in
+  native menus); `&&` writes `&`, any other `&` stays literal. `DropDown`, `PresetBar` and the MIDI learn entries
+  escape their data (`Mnemonics.Escape`), so "R&B" still shows as is.
+- **Gallery**: explicit `[STAThread] Main` (the file dialogs of `FilePathBox` need a single-threaded apartment).
+- **WM_SYSCHAR** following an Alt+key handled by PluginUI is consumed (no beep).
+
+### Fixed
+
+- **MenuPopup**: a menu opened with an entry highlighted before its first layout no longer starts scrolled.
 
 ## [0.2.0] - 2026-11-04
 

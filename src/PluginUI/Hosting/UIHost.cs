@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/05 14:06:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -203,7 +203,7 @@ public sealed partial class UIHost : IDisposable
         var items = new List<MenuItem>();
         if (learn.IsLearning(parameter)) items.Add(new MenuItem(t.MidiLearnCancel, learn.CancelLearn));
         else items.Add(new MenuItem(t.MidiLearn, () => learn.BeginLearn(parameter)));
-        if (learn.GetAssignment(parameter) is { } assignment) items.Add(new MenuItem(t.FormatMidiForget(assignment), () => learn.Forget(parameter)));
+        if (learn.GetAssignment(parameter) is { } assignment) items.Add(new MenuItem(Mnemonics.Escape(t.FormatMidiForget(assignment)), () => learn.Forget(parameter)));
         return items;
     }
 

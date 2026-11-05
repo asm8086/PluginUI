@@ -1,5 +1,5 @@
 {
-  "comment": "2026/10/18 16:20:00 UTC - PluginUI",
+  "comment": "2026/11/05 14:06:00 UTC - PluginUI",
   "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
   "metadata": [
     {
@@ -9,7 +9,8 @@
           "files": [
             "PluginUI/PluginUI.csproj",
             "PluginUI.NPlug/PluginUI.NPlug.csproj",
-            "PluginUI.Design/PluginUI.Design.csproj"
+            "PluginUI.Design/PluginUI.Design.csproj",
+            "PluginUI.Desktop/PluginUI.Desktop.csproj"
           ]
         }
       ],
@@ -33,7 +34,8 @@
           "CHANGELOG.md",
           "CONTRIBUTING*.md",
           "docs/*.md",
-          "samples/PluginUI.DemoSynth/README*.md"
+          "samples/PluginUI.DemoSynth/README*.md",
+          "samples/PluginUI.DesktopDemo/README*.md"
         ]
       }
     ],
