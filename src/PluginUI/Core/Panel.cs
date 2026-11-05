@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -292,6 +292,16 @@ public sealed class MenuItem
 
     /// <summary>Shortcut hint in the language of <paramref name="strings"/> (the command shortcut is localized).</summary>
     public string? GetShortcutText(UIStrings? strings) => _shortcutText ?? Command?.Gesture?.ToDisplayString(strings);
+
+    /// <summary>Longer description shown in a status bar while the entry is highlighted. Defaults to the command description.</summary>
+    [Category("Text")]
+    public string? Description
+    {
+        get => _description ?? Command?.Description;
+        set => _description = value;
+    }
+
+    private string? _description;
 
     /// <summary>Invoked when the entry is chosen (before the command, if any).</summary>
     [Browsable(false)]

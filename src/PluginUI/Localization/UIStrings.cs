@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -100,6 +100,16 @@ public sealed record UIStrings
         MenuExit = "&Quitter",
         MenuAbout = "À &propos de {0}…",
         AllFiles = "Tous les fichiers",
+        HintNew = "Crée un nouveau document",
+        HintOpen = "Ouvre un document existant",
+        HintSave = "Enregistre le document",
+        HintSaveAs = "Enregistre le document sous un autre nom",
+        HintUndo = "Annule la dernière modification",
+        HintRedo = "Rétablit la dernière modification annulée",
+        HintExit = "Quitte l'application",
+        StatusReady = "Prêt",
+        StatusSaved = "Enregistré : {0}",
+        StatusOpened = "Ouvert : {0}",
         RecentFiles = "Fichiers récents",
         ClearRecentFiles = "Effacer la liste",
         NoRecentFiles = "(aucun)",
@@ -275,6 +285,42 @@ public sealed record UIStrings
 
     /// <summary>Name of the "*.*" file dialog filter.</summary>
     public string AllFiles { get; init; } = "All Files";
+
+    /// <summary>Status bar description of File / New.</summary>
+    public string HintNew { get; init; } = "Creates a new document";
+
+    /// <summary>Status bar description of File / Open.</summary>
+    public string HintOpen { get; init; } = "Opens an existing document";
+
+    /// <summary>Status bar description of File / Save.</summary>
+    public string HintSave { get; init; } = "Saves the document";
+
+    /// <summary>Status bar description of File / Save As.</summary>
+    public string HintSaveAs { get; init; } = "Saves the document with a new name";
+
+    /// <summary>Status bar description of Edit / Undo.</summary>
+    public string HintUndo { get; init; } = "Undoes the last change";
+
+    /// <summary>Status bar description of Edit / Redo.</summary>
+    public string HintRedo { get; init; } = "Redoes the last undone change";
+
+    /// <summary>Status bar description of File / Exit.</summary>
+    public string HintExit { get; init; } = "Quits the application";
+
+    /// <summary>Idle text of a status bar.</summary>
+    public string StatusReady { get; init; } = "Ready";
+
+    /// <summary>Status bar message after saving ({0}: document name).</summary>
+    public string StatusSaved { get; init; } = "Saved: {0}";
+
+    /// <summary>Status bar message after opening ({0}: document name).</summary>
+    public string StatusOpened { get; init; } = "Opened: {0}";
+
+    /// <summary>Formats <see cref="StatusSaved"/>.</summary>
+    public string FormatStatusSaved(string documentName) => string.Format(CultureInfo.InvariantCulture, StatusSaved, documentName);
+
+    /// <summary>Formats <see cref="StatusOpened"/>.</summary>
+    public string FormatStatusOpened(string documentName) => string.Format(CultureInfo.InvariantCulture, StatusOpened, documentName);
 
     /// <summary>Sub-menu listing the recently opened files.</summary>
     public string RecentFiles { get; init; } = "Recent Files";

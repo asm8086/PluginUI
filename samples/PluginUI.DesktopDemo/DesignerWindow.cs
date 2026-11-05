@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -94,14 +94,18 @@ internal sealed class DesignerWindow
         var viewMenu = new MenuItem(t.MenuView);
         var helpMenu = new MenuItem(t.MenuHelp);
         MenuBar = new MenuBar(fileMenu, editMenu, viewMenu, helpMenu) { Dock = Side.Top };
+        ToolBar = new ToolBar { Dock = Side.Top };
+        StatusBar = new StatusBar { Dock = Side.Bottom };
 
         var root = new DockPanel { AllowFileDrop = true };
         root.Children.Add(MenuBar);
+        root.Children.Add(ToolBar);
+        root.Children.Add(StatusBar);
         root.Children.Add(columns);
         root.Children.Add(side);
         root.Children.Add(_graph);
 
-        Host = new UIHost(root, new Size(1100f, 720f), SizingMode.Relayout) { MinSize = new Size(820f, 560f) };
+        Host = new UIHost(root, new Size(1100f, 770f), SizingMode.Relayout) { MinSize = new Size(820f, 600f) };
         if (settings.Value.LightTheme) Host.Theme = Theme.Light;
         Window = new StandaloneWindow(Host, app.Name);
 
@@ -123,19 +127,38 @@ internal sealed class DesignerWindow
         fileMenu.Items.Add(new MenuItem(Session.SaveCommand));
         fileMenu.Items.Add(new MenuItem(Session.SaveAsCommand));
         fileMenu.Items.Add(MenuItem.Separator());
-        fileMenu.Items.Add(new MenuItem(t.MenuExit, app.Exit) { ShortcutText = "Alt+F4" });
+        fileMenu.Items.Add(new MenuItem(app.ExitCommand));
 
-        var copyCommand = new Command(L.T("&Copy coefficients", "&Copier les coefficients"), CopyCoefficients, KeyGesture.Parse("Ctrl+Shift+C"));
-        var resetBand = new Command(L.T("&Disable all bands", "&Désactiver toutes les bandes"), DisableAll) { CanExecuteWhen = () => _doc.Bands.Any(b => b.IsEnabled) };
+        var copyCommand = new Command(L.T("&Copy coefficients", "&Copier les coefficients"), CopyCoefficients, KeyGesture.Parse("Ctrl+Shift+C"))
+        {
+            Description = L.T("Copies b0 b1 b2 a1 a2 of the enabled sections", "Copie b0 b1 b2 a1 a2 des sections actives"),
+        };
+        var resetBand = new Command(L.T("&Disable all bands", "&Désactiver toutes les bandes"), DisableAll)
+        {
+            CanExecuteWhen = () => _doc.Bands.Any(b => b.IsEnabled),
+            Description = L.T("Turns every section off (undoable)", "Désactive toutes les sections (annulable)"),
+        };
         editMenu.Items.Add(new MenuItem(Session.Undo.UndoCommand));
         editMenu.Items.Add(new MenuItem(Session.Undo.RedoCommand));
         editMenu.Items.Add(MenuItem.Separator());
         editMenu.Items.Add(new MenuItem(copyCommand));
         editMenu.Items.Add(new MenuItem(resetBand));
 
-        var phase = new Command(L.T("&Phase curve", "Courbe de &phase"), () => SetShowPhase(!_settings.Value.ShowPhase), KeyGesture.Parse("Ctrl+P")) { IsCheckedWhen = () => _settings.Value.ShowPhase };
-        var bands = new Command(L.T("&Section curves", "Courbes des &sections"), () => SetShowBands(!_settings.Value.ShowBands), KeyGesture.Parse("Ctrl+B")) { IsCheckedWhen = () => _settings.Value.ShowBands };
-        var light = new Command(L.T("&Light theme", "Thème &clair"), ToggleTheme, KeyGesture.Parse("Ctrl+T")) { IsCheckedWhen = () => _settings.Value.LightTheme };
+        var phase = new Command(L.T("&Phase curve", "Courbe de &phase"), () => SetShowPhase(!_settings.Value.ShowPhase), KeyGesture.Parse("Ctrl+P"))
+        {
+            IsCheckedWhen = () => _settings.Value.ShowPhase,
+            Description = L.T("Shows the phase of the cascade on the right axis", "Affiche la phase de la cascade sur l'axe de droite"),
+        };
+        var bands = new Command(L.T("&Section curves", "Courbes des &sections"), () => SetShowBands(!_settings.Value.ShowBands), KeyGesture.Parse("Ctrl+B"))
+        {
+            IsCheckedWhen = () => _settings.Value.ShowBands,
+            Description = L.T("Shows the response of each section", "Affiche la réponse de chaque section"),
+        };
+        var light = new Command(L.T("&Light theme", "Thème &clair"), ToggleTheme, KeyGesture.Parse("Ctrl+T"))
+        {
+            IsCheckedWhen = () => _settings.Value.LightTheme,
+            Description = L.T("Switches between the dark and the light theme", "Bascule entre le thème sombre et le thème clair"),
+        };
         viewMenu.Items.Add(new MenuItem(phase));
         viewMenu.Items.Add(new MenuItem(bands));
         viewMenu.Items.Add(MenuItem.Separator());
@@ -146,7 +169,32 @@ internal sealed class DesignerWindow
         language.Items.Add(new MenuItem("&Français", () => SetLanguage("fr")) { Tag = "fr" });
         viewMenu.Items.Add(language);
 
-        helpMenu.Items.Add(new MenuItem(t.FormatAbout(app.Name), ShowAbout) { ShortcutText = "F1" });
+        var about = new Command(t.FormatAbout(app.Name), ShowAbout, KeyGesture.Parse("F1")) { Description = L.T("Version and credits", "Version et crédits") };
+        helpMenu.Items.Add(new MenuItem(about));
+
+        // Tool bar: the same commands as the menus, so both are always in step (greyed out, checked).
+        ToolBar.Add(Session.NewCommand, ToolGlyph.New);
+        ToolBar.Add(Session.OpenCommand, ToolGlyph.Open);
+        ToolBar.Add(Session.SaveCommand, ToolGlyph.Save);
+        ToolBar.AddSeparator();
+        ToolBar.Add(Session.Undo.UndoCommand, ToolGlyph.Undo);
+        ToolBar.Add(Session.Undo.RedoCommand, ToolGlyph.Redo);
+        ToolBar.AddSeparator();
+        ToolBar.Add(copyCommand, ToolGlyph.Copy);
+        ToolBar.AddSeparator();
+        ToolBar.Add(phase, ToolGlyph.Wave);
+        ToolBar.Add(bands, ToolGlyph.Grid);
+        ToolBar.AddSeparator();
+        ToolBar.Add(about, ToolGlyph.Help);
+
+        // Status bar: hints of the menus and buttons, then the design summary and the sample rate.
+        StatusBar.Segments.Add(new StatusBarSegment(() => Host.Strings.StatusReady, float.PositiveInfinity));
+        StatusBar.Segments.Add(new StatusBarSegment(SectionsSummary, 150f));
+        StatusBar.Segments.Add(new StatusBarSegment(() => (_doc.Fs / 1000.0).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + " kHz", 80f) { Align = HorizontalAlignment.Right });
+        StatusBar.Follow(MenuBar);
+        StatusBar.Follow(ToolBar);
+        Session.Saved += (_, path) => StatusBar.ShowMessage(Host.Strings.FormatStatusSaved(Path.GetFileName(path)));
+        Session.Opened += (_, path) => StatusBar.ShowMessage(Host.Strings.FormatStatusOpened(Path.GetFileName(path)));
 
         MenuBar.Opening += (_, top) =>
         {
@@ -175,6 +223,10 @@ internal sealed class DesignerWindow
     public StandaloneWindow Window { get; }
 
     public MenuBar MenuBar { get; }
+
+    public ToolBar ToolBar { get; }
+
+    public StatusBar StatusBar { get; }
 
     public DocumentSession Session { get; }
 
@@ -254,7 +306,16 @@ internal sealed class DesignerWindow
             undo: () => { for (int i = 0; i < before.Length; i++) _doc.Bands[i].Enabled.SelectedIndex = before[i]; });
     }
 
-    private void CopyCoefficients() => Clipboard.SetText(_doc.CoefficientsText());
+    private void CopyCoefficients()
+    {
+        if (Clipboard.SetText(_doc.CoefficientsText())) StatusBar.ShowMessage(L.T("Coefficients copied to the clipboard", "Coefficients copiés dans le presse-papiers"));
+    }
+
+    private string SectionsSummary()
+    {
+        int on = _doc.Bands.Count(b => b.IsEnabled);
+        return L.T($"{on} of {_doc.Bands.Count} sections on", $"{on} section(s) active(s) sur {_doc.Bands.Count}");
+    }
 
     private void ShowAbout()
     {

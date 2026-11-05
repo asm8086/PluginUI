@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -320,6 +320,136 @@ public class DesktopTests
         };
         f.Bar.OpenMenu(1);
         Assert.That(f.OpenPopup!.Items, Has.Count.EqualTo(1));
+    }
+
+    // ---------------------------------------------------------------- tool bar and status bar
+
+    private sealed class ChromeFixture : IDisposable
+    {
+        public ChromeFixture()
+        {
+            Save = new Command("&Save", () => Saves++, KeyGesture.Parse("Ctrl+S")) { CanExecuteWhen = () => CanSave, Description = "Saves the document" };
+            Grid = new Command("&Grid", () => GridOn = !GridOn) { IsCheckedWhen = () => GridOn };
+            var file = new MenuItem("&File");
+            file.Items.Add(new MenuItem(Save));
+            file.Items.Add(new MenuItem("&Close") { Description = "Closes it" });
+            Menu = new MenuBar(file) { Dock = Side.Top };
+            Tools = new ToolBar { Dock = Side.Top };
+            SaveButton = Tools.Add(Save, ToolGlyph.Save);
+            Tools.AddSeparator();
+            GridButton = Tools.Add(Grid, ToolGlyph.Grid);
+            Status = new StatusBar { Dock = Side.Bottom };
+            Status.Segments.Add(new StatusBarSegment("Ready", float.PositiveInfinity));
+            Status.Segments.Add(new StatusBarSegment(() => "48 kHz", 80f));
+            Status.Follow(Menu);
+            Status.Follow(Tools);
+            var root = new DockPanel();
+            root.Children.Add(Menu);
+            root.Children.Add(Tools);
+            root.Children.Add(Status);
+            root.Children.Add(new Canvas());
+            Host = new UIHost(root, new Size(600f, 400f));
+            Host.UpdateLayout();
+        }
+
+        public Command Save { get; }
+
+        public Command Grid { get; }
+
+        public MenuBar Menu { get; }
+
+        public ToolBar Tools { get; }
+
+        public ToolBarButton SaveButton { get; }
+
+        public ToolBarButton GridButton { get; }
+
+        public StatusBar Status { get; }
+
+        public UIHost Host { get; }
+
+        public int Saves;
+
+        public bool CanSave = true, GridOn;
+
+        public void Click(UIElement element)
+        {
+            var c = element.Bounds.Center;
+            Host.DispatchMouseMove(c, ModifierKeys.None);
+            Host.DispatchMouseDown(c, MouseButton.Left, 1, ModifierKeys.None);
+            Host.DispatchMouseUp(c, MouseButton.Left, ModifierKeys.None);
+        }
+
+        public void Dispose() => Host.Dispose();
+    }
+
+    [Test]
+    public void ToolBarButtonsRunTheirCommands()
+    {
+        using var f = new ChromeFixture();
+        Assert.That(f.Tools.Children, Has.Count.EqualTo(3));
+        Assert.That(f.SaveButton.Bounds.Width, Is.GreaterThan(0f));
+        Assert.That(f.GridButton.Bounds.X, Is.GreaterThan(f.SaveButton.Bounds.Right));
+        f.Click(f.SaveButton);
+        f.Click(f.GridButton);
+        Assert.Multiple(() =>
+        {
+            Assert.That(f.Saves, Is.EqualTo(1));
+            Assert.That(f.GridOn, Is.True);
+            Assert.That(f.SaveButton.GetToolTipText(), Is.EqualTo("Save (Ctrl+S)"));
+        });
+        f.CanSave = false;
+        Assert.That(f.SaveButton.CanRun, Is.False);
+        f.Click(f.SaveButton);
+        Assert.That(f.Saves, Is.EqualTo(1), "a disabled command does not run");
+        // Pressing then releasing outside the button cancels.
+        f.CanSave = true;
+        var c = f.SaveButton.Bounds.Center;
+        f.Host.DispatchMouseDown(c, MouseButton.Left, 1, ModifierKeys.None);
+        f.Host.DispatchMouseUp(new Point(c.X + 200f, c.Y + 200f), MouseButton.Left, ModifierKeys.None);
+        Assert.That(f.Saves, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void StatusBarShowsHintsAndMessages()
+    {
+        using var f = new ChromeFixture();
+        Assert.That(f.Status.DisplayedText(0), Is.EqualTo("Ready"));
+        Assert.That(f.Status.DisplayedText(1), Is.EqualTo("48 kHz"));
+        var bounds = f.Status.SegmentBounds();
+        Assert.That(bounds[1].Width, Is.EqualTo(80f));
+        Assert.That(bounds[0].Width + bounds[1].Width, Is.EqualTo(f.Status.Bounds.Width).Within(0.01f));
+
+        // Tool bar hover.
+        f.Host.DispatchMouseMove(f.SaveButton.Bounds.Center, ModifierKeys.None);
+        Assert.That(f.Status.DisplayedText(0), Is.EqualTo("Saves the document"));
+        f.Host.DispatchMouseMove(new Point(300f, 200f), ModifierKeys.None);
+        Assert.That(f.Status.Hint, Is.Null);
+
+        // Menu highlight, then closing the menu clears the hint.
+        f.Menu.OpenMenu(0, fromKeyboard: true);
+        Assert.That(f.Status.DisplayedText(0), Is.EqualTo("Saves the document"));
+        f.Host.DispatchKeyDown(new KeyEventArgs(Key.Down, ModifierKeys.None));
+        Assert.That(f.Status.DisplayedText(0), Is.EqualTo("Closes it"));
+        f.Menu.CloseMenu();
+        Assert.That(f.Status.Hint, Is.Null);
+
+        // Temporary message.
+        f.Status.ShowMessage("Saved: a.bqd", seconds: 1.0);
+        Assert.That(f.Status.DisplayedText(0), Is.EqualTo("Saved: a.bqd"));
+        for (int i = 0; i < 70; i++) f.Host.StepFrame(1.0 / 60.0);
+        Assert.That(f.Status.Message, Is.Null);
+        Assert.That(f.Status.DisplayedText(0), Is.EqualTo("Ready"));
+    }
+
+    [Test]
+    public void CommandDescriptionsReachTheMenusAndTheStrings()
+    {
+        var undo = new UndoStack { Strings = UIStrings.French };
+        Assert.That(undo.UndoCommand.Description, Is.EqualTo("Annule la dernière modification"));
+        Assert.That(new MenuItem(undo.RedoCommand).Description, Is.EqualTo("Rétablit la dernière modification annulée"));
+        Assert.That(new MenuItem(undo.RedoCommand) { Description = "x" }.Description, Is.EqualTo("x"));
+        Assert.That(UIStrings.French.FormatStatusSaved("a.bqd"), Is.EqualTo("Enregistré : a.bqd"));
     }
 
     // ---------------------------------------------------------------- undo stack

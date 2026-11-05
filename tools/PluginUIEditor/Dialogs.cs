@@ -1,4 +1,4 @@
-// 2026/10/19 13:37:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -119,13 +119,14 @@ internal static class NewProjectDialog
         if (!CSharpDesignGenerator.IsIdentifier(suggested)) suggested = "MyPlugin";
         var name = new TextBox { Text = suggested };
         var kind = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-        kind.Items.AddRange([t.KindEffect, t.KindInstrument, t.KindStandalone]);
+        kind.Items.AddRange([t.KindEffect, t.KindInstrument, t.KindStandalone, t.KindDesktop]); // order of ScaffoldKind
         kind.SelectedIndex = design.AllNodes().Any(n => n.Type is "PianoKeyboard" or "PitchWheel" or "ModWheel") ? 1 : 0;
         var folder = new TextBox { Text = settings.ProjectFolder.Length > 0 ? settings.ProjectFolder : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Width = 360 };
         var vendor = new TextBox { Text = settings.Vendor };
         var url = new TextBox { Text = "https://example.com" };
         var email = new TextBox { Text = "contact@example.com" };
         var live = new CheckBox { Text = t.LiveBridge, Checked = true, AutoSize = true };
+        kind.SelectedIndexChanged += (_, _) => live.Enabled = kind.SelectedIndex <= 1; // the live bridge is for plug-ins
         DialogLayout.Row(table, 0, t.ProjectName, name);
         DialogLayout.Row(table, 1, t.ProjectKind, kind);
         DialogLayout.Row(table, 2, t.ProjectFolder, folder, DialogLayout.BrowseFolder(folder, t.ProjectFolder));

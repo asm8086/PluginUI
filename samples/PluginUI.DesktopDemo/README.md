@@ -1,4 +1,4 @@
-<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # Biquad Designer — PluginUI desktop demo
 
@@ -15,6 +15,7 @@ The same code runs as IL (`dotnet run`, debugger) or as one NativeAOT executable
 | Feature | Where |
 |---|---|
 | Menu bar with mnemonics, Alt / F10, shortcuts, check marks, sub-menus | `DesignerWindow` (`MenuBar`, `Command`, `KeyGesture`) |
+| Tool bar sharing the menu commands, status bar with hints, section count, sample rate and messages | `ToolBar`, `StatusBar` |
 | New / Open / Save / Save As, "save changes?" when closing, title "Name* — Biquad Designer" | `DocumentSession` |
 | Undo / redo of every edit: knob drags, dragged points, menus | `UndoStack.Track`, `UndoStack.Do` |
 | Recent files sub-menu, files dropped on the window, file on the command line | `RecentFiles`, `UIHost.FilesDropped` |

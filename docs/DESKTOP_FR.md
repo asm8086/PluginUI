@@ -1,4 +1,4 @@
-<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # Applications de bureau avec PluginUI
 
@@ -25,6 +25,8 @@ JSON par génération de source) et les analyseurs transforment toute incompatib
 |---|---|---|
 | `StandaloneWindow` | PluginUI | Fenêtre principale : DPI, redimensionnement, boucle de messages, `ShowDialog` (modal), barre de titre sombre, icône, position mémorisée |
 | `MenuBar` | PluginUI | Barre de menus dessinée : clic, Alt+lettre, Alt seul ou F10, flèches, survol d'un menu à l'autre, raccourcis de toutes les entrées |
+| `ToolBar`, `ToolGlyph` | PluginUI | Rangée de boutons construits à partir des mêmes commandes que les menus, avec 18 icônes vectorielles |
+| `StatusBar` | PluginUI | Champs en bas de la fenêtre, descriptions des entrées survolées, messages temporaires |
 | `Command`, `KeyGesture`, `CommandSet` | PluginUI | Actions avec libellé, raccourci, état actif et coché, partagées par les menus et le clavier |
 | `Mnemonics` | PluginUI | Marqueurs `&` des textes de menu (« &Fichier », « Enregistrer &sous… », « R&&D ») |
 | `DesktopApplication` | PluginUI.Desktop | DPI, dossier de données, position de la fenêtre, fichiers récents, commandes, boucle, rapport de plantage |
@@ -126,6 +128,46 @@ edit.Items.Add(new MenuItem(delete));
   clic sur un titre, puis survol des autres.
 - **Menus dynamiques.** Reconstruisez les entrées dans `MenuBar.Opening` (fichiers récents, liste des fenêtres).
 
+## Barre d'outils et barre d'état
+
+```csharp
+var tools = new ToolBar { Dock = Side.Top };
+tools.Add(doc.NewCommand, ToolGlyph.New);
+tools.Add(doc.OpenCommand, ToolGlyph.Open);
+tools.Add(doc.SaveCommand, ToolGlyph.Save);
+tools.AddSeparator();
+tools.Add(doc.Undo.UndoCommand, ToolGlyph.Undo);
+tools.Add(doc.Undo.RedoCommand, ToolGlyph.Redo);
+tools.Add(showGrid, ToolGlyph.Grid);             // une commande cochable paraît enfoncée tant qu'elle est cochée
+
+var status = new StatusBar { Dock = Side.Bottom };
+status.Segments.Add(new StatusBarSegment(() => host.Strings.StatusReady, float.PositiveInfinity)); // étiré
+status.Segments.Add(new StatusBarSegment(() => $"{zoom:0} %", 70f) { Align = HorizontalAlignment.Right });
+status.Follow(menuBar);                           // description de l'entrée de menu en surbrillance
+status.Follow(tools);                             // description du bouton sous la souris
+doc.Saved += (_, path) => status.ShowMessage(host.Strings.FormatStatusSaved(Path.GetFileName(path)));
+```
+
+- Un bouton affiche sa commande telle qu'elle est à chaque affichage : grisé quand elle ne peut pas s'exécuter,
+  enfoncé quand elle est cochée, info-bulle « Enregistrer (Ctrl+S) ». Icônes : `ToolGlyph` (New, Open, Save, Undo,
+  Redo, Cut, Copy, Paste, Delete, ZoomIn, ZoomOut, Settings, Help, Play, Stop, Record, Grid, Wave), ou votre propre
+  dessin avec `ToolBarButton.DrawIcon` ; sans icône, le texte est affiché.
+- La barre d'état affiche `Command.Description` (ou `MenuItem.Description`) pendant qu'une entrée est en surbrillance
+  ou qu'un bouton est survolé, dans son premier champ étiré ; `ShowMessage(text, seconds)` y écrit un message
+  temporaire. Les commandes de `DocumentSession`, `UndoStack` et `DesktopApplication.ExitCommand` ont des descriptions
+  traduites.
+
+Placez les barres dans un `DockPanel` dans cet ordre : barre de menus et barre d'outils (`Side.Top`), barre d'état
+(`Side.Bottom`), puis le contenu, qui prend le reste.
+
+## Créer un projet
+
+PluginUIEditor crée une application de bureau complète à partir d'un design : *Fichier ▸ Nouveau projet*, type
+**Application de bureau**. Le projet contient la barre de menus, la barre d'outils, la barre d'état, une
+`DocumentSession` dont les documents sont les valeurs des paramètres du design (JSON), l'annulation de chaque
+contrôle, les fichiers récents, des réglages et un `Main` en `[STAThread]`. Le design reste modifiable dans
+PluginUIEditor (`Editor\<Nom>View.pluginui`).
+
 ## Documents, annulation et fichiers récents
 
 `DocumentSession` pilote une application à document unique. Donnez-lui trois fonctions et utilisez ses commandes :
@@ -200,6 +242,6 @@ dotnet run --project samples/PluginUI.DesktopDemo                               
 dotnet publish samples/PluginUI.DesktopDemo -c Release -r win-x64 -p:PublishAot=true   # NativeAOT
 ```
 
-![Menu Edition ouvert par Alt+E](images/fr/desktop-menu.png)
+![Menu Edition ouvert par Alt+E : la barre d'état décrit l'entrée en surbrillance](images/fr/desktop-menu.png)
 
 ![Question avant de perdre les modifications](images/fr/desktop-save.png)

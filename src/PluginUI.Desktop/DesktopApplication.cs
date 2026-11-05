@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -106,6 +106,20 @@ public sealed partial class DesktopApplication
             SaveState();
             _mainWindow = null;
         }
+    }
+
+    /// <summary>
+    /// File / Exit command (shortcut Alt+F4, texts in <see cref="UIHost.DefaultLanguage"/> at first use): runs
+    /// <see cref="Exit"/>.
+    /// </summary>
+    public Command ExitCommand => _exitCommand ??= CreateExitCommand();
+
+    private Command? _exitCommand;
+
+    private Command CreateExitCommand()
+    {
+        var t = UIStrings.ForLanguage(UIHost.DefaultLanguage);
+        return new Command(t.MenuExit, Exit, KeyGesture.Parse("Alt+F4")) { Description = t.HintExit };
     }
 
     /// <summary>Asks the main window to close (File / Exit): its <see cref="StandaloneWindow.Closing"/> handlers can cancel.</summary>

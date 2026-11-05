@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -44,6 +44,9 @@ public class MenuPopup : Popup
     /// </summary>
     public event Action<MenuPopup, int>? NavigateSibling;
 
+    /// <summary>Raised on the root menu when the highlighted entry changes, in this menu or a sub-menu (null: none).</summary>
+    public event Action<MenuPopup, MenuItem?>? ItemHighlighted;
+
     /// <summary>Underlines the mnemonic characters (menus opened from the keyboard). Sub-menus inherit it.</summary>
     public bool ShowMnemonics { get; set; }
 
@@ -58,6 +61,8 @@ public class MenuPopup : Popup
             _highlight = value;
             EnsureVisible(value);
             InvalidateVisual();
+            var root = Root;
+            root.ItemHighlighted?.Invoke(root, value >= 0 ? Items[value] : null);
         }
     }
 

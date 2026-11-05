@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -219,6 +219,8 @@ public sealed class UndoStack
     {
         UndoCommand.Text = _strings.FormatUndo(UndoName);
         RedoCommand.Text = _strings.FormatRedo(RedoName);
+        UndoCommand.Description = _strings.HintUndo;
+        RedoCommand.Description = _strings.HintRedo;
     }
 
     private sealed record Entry(string Name, Action Redo, Action Undo, object? MergeKey, long Id);

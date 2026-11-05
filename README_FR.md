@@ -1,4 +1,4 @@
-<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -71,9 +71,9 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer : application de bureau (IL ou NativeAOT) construite avec PluginUI.Desktop
 ├── samples/Designs/                Designs d'exemple (.pluginui), dont la disposition de DemoSynth
-├── tests/PluginUI.Tests/           162 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau)
+├── tests/PluginUI.Tests/           165 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau)
 ├── tests/PluginUI.NPlug.Tests/     25 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
-└── tests/PluginUI.Design.Tests/    25 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
+└── tests/PluginUI.Design.Tests/    26 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
 ```
 
 Environ 34 000 lignes de C# pour les bibliothèques. Tous les membres publics ont leur documentation XML.
@@ -185,7 +185,7 @@ return new StandaloneWindow(host, "Mon application").Run();
 
 PluginUI peut aussi être l'interface complète d'une application Windows, compilée en IL (`dotnet run`, débogage) ou en
 NativeAOT (`dotnet publish -p:PublishAot=true`, un seul `.exe` natif). La bibliothèque de base fournit la barre de menus
-(`MenuBar`, Alt / F10 / lettres soulignées), les commandes et raccourcis (`Command`, `KeyGesture`, `CommandSet`), les
+(`MenuBar`, Alt / F10 / lettres soulignées), les barres d'outils et d'état (`ToolBar`, `StatusBar`), les commandes et raccourcis (`Command`, `KeyGesture`, `CommandSet`), les
 fenêtres modales (`StandaloneWindow.ShowDialog`), la barre de titre sombre, l'icône et la position mémorisée ; le paquet
 **PluginUI.Desktop** ajoute l'objet application, les documents (Nouveau / Ouvrir / Enregistrer / Enregistrer sous,
 « enregistrer les modifications ? »), annuler / rétablir, les fichiers récents et des réglages JSON sans réflexion.

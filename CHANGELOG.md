@@ -1,4 +1,4 @@
-<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -43,8 +43,21 @@ Before 1.0, minor versions may contain breaking changes.
   draggable response, coefficients, `.bqd` files, undo, recent files, light theme, French interface), built with
   NativeAOT by `build/Build-Release.ps1` and shipped as `BiquadDesigner-<version>-win-<arch>.zip`.
 
+- **ToolBar**, **ToolBarButton**, **ToolBarSeparator**: tool bar of buttons built from `Command` objects (greyed out
+  when the command cannot run, pressed while checked, tooltip with the shortcut), 18 vector icons (`ToolGlyph`,
+  `ToolGlyphs.Draw`) or a custom `DrawIcon`, `HintChanged` for a status bar. Registered for PluginUIEditor designs.
+- **StatusBar** with `StatusBarSegment`: fixed, fitted or stretched fields with live text sources, `Hint` (description
+  of the highlighted menu entry or hovered button through `Follow(MenuBar)` / `Follow(ToolBar)`), temporary messages
+  (`ShowMessage`). `MenuItem.Description`, `MenuPopup.ItemHighlighted`, `MenuBar.HintChanged`.
+- **PluginUI.Desktop**: `DesktopApplication.ExitCommand`, `DocumentSession.Saved` / `Opened`, localized descriptions of
+  the document, undo and exit commands; `UIStrings` hints and status texts (Ready, Saved, Opened).
+- **Project creation**: new kind `ScaffoldKind.DesktopApplication` (PluginUIEditor: *Desktop application*): menu bar,
+  tool bar, status bar, documents saving the parameter values of the design, undo, recent files, settings.
+
 ### Changed
 
+- **Project creation**: the standalone application template has an `[STAThread]` `Main` and an `app.manifest`
+  (per-monitor DPI).
 - **MenuItem**: an `&` followed by a letter or a digit is now a mnemonic marker in drawn menus too (it already was in
   native menus); `&&` writes `&`, any other `&` stays literal. `DropDown`, `PresetBar` and the MIDI learn entries
   escape their data (`Mnemonics.Escape`), so "R&B" still shows as is.

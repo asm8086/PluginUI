@@ -1,4 +1,4 @@
-<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -71,9 +71,9 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer: desktop application (IL or NativeAOT) built with PluginUI.Desktop
 ├── samples/Designs/                Sample designs (.pluginui), including the DemoSynth layout
-├── tests/PluginUI.Tests/           162 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers)
+├── tests/PluginUI.Tests/           165 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers)
 ├── tests/PluginUI.NPlug.Tests/     25 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
-└── tests/PluginUI.Design.Tests/    25 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
+└── tests/PluginUI.Design.Tests/    26 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
 ```
 
 About 34,000 lines of C# for the libraries. All public members have XML documentation.
@@ -184,7 +184,7 @@ return new StandaloneWindow(host, "My application").Run();
 
 PluginUI can also be the whole interface of a Windows application, compiled as IL (`dotnet run`, debugging) or
 NativeAOT (`dotnet publish -p:PublishAot=true`, one native `.exe`). The core library has the menu bar (`MenuBar`,
-Alt / F10 / mnemonics), commands and shortcuts (`Command`, `KeyGesture`, `CommandSet`), modal windows
+Alt / F10 / mnemonics), the tool bar and the status bar (`ToolBar`, `StatusBar`), commands and shortcuts (`Command`, `KeyGesture`, `CommandSet`), modal windows
 (`StandaloneWindow.ShowDialog`), the dark title bar, the icon and the saved placement; the **PluginUI.Desktop** package
 adds the application object, documents (New / Open / Save / Save As, "save changes?"), undo / redo, recent files and
 JSON settings without reflection.

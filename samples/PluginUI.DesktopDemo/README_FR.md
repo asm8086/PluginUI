@@ -1,4 +1,4 @@
-<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # Biquad Designer — démonstration bureau de PluginUI
 
@@ -15,6 +15,7 @@ coefficients. Le même code fonctionne en IL (`dotnet run`, débogueur) ou en un
 | Fonction | Où |
 |---|---|
 | Barre de menus avec lettres soulignées, Alt / F10, raccourcis, coches, sous-menus | `DesignerWindow` (`MenuBar`, `Command`, `KeyGesture`) |
+| Barre d'outils partageant les commandes des menus, barre d'état avec descriptions, nombre de sections, fréquence d'échantillonnage et messages | `ToolBar`, `StatusBar` |
 | Nouveau / Ouvrir / Enregistrer / Enregistrer sous, « enregistrer les modifications ? » à la fermeture, titre « Nom* — Biquad Designer » | `DocumentSession` |
 | Annulation de chaque modification : boutons rotatifs, points glissés, menus | `UndoStack.Track`, `UndoStack.Do` |
 | Sous-menu des fichiers récents, fichiers déposés sur la fenêtre, fichier en ligne de commande | `RecentFiles`, `UIHost.FilesDropped` |

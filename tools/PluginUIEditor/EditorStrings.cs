@@ -1,4 +1,4 @@
-// 2026/10/19 13:37:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -42,7 +42,7 @@ internal sealed record EditorStrings
         OptionGrid = "Grille magnétique (DIP, 0 = aucune)",
         OptionPluginUIRoot = "Dossier de PluginUI (nouveaux projets)", Ok = "OK", Cancel = "Annuler", Browse = "Parcourir…",
         NewProjectTitle = "Nouveau projet", ProjectName = "Nom du projet (identifiant C#)", ProjectKind = "Type", KindEffect = "Effet VST3",
-        KindInstrument = "Instrument VST3", KindStandalone = "Application Windows", ProjectFolder = "Dossier parent", Vendor = "Éditeur",
+        KindInstrument = "Instrument VST3", KindStandalone = "Application Windows (fenêtre simple)", KindDesktop = "Application de bureau (menus, documents)", ProjectFolder = "Dossier parent", Vendor = "Éditeur",
         VendorUrl = "Site web", VendorEmail = "E-mail", LiveBridge = "Lien de design en direct dans les versions Debug", Create = "Créer",
         InvalidProjectName = "Le nom du projet doit être un identifiant C# (lettres, chiffres, _).",
         OptionExtensions = "Assemblies d'extension (un chemin .dll par ligne ; pris en compte au prochain démarrage)",
@@ -166,7 +166,8 @@ internal sealed record EditorStrings
     public string ProjectKind { get; init; } = "Kind";
     public string KindEffect { get; init; } = "VST3 effect";
     public string KindInstrument { get; init; } = "VST3 instrument";
-    public string KindStandalone { get; init; } = "Windows application";
+    public string KindStandalone { get; init; } = "Windows application (single window)";
+    public string KindDesktop { get; init; } = "Desktop application (menus, documents)";
     public string ProjectFolder { get; init; } = "Parent folder";
     public string Vendor { get; init; } = "Vendor";
     public string VendorUrl { get; init; } = "Web site";

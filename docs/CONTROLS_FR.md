@@ -1,4 +1,4 @@
-<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # Catalogue des éléments
 
@@ -49,6 +49,8 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 |---|---|---|
 | `DropDown` | Éléments du paramètre ou liste explicite, sous-menus par séparateur (`"Groupe/Élément"`), molette et flèches, éléments non applicables masqués (`IsItemAvailable`) | `COptionMenu`, `IVMenuButtonControl` |
 | `MenuButton` | Menu arbitraire (`MenuItem`), styles hamburger / points / texte + chevron | `IVMenuButtonControl` |
+| `ToolBar` | Barre d'outils de boutons construits à partir de `Command` (actif, coché, info-bulle avec le raccourci), 18 icônes vectorielles (`ToolGlyph`), séparateurs, descriptions pour une barre d'état | — (rangées de `COnOffButton` / `IVButtonControl`) |
+| `StatusBar` | Champs (fixes, ajustés, étirés ; textes calculés), descriptions de l'entrée de menu ou du bouton survolé, messages temporaires | — |
 | `MenuBar` | Barre de menus d'application : clic, Alt+lettre, Alt seul / F10, flèches entre menus, lettres soulignées `&`, raccourcis de toutes les entrées, entrées construites à partir de `Command` (texte, raccourci, états actif et coché). Voir [DESKTOP_FR.md](DESKTOP_FR.md) | — (barre de menus native des enveloppes autonomes) |
 | `MenuPopup` | Menu dessiné : coches, raccourcis, séparateurs, sous-menus, clavier, saisie rapide, défilement | `IPopupMenuControl` |
 | `NativeMenu` | Menu Win32 natif (`UIHost.UseNativeMenus`) | `COptionMenu` (natif) |

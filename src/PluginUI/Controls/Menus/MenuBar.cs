@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -66,6 +66,12 @@ public class MenuBar : UIElement
     /// <summary>Alt+letter, a lone Alt and F10 activate the bar (default <c>true</c>; turn off in plug-in editors).</summary>
     [Category("Behavior")]
     public bool HandlesAltKey { get; set; } = true;
+
+    /// <summary>
+    /// Raised when the highlighted entry of an open menu changes: its <see cref="MenuItem.Description"/>, or null when
+    /// no entry with a description is highlighted or the menu closes (see <see cref="StatusBar.Follow(MenuBar)"/>).
+    /// </summary>
+    public event Action<MenuBar, string?>? HintChanged;
 
     /// <summary>Raised before a menu opens (argument: its top-level entry), to rebuild its entries.</summary>
     public event Action<MenuBar, MenuItem>? Opening;
@@ -435,6 +441,7 @@ public class MenuBar : UIElement
             if (next >= 0 && next != index) OpenMenu(next, fromKeyboard: true);
         };
         popup.Closed += _ => OnPopupClosed(popup, index);
+        popup.ItemHighlighted += (_, entry) => HintChanged?.Invoke(this, entry?.Description);
         _popup = popup;
         _open = index;
         _keyboardIndex = index;
@@ -466,6 +473,7 @@ public class MenuBar : UIElement
     {
         if (!ReferenceEquals(_popup, popup)) return;
         _popup = null;
+        HintChanged?.Invoke(this, null);
         _open = -1;
         _closedIndex = index;
         _closedAt = Environment.TickCount64;

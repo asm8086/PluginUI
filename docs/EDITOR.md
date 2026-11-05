@@ -1,4 +1,4 @@
-<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # PluginUIEditor — visual designer
 
@@ -11,7 +11,7 @@ PluginUIEditor is a WinForms application for laying out PluginUI editors visuall
 | `.pluginui` | The design itself: layout, properties, parameter bindings, theme, code generation settings | Next to your editor code, under source control |
 | `.Designer.cs` | C# code that builds the same element tree, with no reflection at run time (NativeAOT) | Compiled into the plug-in |
 | Runtime loading | `DesignLoader.Build` reads a `.pluginui` file at run time (AOT-safe registry, no reflection serializer) | Skins, user layouts, tools |
-| New project | A complete NPlug effect, instrument or standalone app built around the design | A new folder, ready to build |
+| New project | A complete NPlug effect, instrument, standalone app or desktop application built around the design | A new folder, ready to build |
 | Exports | PNG images (100 % and 200 %), the theme as JSON, the assets the design uses | Documentation, web site, another project |
 | Live design bridge | Two-way link between the design file and the editor running in a DAW (debug builds) | Development |
 
@@ -199,7 +199,7 @@ Elements of unknown type are replaced by a dimmed label (`PlaceholderForUnknownT
 | Field | Meaning |
 |---|---|
 | Project name | A C# identifier: project, namespace and class names. It cannot be the name of a type or namespace the generated code uses (`Knob`, `PluginUI`, `NPlug`, `AudioPlugin`…), since it becomes the root namespace |
-| Type | VST3 effect, VST3 instrument (event input, on-screen keyboard connected), or Windows application |
+| Type | VST3 effect, VST3 instrument (event input, on-screen keyboard connected), Windows application (one window), or desktop application (PluginUI.Desktop: menu bar, tool bar, status bar, documents saving the parameter values, undo, recent files; see [DESKTOP.md](DESKTOP.md)) |
 | Parent folder | The project is created in `<folder>\<name>` (an existing folder is never overwritten) |
 | Vendor, web site, e-mail | Plug-in factory information |
 | Live design bridge | Adds the bridge to debug builds |

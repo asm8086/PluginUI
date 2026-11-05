@@ -1,4 +1,4 @@
-<!-- 2026/11/05 14:06:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # Desktop applications with PluginUI
 
@@ -24,6 +24,8 @@ source generation), and the analyzers turn any incompatibility into a build erro
 |---|---|---|
 | `StandaloneWindow` | PluginUI | Top-level window: DPI, resizing, message loop, `ShowDialog` (modal), dark title bar, icon, saved placement |
 | `MenuBar` | PluginUI | Drawn menu bar: click, Alt+letter, lone Alt or F10, arrows, hover between menus, shortcuts of every entry |
+| `ToolBar`, `ToolGlyph` | PluginUI | Row of buttons built from the same commands as the menus, with 18 vector icons |
+| `StatusBar` | PluginUI | Fields at the bottom of the window, descriptions of the highlighted entries, temporary messages |
 | `Command`, `KeyGesture`, `CommandSet` | PluginUI | Actions with a label, a shortcut, an enabled and a checked state, shared by menus and the keyboard |
 | `Mnemonics` | PluginUI | `&` markers of menu texts ("&File", "Save &As…", "R&&D") |
 | `DesktopApplication` | PluginUI.Desktop | DPI awareness, data folder, main window placement, recent files, commands, loop, crash report |
@@ -121,6 +123,44 @@ edit.Items.Add(new MenuItem(delete));
   Right go to the neighbouring menus. With the mouse: click a title, then hover the others.
 - **Dynamic menus.** Rebuild entries in `MenuBar.Opening` (recent files, window list).
 
+## Tool bar and status bar
+
+```csharp
+var tools = new ToolBar { Dock = Side.Top };
+tools.Add(doc.NewCommand, ToolGlyph.New);
+tools.Add(doc.OpenCommand, ToolGlyph.Open);
+tools.Add(doc.SaveCommand, ToolGlyph.Save);
+tools.AddSeparator();
+tools.Add(doc.Undo.UndoCommand, ToolGlyph.Undo);
+tools.Add(doc.Undo.RedoCommand, ToolGlyph.Redo);
+tools.Add(showGrid, ToolGlyph.Grid);             // a checkable command looks pressed while checked
+
+var status = new StatusBar { Dock = Side.Bottom };
+status.Segments.Add(new StatusBarSegment(() => host.Strings.StatusReady, float.PositiveInfinity)); // stretched
+status.Segments.Add(new StatusBarSegment(() => $"{zoom:0} %", 70f) { Align = HorizontalAlignment.Right });
+status.Follow(menuBar);                           // description of the highlighted menu entry
+status.Follow(tools);                             // description of the button under the mouse
+doc.Saved += (_, path) => status.ShowMessage(host.Strings.FormatStatusSaved(Path.GetFileName(path)));
+```
+
+- A button shows its command as it is at every repaint: greyed out when it cannot run, pressed when checked, tooltip
+  "Save (Ctrl+S)". Icons: `ToolGlyph` (New, Open, Save, Undo, Redo, Cut, Copy, Paste, Delete, ZoomIn, ZoomOut,
+  Settings, Help, Play, Stop, Record, Grid, Wave), or your own drawing with `ToolBarButton.DrawIcon`; without icon,
+  the text is shown.
+- The status bar shows `Command.Description` (or `MenuItem.Description`) while an entry is highlighted or a button
+  hovered, in its first stretched field; `ShowMessage(text, seconds)` writes a temporary message there. The commands
+  of `DocumentSession`, `UndoStack` and `DesktopApplication.ExitCommand` have localized descriptions.
+
+Put the bars in a `DockPanel` in this order: menu bar and tool bar (`Side.Top`), status bar (`Side.Bottom`), then the
+content, which takes the rest.
+
+## Creating a project
+
+PluginUIEditor creates a complete desktop application from a design: *File ▸ New project*, type **Desktop
+application**. The project has the menu bar, the tool bar, the status bar, a `DocumentSession` whose documents are the
+parameter values of the design (JSON), undo of every control, recent files, settings and an `[STAThread]` `Main`. The
+design remains editable in PluginUIEditor (`Editor\<Name>View.pluginui`).
+
 ## Documents, undo and recent files
 
 `DocumentSession` drives a single-document application. Give it three functions and use its commands:
@@ -190,6 +230,6 @@ dotnet run --project samples/PluginUI.DesktopDemo                               
 dotnet publish samples/PluginUI.DesktopDemo -c Release -r win-x64 -p:PublishAot=true   # NativeAOT
 ```
 
-![Edit menu opened with Alt+E](images/desktop-menu.png)
+![Edit menu opened with Alt+E: the status bar describes the highlighted entry](images/desktop-menu.png)
 
 ![Question before losing changes](images/desktop-save.png)

@@ -1,4 +1,4 @@
-// 2026/10/19 13:37:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -18,6 +18,12 @@ public enum ScaffoldKind
 
     /// <summary>Standalone Windows application hosting the design in a window.</summary>
     Standalone,
+
+    /// <summary>
+    /// Windows desktop application (PluginUI.Desktop): the design as main view, with menu bar, tool bar, status bar,
+    /// documents saving the parameter values (New / Open / Save / Save As, recent files), undo / redo and settings.
+    /// </summary>
+    DesktopApplication,
 }
 
 /// <summary>Options of <see cref="ProjectScaffolder"/>.</summary>
@@ -89,7 +95,7 @@ public static class ProjectScaffolder
     public static string? ValidateProjectName(string name, DesignTypeRegistry? registry = null)
     {
         if (!CSharpDesignGenerator.IsIdentifier(name)) return $"'{name}' is not a valid C# identifier.";
-        if (name is "PluginUI" or "NPlug" or "System" or "Microsoft" or "Windows" or "Editor" or "Plugin"
+        if (name is "PluginUI" or "NPlug" or "System" or "Microsoft" or "Windows" or "Editor" or "Plugin" or "Program" or "MainWindow" or "Desktop"
             || CSharpDesignGenerator.ReservedTypeNames(registry ?? DesignTypeRegistry.Default).Contains(name)
             || (name.StartsWith("Audio", StringComparison.Ordinal) && name.Length > 5 && char.IsUpper(name[5])))
         {
@@ -123,10 +129,11 @@ public static class ProjectScaffolder
         string designFile = $"Editor/{editor}.pluginui";
 
         var copy = DesignJson.Read(DesignJson.Write(design));
-        copy.Name = options.Kind == ScaffoldKind.Standalone ? name : editor;
+        bool app = options.Kind is ScaffoldKind.Standalone or ScaffoldKind.DesktopApplication;
+        copy.Name = app ? name : editor;
         copy.Codegen.Namespace = context.EditorNamespace;
         copy.Codegen.ClassName = editor;
-        copy.Codegen.Target = options.Kind == ScaffoldKind.Standalone ? CodegenTarget.Standalone : CodegenTarget.PluginEditorView;
+        copy.Codegen.Target = app ? CodegenTarget.Standalone : CodegenTarget.PluginEditorView;
         copy.Codegen.GenerateBuildOverride = true;
         copy.Comment = $"{(options.Timestamp ?? DateTime.UtcNow).ToString("yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture)} UTC - {name}";
         files[designFile] = DesignJson.Write(copy);
@@ -144,6 +151,15 @@ public static class ProjectScaffolder
             files[$"{name}.csproj"] = context.StandaloneProject();
             files["Program.cs"] = context.StandaloneProgram();
             files[$"Editor/{editor}.cs"] = context.StandaloneEditor();
+            files["app.manifest"] = context.AppManifest();
+        }
+        else if (options.Kind == ScaffoldKind.DesktopApplication)
+        {
+            files[$"{name}.csproj"] = context.DesktopProject();
+            files["Program.cs"] = context.DesktopProgram();
+            files["MainWindow.cs"] = context.DesktopMainWindow();
+            files[$"Editor/{editor}.cs"] = context.StandaloneEditor();
+            files["app.manifest"] = context.AppManifest();
         }
         else
         {
@@ -208,7 +224,9 @@ public static class ProjectScaffolder
         private readonly string _stamp = (options.Timestamp ?? DateTime.UtcNow).ToString("yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture);
 
         public string Name => options.ProjectName;
-        public string EditorClass => Name + (options.Kind == ScaffoldKind.Standalone ? "View" : "Editor");
+        public string EditorClass => Name + (IsApplication ? "View" : "Editor");
+
+        private bool IsApplication => options.Kind is ScaffoldKind.Standalone or ScaffoldKind.DesktopApplication;
         public string EditorNamespace => Name + ".Editor";
         private bool Instrument => options.Kind == ScaffoldKind.Instrument;
 
@@ -823,6 +841,7 @@ public static class ProjectScaffolder
                 <ImplicitUsings>enable</ImplicitUsings>
                 <IsAotCompatible>true</IsAotCompatible>
                 <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+                <ApplicationManifest>app.manifest</ApplicationManifest>
                 <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
               </PropertyGroup>
 
@@ -848,10 +867,258 @@ public static class ProjectScaffolder
 
             [assembly: SupportedOSPlatform("windows10.0.17763")]
 
-            StandaloneWindow.EnablePerMonitorDpiAwareness();
-            var view = new {{EditorClass}}();
-            var host = new UIHost(view.BuildDesign(), {{EditorClass}}.DesignSize, {{EditorClass}}.DesignSizing) { Theme = {{EditorClass}}.CreateDesignTheme() };
-            return new StandaloneWindow(host, {{S(Name)}}).Run();
+            namespace {{Name}};
+
+            internal static class Program
+            {
+                // STA: the file dialogs, the clipboard and drag and drop are COM / OLE services.
+                [STAThread]
+                private static int Main()
+                {
+                    StandaloneWindow.EnablePerMonitorDpiAwareness();
+                    var view = new {{EditorClass}}();
+                    var host = new UIHost(view.BuildDesign(), {{EditorClass}}.DesignSize, {{EditorClass}}.DesignSizing) { Theme = {{EditorClass}}.CreateDesignTheme() };
+                    return new StandaloneWindow(host, {{S(Name)}}).Run();
+                }
+            }
+
+            """;
+
+        public string AppManifest() => "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + Header("xml") + $$"""
+            <assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+              <assemblyIdentity version="1.0.0.0" name="{{Name}}.app" />
+              <application xmlns="urn:schemas-microsoft-com:asm.v3">
+                <windowsSettings>
+                  <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+                  <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+                </windowsSettings>
+              </application>
+              <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+                <application>
+                  <!-- Windows 10 / 11 -->
+                  <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+                </application>
+              </compatibility>
+            </assembly>
+
+            """;
+
+        private string Extension => Name.ToLowerInvariant();
+
+        public string DesktopProject() => Header("xml") + $$"""
+            <Project Sdk="Microsoft.NET.Sdk">
+
+              <!--
+                Desktop application whose whole interface is PluginUI (PluginUI.Desktop).
+                  dotnet run                                       IL build, debuggable (F5 in Visual Studio)
+                  dotnet publish -c Release -p:PublishAot=true     one native .exe, no .NET runtime needed
+                Add <ApplicationIcon>app.ico</ApplicationIcon> for the window and taskbar icon.
+              -->
+              <PropertyGroup>
+                <OutputType>WinExe</OutputType>
+                <TargetFramework>net10.0</TargetFramework>
+                <RootNamespace>{{Name}}</RootNamespace>
+                <Nullable>enable</Nullable>
+                <ImplicitUsings>enable</ImplicitUsings>
+                <IsAotCompatible>true</IsAotCompatible>
+                <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+                <ApplicationManifest>app.manifest</ApplicationManifest>
+                <Version>{{options.Version.ToString(3)}}</Version>
+                <Company>{{System.Security.SecurityElement.Escape(options.Vendor)}}</Company>
+                <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+              </PropertyGroup>
+
+              <PropertyGroup>
+                <PluginUIRoot Condition="'$(PluginUIRoot)' == ''">{{options.PluginUIRoot}}</PluginUIRoot>
+              </PropertyGroup>
+
+              <ItemGroup>
+                <ProjectReference Include="$(PluginUIRoot)src\PluginUI.Desktop\PluginUI.Desktop.csproj" />
+              </ItemGroup>
+
+            {{AssetItems}}
+
+            </Project>
+
+            """;
+
+        public string DesktopProgram() => Header("cs") + $$"""
+
+            using System.Runtime.Versioning;
+            using PluginUI;
+            using PluginUI.Desktop;
+
+            [assembly: SupportedOSPlatform("windows10.0.17763")]
+
+            namespace {{Name}};
+
+            internal static class Program
+            {
+                // STA is required: the file dialogs, the clipboard and drag and drop are COM / OLE services.
+                [STAThread]
+                private static int Main(string[] args)
+                {
+                    var app = new DesktopApplication({{S(Name)}}, company: {{S(options.Vendor)}});
+                    var settings = AppSettings<AppPreferences>.Load(app.GetDataPath("settings.json"), AppJson.Default.AppPreferences);
+                    UIHost.DefaultLanguage = settings.Value.Language;
+                    var main = new MainWindow(app, settings);
+                    if (args.Length > 0 && File.Exists(args[0])) main.Host.Post(() => main.Session.OpenFile(args[0], confirm: false));
+                    return app.Run(main.Window);
+                }
+            }
+
+            """;
+
+        public string DesktopMainWindow() => Header("cs") + $$"""
+
+            using System.Text.Json;
+            using System.Text.Json.Serialization;
+            using PluginUI;
+            using PluginUI.Desktop;
+            using {{EditorNamespace}};
+
+            namespace {{Name}};
+
+            /// <summary>
+            /// Main window: menu bar, tool bar, the design ({{EditorClass}}) and a status bar. The document is the set of
+            /// parameter values of the view, saved as JSON (*.{{Extension}}); every edit is undoable.
+            /// </summary>
+            internal sealed class MainWindow
+            {
+                private readonly {{EditorClass}} _view = new();
+                private readonly AppSettings<AppPreferences> _settings;
+
+                public MainWindow(DesktopApplication app, AppSettings<AppPreferences> settings)
+                {
+                    _settings = settings;
+                    var t = UIStrings.ForLanguage(UIHost.DefaultLanguage);
+                    var file = new MenuItem(t.MenuFile);
+                    var edit = new MenuItem(t.MenuEdit);
+                    var view = new MenuItem(t.MenuView);
+                    var help = new MenuItem(t.MenuHelp);
+                    MenuBar = new MenuBar(file, edit, view, help) { Dock = Side.Top };
+                    ToolBar = new ToolBar { Dock = Side.Top };
+                    StatusBar = new StatusBar { Dock = Side.Bottom };
+
+                    var root = new DockPanel();
+                    root.Children.Add(MenuBar);
+                    root.Children.Add(ToolBar);
+                    root.Children.Add(StatusBar);
+                    root.Children.Add(_view.BuildDesign());
+
+                    var size = {{EditorClass}}.DesignSize;
+                    Host = new UIHost(root, new Size(size.Width, size.Height + 90f), SizingMode.Relayout)
+                    {
+                        Theme = {{EditorClass}}.CreateDesignTheme(),
+                        MinSize = new Size(480f, 320f),
+                    };
+                    Window = new StandaloneWindow(Host, app.Name);
+
+                    Session = new DocumentSession(Window, app, [new FileFilter({{S(Name)}}, "*.{{Extension}}")], {{S(Extension)}})
+                    {
+                        Reset = Reset,
+                        Read = Read,
+                        Write = Write,
+                    };
+                    foreach (var parameter in _view.Parameters.Values.OfType<LocalParameter>()) Session.Undo.Track(parameter);
+
+                    var recent = new MenuItem(t.RecentFiles);
+                    file.Items.Add(new MenuItem(Session.NewCommand));
+                    file.Items.Add(new MenuItem(Session.OpenCommand));
+                    file.Items.Add(recent);
+                    file.Items.Add(MenuItem.Separator());
+                    file.Items.Add(new MenuItem(Session.SaveCommand));
+                    file.Items.Add(new MenuItem(Session.SaveAsCommand));
+                    file.Items.Add(MenuItem.Separator());
+                    file.Items.Add(new MenuItem(app.ExitCommand));
+                    edit.Items.Add(new MenuItem(Session.Undo.UndoCommand));
+                    edit.Items.Add(new MenuItem(Session.Undo.RedoCommand));
+
+                    var light = new Command("&Light theme", ToggleTheme) { IsCheckedWhen = () => _settings.Value.LightTheme };
+                    view.Items.Add(new MenuItem(light));
+                    var about = new Command(t.FormatAbout(app.Name), () => Host.ShowPopup(new AboutBox(app.Name, typeof(MainWindow).Assembly.GetName().Version?.ToString(3))), KeyGesture.Parse("F1"));
+                    help.Items.Add(new MenuItem(about));
+                    MenuBar.Opening += (_, top) =>
+                    {
+                        if (ReferenceEquals(top, file)) app.RecentFiles.FillMenu(recent, path => Session.OpenFile(path), Host.Strings);
+                    };
+
+                    ToolBar.Add(Session.NewCommand, ToolGlyph.New);
+                    ToolBar.Add(Session.OpenCommand, ToolGlyph.Open);
+                    ToolBar.Add(Session.SaveCommand, ToolGlyph.Save);
+                    ToolBar.AddSeparator();
+                    ToolBar.Add(Session.Undo.UndoCommand, ToolGlyph.Undo);
+                    ToolBar.Add(Session.Undo.RedoCommand, ToolGlyph.Redo);
+                    ToolBar.AddSeparator();
+                    ToolBar.Add(about, ToolGlyph.Help);
+
+                    StatusBar.Segments.Add(new StatusBarSegment(() => Host.Strings.StatusReady, float.PositiveInfinity));
+                    StatusBar.Segments.Add(new StatusBarSegment(() => Session.DisplayName, 0f) { Align = HorizontalAlignment.Right });
+                    StatusBar.Follow(MenuBar);
+                    StatusBar.Follow(ToolBar);
+                    Session.Saved += (_, path) => StatusBar.ShowMessage(Host.Strings.FormatStatusSaved(Path.GetFileName(path)));
+                    Session.Opened += (_, path) => StatusBar.ShowMessage(Host.Strings.FormatStatusOpened(Path.GetFileName(path)));
+
+                    if (_settings.Value.LightTheme) Host.Theme = Theme.Light;
+                    Window.Closed += _ => _settings.Save();
+                }
+
+                public UIHost Host { get; }
+
+                public StandaloneWindow Window { get; }
+
+                public DocumentSession Session { get; }
+
+                public MenuBar MenuBar { get; }
+
+                public ToolBar ToolBar { get; }
+
+                public StatusBar StatusBar { get; }
+
+                private void Reset()
+                {
+                    foreach (var parameter in _view.Parameters.Values.OfType<LocalParameter>()) parameter.NormalizedValue = parameter.DefaultNormalizedValue;
+                }
+
+                private bool Read(string path)
+                {
+                    using var stream = File.OpenRead(path);
+                    var values = JsonSerializer.Deserialize(stream, AppJson.Default.DictionaryStringDouble) ?? throw new InvalidDataException("Empty file.");
+                    foreach (var (name, value) in values)
+                    {
+                        if (_view.Parameters.GetValueOrDefault(name) is LocalParameter parameter) parameter.NormalizedValue = value;
+                    }
+                    return true;
+                }
+
+                private bool Write(string path)
+                {
+                    var values = _view.Parameters.ToDictionary(p => p.Key, p => p.Value.NormalizedValue);
+                    using var stream = File.Create(path);
+                    JsonSerializer.Serialize(stream, values, AppJson.Default.DictionaryStringDouble);
+                    return true;
+                }
+
+                private void ToggleTheme()
+                {
+                    _settings.Value.LightTheme = !_settings.Value.LightTheme;
+                    Host.Theme = _settings.Value.LightTheme ? Theme.Light : {{EditorClass}}.CreateDesignTheme();
+                    Window.UpdateTitleBarTheme();
+                }
+            }
+
+            /// <summary>Settings saved in %APPDATA% (JSON, source generated: NativeAOT compatible).</summary>
+            internal sealed class AppPreferences
+            {
+                public bool LightTheme { get; set; }
+
+                public string Language { get; set; } = "auto";
+            }
+
+            [JsonSerializable(typeof(AppPreferences))]
+            [JsonSerializable(typeof(Dictionary<string, double>))]
+            [JsonSourceGenerationOptions(WriteIndented = true)]
+            internal sealed partial class AppJson : JsonSerializerContext;
 
             """;
 
@@ -913,19 +1180,20 @@ public static class ProjectScaffolder
             {
                 ScaffoldKind.Effect => "VST3 audio effect",
                 ScaffoldKind.Instrument => "VST3 instrument",
+                ScaffoldKind.DesktopApplication => "Windows desktop application (menu bar, tool bar, documents, undo)",
                 _ => "Windows application",
             };
-            string build = options.Kind == ScaffoldKind.Standalone
+            string build = IsApplication
                 ? "```\ndotnet run\ndotnet publish -c Release -p:PublishAot=true   # single native executable\n```\n"
                 : $"```\ndotnet build -c Debug                   # bin\\Debug\\net10.0\\win-x64\\{Name}.vst3 (win-arm64 on ARM64; debuggable through the NPlug proxy)\ndotnet publish -c Release -r win-x64    # NativeAOT {Name}.vst3 (AVX2); add -p:IlcInstructionSet=x86-64-v2 for older CPUs\ndotnet publish -c Release -r win-arm64  # NativeAOT {Name}.vst3 for Windows on ARM\n```\n\nCopy the `.vst3` to `C:\\Program Files\\Common Files\\VST3` and rescan the plug-ins in the DAW.\n";
-            string live = options.IncludeLiveBridge && options.Kind != ScaffoldKind.Standalone
+            string live = options.IncludeLiveBridge && !IsApplication
                 ? "\n## Live design (Debug builds)\n\n- In the DAW, Ctrl+Shift+E turns on live edit in the editor: move and resize, then **Ctrl+S** writes the layout to the design file.\n- Saving the design in PluginUIEditor rebuilds the editor in the DAW at once.\n- Regenerate the `.Designer.cs` file (PluginUIEditor: *Generate code*) before a release build.\n"
                 : string.Empty;
             return Header("md") + $$"""
 
                 # {{Name}}
 
-                {{kind}} written in C# with {{(options.Kind == ScaffoldKind.Standalone ? "" : "[NPlug](https://github.com/xoofx/NPlug) and ")}}PluginUI, created from a PluginUIEditor design.
+                {{kind}} written in C# with {{(IsApplication ? "" : "[NPlug](https://github.com/xoofx/NPlug) and ")}}PluginUI{{(options.Kind == ScaffoldKind.DesktopApplication ? " and PluginUI.Desktop" : "")}}, created from a PluginUIEditor design.
 
                 ## Files
 
@@ -935,12 +1203,12 @@ public static class ProjectScaffolder
                 | `Editor/{{EditorClass}}.Designer.cs` | Generated from the design (do not edit) |
                 | `Editor/{{EditorClass}}.cs` | Your editor code: events in `OnBuilt` |
                 | `Editor/assets/` | Images and SVG of the design (embedded resources) |
-                {{(options.Kind == ScaffoldKind.Standalone ? "| `Program.cs` | Window and host |" : $"| `Plugin/{Name}Model.cs` | Parameters (titles = design parameter names) |\n| `Plugin/{Name}Processor.cs` | Audio processing (audio thread) |\n| `Plugin/{Name}Controller.cs` | Edit controller, creates the editor |\n| `Plugin/{Name}Plugin.cs` | Factory: name, vendor, class ids |")}}
+                {{(options.Kind == ScaffoldKind.DesktopApplication ? "| `Program.cs` | Entry point ([STAThread]) and settings |\n| `MainWindow.cs` | Menus, tool bar, status bar, document (parameter values as JSON) |" : options.Kind == ScaffoldKind.Standalone ? "| `Program.cs` | Window and host |" : $"| `Plugin/{Name}Model.cs` | Parameters (titles = design parameter names) |\n| `Plugin/{Name}Processor.cs` | Audio processing (audio thread) |\n| `Plugin/{Name}Controller.cs` | Edit controller, creates the editor |\n| `Plugin/{Name}Plugin.cs` | Factory: name, vendor, class ids |")}}
 
                 ## Build
 
                 {{build}}
-                It expects the PluginUI sources at the path set in the project file (`PluginUIRoot`){{(options.Kind == ScaffoldKind.Standalone ? "" : "; NPlug comes from its NuGet package")}}.
+                It expects the PluginUI sources at the path set in the project file (`PluginUIRoot`){{(IsApplication ? "" : "; NPlug comes from its NuGet package")}}.
                 {{live}}
                 """;
         }

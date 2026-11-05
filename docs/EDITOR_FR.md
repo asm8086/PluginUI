@@ -1,4 +1,4 @@
-<!-- 2026/10/19 13:37:00 UTC - PluginUI -->
+<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
 
 # PluginUIEditor — concepteur visuel
 
@@ -11,7 +11,7 @@ PluginUIEditor est une application WinForms qui sert à composer visuellement le
 | `.pluginui` | Le design lui-même : disposition, propriétés, liaisons aux paramètres, thème, réglages de génération de code | À côté du code de l'éditeur, sous contrôle de version |
 | `.Designer.cs` | Du code C# qui construit le même arbre d'éléments, sans réflexion à l'exécution (NativeAOT) | Compilé dans le plugin |
 | Chargement à l'exécution | `DesignLoader.Build` lit un `.pluginui` pendant l'exécution (registre compatible AOT, pas de sérialiseur par réflexion) | Habillages, dispositions choisies par l'utilisateur, outils |
-| Nouveau projet | Un projet NPlug complet (effet, instrument) ou une application autonome construits autour du design | Un nouveau dossier, prêt à compiler |
+| Nouveau projet | Un projet NPlug complet (effet, instrument), une application autonome ou une application de bureau construits autour du design | Un nouveau dossier, prêt à compiler |
 | Exports | Images PNG (100 % et 200 %), thème en JSON, ressources utilisées par le design | Documentation, site web, autre projet |
 | Lien de design en direct | Lien dans les deux sens entre le fichier de design et l'éditeur ouvert dans le DAW (versions Debug) | Développement |
 
@@ -199,7 +199,7 @@ Les éléments de type inconnu sont remplacés par une étiquette grisée (`Plac
 | Champ | Signification |
 |---|---|
 | Nom du projet | Un identifiant C# : noms du projet, de l'espace de noms et des classes. Ce ne peut pas être le nom d'un type ou d'un espace de noms utilisé par le code généré (`Knob`, `PluginUI`, `NPlug`, `AudioPlugin`…), puisqu'il devient l'espace de noms racine |
-| Type | Effet VST3, instrument VST3 (entrée d'événements, clavier à l'écran connecté) ou application Windows |
+| Type | Effet VST3, instrument VST3 (entrée d'événements, clavier à l'écran connecté), application Windows (une fenêtre) ou application de bureau (PluginUI.Desktop : barre de menus, barre d'outils, barre d'état, documents enregistrant les valeurs des paramètres, annulation, fichiers récents ; voir [DESKTOP_FR.md](DESKTOP_FR.md)) |
 | Dossier parent | Le projet est créé dans `<dossier>\<nom>` (un dossier existant n'est jamais écrasé) |
 | Éditeur, site web, e-mail | Informations de la fabrique du plugin |
 | Lien de design en direct | Ajoute le lien aux versions Debug |

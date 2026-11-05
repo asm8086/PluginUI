@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -364,6 +364,10 @@ public static class BuiltInDesignTypes
         registry.Register<DropDown>(Buttons);
         registry.Register<MenuButton>(Buttons);
         registry.Register<MenuBar>(Buttons);
+        registry.Register<ToolBar>(Buttons);
+        registry.Register<ToolBarButton>(Buttons);
+        registry.Register<ToolBarSeparator>(Buttons);
+        registry.Register<StatusBar>(Buttons);
 
         registry.Register<Label>(Text);
         registry.Register<ValueDisplay>(Text);

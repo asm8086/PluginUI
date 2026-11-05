@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -46,10 +46,10 @@ public sealed class DocumentSession
         _applicationName = applicationName ?? app?.Name ?? window.Title;
         var t = Strings;
         Undo.Strings = t;
-        NewCommand = new Command(t.MenuNew, () => New(), KeyGesture.Parse("Ctrl+N"));
-        OpenCommand = new Command(t.MenuOpen, () => Open(), KeyGesture.Parse("Ctrl+O"));
-        SaveCommand = new Command(t.MenuSave, () => Save(), KeyGesture.Parse("Ctrl+S"));
-        SaveAsCommand = new Command(t.MenuSaveAs, () => SaveAs(), KeyGesture.Parse("Ctrl+Shift+S"));
+        NewCommand = new Command(t.MenuNew, () => New(), KeyGesture.Parse("Ctrl+N")) { Description = t.HintNew };
+        OpenCommand = new Command(t.MenuOpen, () => Open(), KeyGesture.Parse("Ctrl+O")) { Description = t.HintOpen };
+        SaveCommand = new Command(t.MenuSave, () => Save(), KeyGesture.Parse("Ctrl+S")) { Description = t.HintSave };
+        SaveAsCommand = new Command(t.MenuSaveAs, () => SaveAs(), KeyGesture.Parse("Ctrl+Shift+S")) { Description = t.HintSaveAs };
         Undo.Changed += _ => UpdateTitle();
         window.Closing += OnWindowClosing;
         UpdateTitle();
@@ -90,6 +90,12 @@ public sealed class DocumentSession
 
     /// <summary>Raised after New, Open, Save and Save As changed the file or the saved state.</summary>
     public event Action<DocumentSession>? DocumentChanged;
+
+    /// <summary>Raised after the document was written to a file (argument: the path).</summary>
+    public event Action<DocumentSession, string>? Saved;
+
+    /// <summary>Raised after a file was read into the document (argument: the path).</summary>
+    public event Action<DocumentSession, string>? Opened;
 
     private UIStrings Strings => _window.Host.Strings;
 
@@ -135,6 +141,7 @@ public sealed class DocumentSession
         if (!Run(Read, path)) return false;
         SetFile(path);
         _app?.RecentFiles.Add(path);
+        Opened?.Invoke(this, FilePath!);
         return true;
     }
 
@@ -177,6 +184,7 @@ public sealed class DocumentSession
         _app?.RecentFiles.Add(FilePath);
         UpdateTitle();
         DocumentChanged?.Invoke(this);
+        Saved?.Invoke(this, FilePath);
         return true;
     }
 

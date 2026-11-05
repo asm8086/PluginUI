@@ -1,4 +1,4 @@
-// 2026/10/18 17:31:00 UTC - PluginUI
+// 2026/11/05 15:08:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -62,6 +62,28 @@ public class ScaffoldTests
         }
         Assert.That(ProjectScaffolder.ValidateProjectName("Audiophile"), Is.Null);
         Assert.That(ProjectScaffolder.ValidateProjectName("MySynth"), Is.Null);
+    }
+
+    [Test]
+    public void DesktopApplicationVariant()
+    {
+        var design = Samples.Synth();
+        var app = ProjectScaffolder.Create(design, new ScaffoldOptions { ProjectName = "Studio", Kind = ScaffoldKind.DesktopApplication, Vendor = "Me & Co", Timestamp = Stamp });
+        Assert.That(app.Keys, Is.SupersetOf(new[] { "Studio.csproj", "Program.cs", "MainWindow.cs", "app.manifest", "Editor/StudioView.cs", "Editor/StudioView.Designer.cs", "Editor/StudioView.pluginui", "README.md" }));
+        Assert.That(app.Keys, Has.None.StartsWith("Plugin/"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(app["Studio.csproj"], Does.Contain(@"src\PluginUI.Desktop\PluginUI.Desktop.csproj").And.Contain("<OutputType>WinExe</OutputType>").And.Contain("<Company>Me &amp; Co</Company>").And.Not.Contain("LIVE_DESIGN"));
+            Assert.That(app["Program.cs"], Does.Contain("[STAThread]").And.Contain("new DesktopApplication(\"Studio\", company: \"Me & Co\")"));
+            Assert.That(app["MainWindow.cs"], Does.Contain("new DocumentSession(").And.Contain("Session.Undo.Track(parameter)").And.Contain("ToolBar.Add(Session.SaveCommand, ToolGlyph.Save)")
+                .And.Contain("StatusBar.Follow(MenuBar)").And.Contain("\"*.studio\""));
+            Assert.That(app["Editor/StudioView.Designer.cs"], Does.Contain("public UIElement BuildDesign()"));
+            Assert.That(app["app.manifest"], Does.StartWith("<?xml").And.Contain("PerMonitorV2").And.Contain("2026/10/18 14:24:00 UTC - Studio"));
+            Assert.That(app["README.md"], Does.Contain("Windows desktop application").And.Contain("MainWindow.cs"));
+        });
+        var standalone = ProjectScaffolder.Create(design, new ScaffoldOptions { ProjectName = "Viewer", Kind = ScaffoldKind.Standalone, Timestamp = Stamp });
+        Assert.That(standalone["Program.cs"], Does.Contain("[STAThread]"), "file dialogs need an STA thread");
+        Assert.That(ProjectScaffolder.ValidateProjectName("MainWindow"), Is.Not.Null);
     }
 
     [Test]
