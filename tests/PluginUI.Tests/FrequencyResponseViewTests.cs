@@ -1,4 +1,4 @@
-// 2026/10/24 14:21:00 UTC - PluginUI
+// 2026/11/06 15:32:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -190,6 +190,35 @@ public class FrequencyResponseViewTests
         Assert.That(_view.EffectiveSpectrumMinDb, Is.EqualTo(-120.0), "independent scale by default");
         _view.SpectrumFollowsLeftAxis = true;
         Assert.That(_view.EffectiveSpectrumMinDb, Is.EqualTo(-72.0), "72 dB of depth, as the response curves");
+    }
+
+    [Test]
+    public void SpectrumAnchorKeepsTheSpectrumStillWhenTheRangeChanges()
+    {
+        _view.SpectrumFollowsLeftAxis = true;
+        _view.SpectrumMaxDb = 0.0;
+
+        // Default: 0 dBFS at the top, so a wider range moves the spectrum relative to the 0 dB line.
+        _view.LeftMin = -48.0;
+        _view.LeftMax = 48.0;
+        Assert.That(_view.EffectiveSpectrumMaxDb, Is.EqualTo(0.0));
+
+        // Anchored at +24: 0 dBFS stays on the +24 dB line, a level L dBFS stays on the line L + 24 at every range.
+        _view.SpectrumAnchor = 24.0;
+        foreach (double range in new[] { 24.0, 36.0, 48.0, 96.0 })
+        {
+            _view.LeftMin = -range;
+            _view.LeftMax = range;
+            double top = _view.EffectiveSpectrumMaxDb, bottom = _view.EffectiveSpectrumMinDb;
+            Assert.Multiple(() =>
+            {
+                Assert.That(top - bottom, Is.EqualTo(2.0 * range), "decibels per pixel of the left axis");
+                Assert.That(top, Is.EqualTo(range - 24.0), $"top of the plot at ±{range}");
+                // Axis value of 0 dBFS: LeftMin + (0 − bottom) / (top − bottom) · span.
+                Assert.That(-range + (0.0 - bottom), Is.EqualTo(24.0).Within(1e-9));
+                Assert.That(-range + (-30.0 - bottom), Is.EqualTo(-6.0).Within(1e-9));
+            });
+        }
     }
 
     [Test]

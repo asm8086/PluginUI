@@ -1,4 +1,4 @@
-// 2026/10/24 14:21:00 UTC - PluginUI
+// 2026/11/06 15:32:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -373,22 +373,37 @@ public class FrequencyResponseView : Control
     public double SpectrumMinDb { get; set; } = -120.0;
 
     /// <summary>
-    /// Draws the spectra with the decibels per pixel of the left axis, <see cref="SpectrumMaxDb"/> at the top: the gap
-    /// between the filtered and the input spectrum then matches the response curves exactly. The visible depth is
-    /// <see cref="LeftMax"/> − <see cref="LeftMin"/>.
+    /// Draws the spectra with the decibels per pixel of the left axis: the gap between the filtered and the input
+    /// spectrum then matches the response curves exactly. <see cref="SpectrumMaxDb"/> is drawn at the left-axis value
+    /// <see cref="SpectrumAnchor"/> (at the top by default). The visible depth is <see cref="LeftMax"/> − <see cref="LeftMin"/>.
     /// </summary>
     [Category("Data")]
     public bool SpectrumFollowsLeftAxis { get; set; }
 
-    /// <summary>Bottom of the spectrum scale actually used (see <see cref="SpectrumFollowsLeftAxis"/>).</summary>
+    /// <summary>
+    /// Left-axis value at which the spectrum level <see cref="SpectrumMaxDb"/> is drawn when
+    /// <see cref="SpectrumFollowsLeftAxis"/> is set (NaN, the default = <see cref="LeftMax"/>, the top of the plot).
+    /// A fixed value ties the spectrum to the axis: changing <see cref="LeftMin"/> / <see cref="LeftMax"/> then zooms
+    /// the spectrum and the curves around the same levels (with 0 dBFS anchored at +24, a ±48 dB range shows 0 dBFS at
+    /// the +24 line and the spectrum down to −72 dBFS), instead of keeping 0 dBFS at the top.
+    /// </summary>
+    [Category("Data")]
+    public double SpectrumAnchor { get; set; } = double.NaN;
+
+    /// <summary>Spectrum level at the top of the plot actually used (see <see cref="SpectrumFollowsLeftAxis"/>).</summary>
     [Browsable(false)]
-    public double EffectiveSpectrumMinDb => SpectrumFollowsLeftAxis ? SpectrumMaxDb - Math.Max(1e-9, LeftMax - LeftMin) : SpectrumMinDb;
+    public double EffectiveSpectrumMaxDb
+        => SpectrumFollowsLeftAxis && double.IsFinite(SpectrumAnchor) ? SpectrumMaxDb + (LeftMax - SpectrumAnchor) : SpectrumMaxDb;
+
+    /// <summary>Spectrum level at the bottom of the plot actually used (see <see cref="SpectrumFollowsLeftAxis"/>).</summary>
+    [Browsable(false)]
+    public double EffectiveSpectrumMinDb => SpectrumFollowsLeftAxis ? EffectiveSpectrumMaxDb - Math.Max(1e-9, LeftMax - LeftMin) : SpectrumMinDb;
 
     /// <summary>Keeps the zero of the right axis at mid-height (symmetric range).</summary>
     [Category("Data")]
     public bool RightAxisCentered { get; set; }
 
-    /// <summary>Spectrum level at the top of the plot.</summary>
+    /// <summary>Spectrum level at the top of the plot (at <see cref="SpectrumAnchor"/> when it is set).</summary>
     [Category("Data")]
     public double SpectrumMaxDb { get; set; }
 
@@ -808,7 +823,7 @@ public class FrequencyResponseView : Control
         int columns = freqs.Length - 1;
         var pts = new Point[columns + 3];
         double binHz = SampleRate / (2.0 * _smoothed.Length);
-        double spMin = EffectiveSpectrumMinDb, spMax = SpectrumMaxDb;
+        double spMin = EffectiveSpectrumMinDb, spMax = EffectiveSpectrumMaxDb;
         for (int c = 0; c <= columns; c++)
         {
             // Highest bin inside the column, or the interpolated level when the column holds no bin.

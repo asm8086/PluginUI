@@ -1,4 +1,4 @@
-<!-- 2026/11/06 12:53:00 UTC - PluginUI -->
+<!-- 2026/11/06 15:32:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -27,6 +27,9 @@ Before 1.0, minor versions may contain breaking changes.
   (`UIHost.FollowSystemHighContrast`, default on; `EffectiveTheme`, `IsHighContrastActive`, `IsSystemHighContrast`,
   `CreateSystemHighContrastTheme`), with `Theme.HighContrast`, `Theme.CreateHighContrast` and `Palette.HighContrast`.
 - **UIStrings**: `AutomationKnob`, `AutomationDialog`, `AutomationMenu`, `AutomationInvalidEntry`.
+- **FrequencyResponseView.SpectrumAnchor**: left-axis value at which `SpectrumMaxDb` is drawn when the spectra follow
+  the left axis (default: the top, as before). A fixed anchor keeps the spectrum still relative to the curves when the
+  decibel range changes; `EffectiveSpectrumMaxDb`.
 - **PluginUI.Desktop** (new NuGet package): complete Windows desktop applications with PluginUI as their whole
   interface, compiled as IL or NativeAOT. `DesktopApplication` (DPI awareness, `%APPDATA%` data folder, main window
   placement and recent files saved in `state.json`, application commands, crash report; requires an STA `Main`),
