@@ -1,4 +1,4 @@
-<!-- 2026/11/06 15:32:00 UTC - PluginUI -->
+<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -10,6 +10,18 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **PluginUI.Host** (new library, not published on NuGet yet): VST3 plug-in host for .NET, without UI dependency and
+  NativeAOT compatible. `Vst3Module` (`.vst3` files and bundles on Windows and Linux, or an NPlug factory in the same
+  process with `FromFactory`), `PluginInstance` / `Vst3Plugin` (buses and channel layouts, parameters with display
+  texts and typed values, changes from any thread through a lock-free queue, notes and MIDI controllers through the
+  plug-in's `IMidiMapping`, transport, latency and tail, `.vstpreset` state, `Vst3Editor` windows, restart requests),
+  `VstPreset`, `PluginCatalog` / `PluginScanner` / `HostSettings` / `HostPaths` (plug-in folders in `settings.json`,
+  out-of-process incremental scan, plug-in list in `plugins.json` with favorites and usage, text queries and 13 sort
+  orders), `PluginLoader`, `OfflineRenderer` (chains, latency compensation, tails, MIDI), `ResponseMeasurer` (impulse
+  and FFT, or stepped sine; 20·log10 or 6·log2 decibels), `WavFile`, `MidiFile`. Guide: `docs/PLUGIN_HOST.md`.
+- **pluginhost** (`tools/PluginHost.Cli`): command line plug-in host to replace Python and Pedalboard scripts —
+  `folders`, `scan`, `list`, `favorite`, `info`, `preset show|save`, `process` (WAV through a chain of plug-ins),
+  `render` (MIDI file through an instrument), `measure` (frequency response to CSV, impulse response to WAV).
 - **Accessibility (screen readers)**: PluginUI interfaces are exposed to Narrator, NVDA and JAWS through Windows UI
   Automation, in desktop applications and plug-in editors (`WM_GETOBJECT`, source-generated COM, NativeAOT compatible;
   calls from UI Automation threads run on the UI thread). New namespace `PluginUI.Automation`: `AutomationPeer`,

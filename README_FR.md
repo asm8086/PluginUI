@@ -1,4 +1,4 @@
-<!-- 2026/11/06 12:53:00 UTC - PluginUI -->
+<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -39,6 +39,7 @@ PluginUI/
 │   ├── EDITOR.md                   Guide du concepteur visuel PluginUIEditor et du format .pluginui
 │   ├── DESKTOP.md                  Applications de bureau avec PluginUI.Desktop (barre de menus, commandes, documents)
 │   ├── ACCESSIBILITY.md            Lecteurs d'écran (UI Automation), clavier, annonces, contraste élevé
+│   ├── PLUGIN_HOST.md              Hébergement de plug-ins VST3 : PluginUI.Host et l'outil en ligne de commande pluginhost
 │   └── images/                     Captures (anglais ; françaises dans images/fr/)
 ├── docfx/                          Site de documentation (DocFX) : articles + référence de l'API
 ├── src/
@@ -66,16 +67,21 @@ PluginUI/
 │   │                               PluginUIProcessor (notes de l'éditeur, état partagé), NPlugMidiLearn
 │   ├── PluginUI.Design/            Designs .pluginui : document, JSON, registre de types compatible AOT, chargeur,
 │   │                               capture, génération de code C#, thèmes, lien de design en direct, création de projets
-│   └── PluginUI.Desktop/           Applications de bureau : DesktopApplication, DocumentSession, UndoStack,
-│                                   AppSettings (JSON AOT), RecentFiles, MessageDialog
+│   ├── PluginUI.Desktop/           Applications de bureau : DesktopApplication, DocumentSession, UndoStack,
+│   │                               AppSettings (JSON AOT), RecentFiles, MessageDialog
+│   └── PluginUI.Host/              Hôte de plug-ins : modules et instances VST3, liste et recherche des plug-ins, rendu
+│                                   hors temps réel, mesure de réponse, fichiers WAV et MIDI (sans dépendance d'interface)
 ├── tools/PluginUIEditor/           Concepteur visuel WinForms (boîte à outils, propriétés, aperçu, code, nouveaux projets)
+├── tools/PluginHost.Cli/           pluginhost : hôte de plug-ins en ligne de commande (scan, liste, traitement, rendu, mesure, presets)
 ├── samples/PluginUI.Gallery/       Application de démonstration (fenêtre autonome + mode capture PNG)
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer : application de bureau (IL ou NativeAOT) construite avec PluginUI.Desktop
 ├── samples/Designs/                Designs d'exemple (.pluginui), dont la disposition de DemoSynth
 ├── tests/PluginUI.Tests/           197 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau, accessibilité)
 ├── tests/PluginUI.NPlug.Tests/     29 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
-└── tests/PluginUI.Design.Tests/    26 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
+├── tests/PluginUI.Design.Tests/    26 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
+├── tests/PluginUI.Host.Tests/      17 tests NUnit (hébergement VST3 de DemoSynth et d'un plug-in de test, paramètres, correspondance MIDI, presets, rendu, mesure, WAV, MIDI, liste des plug-ins)
+└── tests/PluginUI.Host.TestGain/   Effet VST3 de test avec latence (publiable aussi en .vst3 NativeAOT pour les essais manuels)
 ```
 
 Environ 34 000 lignes de C# pour les bibliothèques. Tous les membres publics ont leur documentation XML.
@@ -217,6 +223,26 @@ un message. En mode contraste élevé de Windows, les hôtes dessinent avec les 
 activer ; un hôte ne coûte rien tant qu'aucun client ne le demande. Guide :
 [docs/ACCESSIBILITY_FR.md](docs/ACCESSIBILITY_FR.md).
 
+### Héberger des plug-ins
+
+**PluginUI.Host** charge des plug-ins VST3 (fichiers et bundles, ou une fabrique NPlug dans le même processus) et les
+fait fonctionner depuis du code .NET : paramètres avec leurs textes affichés, notes et contrôleurs MIDI, presets,
+fenêtres d'éditeur, rendu hors temps réel avec compensation de latence, mesure de réponse. L'outil en ligne de
+commande **pluginhost**, construit dessus, conserve les dossiers de plug-ins dans un fichier de réglages et la liste
+des plug-ins trouvés entre les lancements (chaque module est ouvert dans un processus séparé), et remplace les scripts
+écrits avec Python et Pedalboard :
+
+```
+pluginhost scan
+pluginhost list --sort vendor
+pluginhost process -i sec.wav -o traite.wav -p "Pro-Q 3" --preset brillant.vstpreset -p "Pro-L 2" --set "Gain=+3 dB"
+pluginhost render -p "Diva" --midi accords.mid -o nappe.wav
+pluginhost measure -p "Pro-Q 3" -o reponse.csv --db 6log2
+```
+
+Les plug-ins VST 2, les périphériques audio temps réel (WASAPI, ASIO) et un hôte graphique viendront ensuite. Guide :
+[docs/PLUGIN_HOST_FR.md](docs/PLUGIN_HOST_FR.md).
+
 ## Concepts
 
 - **`UIHost`** possède la fenêtre enfant, le moteur de rendu, la mise en page, le routage des entrées (capture implicite, survol, focus, Tab, menus contextuels, glisser-déposer, dépôt de fichiers), les popups, les infobulles, la bulle de valeur, le minuteur d'animation et `Post` (exécuter sur le thread d'interface depuis un autre thread). Il ne lance jamais de boucle de messages : dans un plugin, c'est celle du DAW.
@@ -320,6 +346,7 @@ Le site est produit dans `docfx/_site` et publié sur [GitHub Pages](https://asm
 dotnet test tests/PluginUI.Tests
 dotnet test tests/PluginUI.NPlug.Tests
 dotnet test tests/PluginUI.Design.Tests
+dotnet test tests/PluginUI.Host.Tests
 ```
 
 Les tests n'ouvrent aucune fenêtre : ils simulent les entrées via `UIHost.Dispatch…`. Ils tournent aussi sous Linux (intégration continue).

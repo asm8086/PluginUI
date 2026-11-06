@@ -1,0 +1,28 @@
+<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PluginUI.Host</RootNamespace>
+    <AssemblyName>PluginUI.Host</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
+    <Description>Audio plug-in host for .NET: loads VST3 plug-ins (files, or an NPlug factory in-process), scans and catalogs the installed plug-ins, renders audio offline (WAV), measures responses. No UI dependency; NativeAOT compatible.</Description>
+    <IsAotCompatible>true</IsAotCompatible>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PluginUI.Host.Tests" />
+  </ItemGroup>
+
+</Project>

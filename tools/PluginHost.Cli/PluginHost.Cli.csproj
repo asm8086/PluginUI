@@ -1,0 +1,22 @@
+<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>pluginhost</AssemblyName>
+    <RootNamespace>PluginUI.Host.Cli</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- dotnet publish -c Release -r win-x64 -p:PublishAot=true : one self-contained pluginhost.exe. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PluginUI.Host\PluginUI.Host.csproj" />
+  </ItemGroup>
+
+</Project>

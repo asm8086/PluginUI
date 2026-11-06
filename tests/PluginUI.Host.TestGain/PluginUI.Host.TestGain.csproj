@@ -1,0 +1,22 @@
+<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Minimal NPlug effect used by the host tests: hosted in-process through its factory, or published as a real module
+       (dotnet publish -r linux-x64 / win-x64) to test loading .vst3 files. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>TestGain</AssemblyName>
+    <RootNamespace>PluginUI.Host.Tests</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NPlug" Version="0.6.2.380" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,318 @@
+// 2026/11/06 22:50:00 UTC - PluginUI
+// SPDX-FileCopyrightText: 2026 asm8086
+// SPDX-License-Identifier: MIT
+
+using System.Diagnostics;
+using PluginUI.Host.Vst3;
+
+namespace PluginUI.Host.Catalog;
+
+/// <summary>Summary of a scan.</summary>
+/// <param name="Modules">Modules found in the folders.</param>
+/// <param name="Scanned">Modules scanned (new or changed).</param>
+/// <param name="Unchanged">Modules taken from the cache.</param>
+/// <param name="Removed">Plug-ins whose module disappeared.</param>
+/// <param name="Failed">Modules that could not be loaded.</param>
+public sealed record ScanSummary(int Modules, int Scanned, int Unchanged, int Removed, int Failed);
+
+/// <summary>Progress of a scan: the module being scanned and how many are done.</summary>
+/// <param name="Module">Module path.</param>
+/// <param name="Index">Number of modules done.</param>
+/// <param name="Count">Number of modules to scan.</param>
+public readonly record struct ScanProgress(string Module, int Index, int Count);
+
+/// <summary>Describes the plug-ins of one module (in this process, or in a child process that may crash safely).</summary>
+public interface IModuleScanner
+{
+    /// <summary>Plug-ins of the module; throws when it cannot be loaded.</summary>
+    IReadOnlyList<PluginDescription> Scan(string modulePath, PluginFormat format, TimeSpan timeout);
+}
+
+/// <summary>
+/// Finds the plug-in modules in the folders of the settings and updates the catalog. Only new or changed modules (size
+/// or date) are scanned again; the user's data (favorites, usage) is kept.
+/// </summary>
+public sealed class PluginScanner(IModuleScanner moduleScanner)
+{
+    /// <summary>Scanner loading modules out of process with <paramref name="executable"/> (see <see cref="OutOfProcessModuleScanner"/>).</summary>
+    public static PluginScanner OutOfProcess(string executable, params string[] argumentsPrefix) => new(new OutOfProcessModuleScanner(executable, argumentsPrefix));
+
+    /// <summary>Scanner loading modules in this process (a crashing plug-in takes the process down).</summary>
+    public static PluginScanner InProcess() => new(new InProcessModuleScanner());
+
+    /// <summary>Module files of the folders: .vst3 files and bundles (VST 3), .dll / .so files (VST 2).</summary>
+    public static IEnumerable<(string Path, PluginFormat Format)> FindModules(HostSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        var seen = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        var ignored = new HashSet<string>(settings.IgnoredModules, seen.Comparer);
+        foreach (string folder in settings.Vst3Folders)
+        {
+            foreach (string module in FindVst3(folder))
+            {
+                if (!ignored.Contains(module) && seen.Add(module)) yield return (module, PluginFormat.Vst3);
+            }
+        }
+        string vst2Extension = OperatingSystem.IsWindows() ? ".dll" : OperatingSystem.IsMacOS() ? ".vst" : ".so";
+        foreach (string folder in settings.Vst2Folders)
+        {
+            if (!Directory.Exists(folder)) continue;
+            IEnumerable<string> files;
+            try
+            {
+                files = Directory.EnumerateFiles(folder, "*" + vst2Extension, new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true });
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
+            foreach (string module in files)
+            {
+                if (!ignored.Contains(module) && seen.Add(module)) yield return (module, PluginFormat.Vst2);
+            }
+        }
+    }
+
+    private static IEnumerable<string> FindVst3(string folder)
+    {
+        if (!Directory.Exists(folder)) yield break;
+        var pending = new Stack<string>();
+        pending.Push(folder);
+        while (pending.Count > 0)
+        {
+            string current = pending.Pop();
+            string[] entries;
+            try
+            {
+                entries = Directory.GetFileSystemEntries(current);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
+            Array.Sort(entries, StringComparer.OrdinalIgnoreCase);
+            foreach (string entry in entries)
+            {
+                bool isVst3 = entry.EndsWith(".vst3", StringComparison.OrdinalIgnoreCase);
+                if (Directory.Exists(entry))
+                {
+                    if (isVst3) yield return entry; // a bundle: its binaries are inside, do not descend
+                    else pending.Push(entry);
+                }
+                else if (isVst3)
+                {
+                    yield return entry;
+                }
+            }
+        }
+    }
+
+    /// <summary>Binary whose size and date identify a module version.</summary>
+    public static string ModuleBinary(string path, PluginFormat format)
+        => format == PluginFormat.Vst3 ? Vst3Module.ResolveBinary(path) ?? path : path;
+
+    /// <summary>Scans the folders of <paramref name="settings"/> into <paramref name="catalog"/>.</summary>
+    /// <param name="settings">Folders and options.</param>
+    /// <param name="catalog">Catalog updated in place.</param>
+    /// <param name="rescanAll"><c>true</c> to scan every module again (also those that failed before).</param>
+    /// <param name="progress">Reports each module.</param>
+    /// <param name="cancellation">Stops between modules.</param>
+    public ScanSummary Scan(HostSettings settings, PluginCatalog catalog, bool rescanAll = false, IProgress<ScanProgress>? progress = null,
+        CancellationToken cancellation = default)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(catalog);
+        var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        var modules = FindModules(settings).ToList();
+        var present = new HashSet<string>(modules.Select(m => m.Path), comparer);
+        var byModule = catalog.Plugins.GroupBy(p => p.Path, comparer).ToDictionary(g => g.Key, g => g.ToList(), comparer);
+
+        int removed = catalog.Plugins.RemoveAll(p => !present.Contains(p.Path));
+        int scanned = 0, unchanged = 0, failed = 0;
+        var timeout = TimeSpan.FromSeconds(Math.Max(1, settings.ScanTimeoutSeconds));
+        for (int i = 0; i < modules.Count; i++)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            var (path, format) = modules[i];
+            var (size, time) = FileStamp(ModuleBinary(path, format));
+            byModule.TryGetValue(path, out var previous);
+            bool same = previous is { Count: > 0 } && previous.All(p => p.ModuleSize == size && p.ModuleTimeUtc == time);
+            if (same && !rescanAll)
+            {
+                unchanged++;
+                continue;
+            }
+            progress?.Report(new ScanProgress(path, i, modules.Count));
+            List<PluginDescription> found;
+            try
+            {
+                found = moduleScanner.Scan(path, format, timeout).ToList();
+                if (found.Count == 0) throw new InvalidOperationException("The module contains no plug-in.");
+            }
+            catch (Exception ex)
+            {
+                failed++;
+                found = [new PluginDescription
+                {
+                    Format = format, Path = path, Name = Path.GetFileNameWithoutExtension(path), Status = PluginStatus.Failed,
+                    Error = ex.Message, Category = string.Empty,
+                }];
+            }
+            foreach (var plugin in found)
+            {
+                plugin.Path = path;
+                plugin.ModuleSize = size;
+                plugin.ModuleTimeUtc = time;
+                plugin.ScannedUtc = DateTime.UtcNow;
+                var older = previous?.FirstOrDefault(p => p.ClassId == plugin.ClassId) ?? (found.Count == 1 ? previous?.FirstOrDefault() : null);
+                if (older is not null) plugin.KeepUserData(older);
+            }
+            catalog.Plugins.RemoveAll(p => comparer.Equals(p.Path, path));
+            catalog.Plugins.AddRange(found);
+            scanned++;
+        }
+        catalog.LastScanUtc = DateTime.UtcNow;
+        progress?.Report(new ScanProgress(string.Empty, modules.Count, modules.Count));
+        return new ScanSummary(modules.Count, scanned, unchanged, removed, failed);
+    }
+
+    private static (long Size, DateTime Time) FileStamp(string path)
+    {
+        try
+        {
+            var info = new FileInfo(path);
+            if (info.Exists) return (info.Length, info.LastWriteTimeUtc);
+            var dir = new DirectoryInfo(path);
+            return dir.Exists ? (0, dir.LastWriteTimeUtc) : (0, DateTime.MinValue);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return (0, DateTime.MinValue);
+        }
+    }
+}
+
+/// <summary>Loads modules in this process to describe them.</summary>
+public sealed class InProcessModuleScanner : IModuleScanner
+{
+    /// <summary>Describes the plug-ins of a VST 3 module (loads it, creates each plug-in once).</summary>
+    public static List<PluginDescription> DescribeVst3(Vst3Module module)
+    {
+        ArgumentNullException.ThrowIfNull(module);
+        var list = new List<PluginDescription>();
+        foreach (var info in module.Plugins)
+        {
+            var d = new PluginDescription
+            {
+                Format = PluginFormat.Vst3,
+                Path = module.Path,
+                ClassId = info.ClassIdString,
+                Name = info.Name,
+                Vendor = info.Vendor,
+                Version = info.Version,
+                SdkVersion = info.SdkVersion,
+                SubCategories = info.SubCategories,
+                Category = info.SubCategories.Contains("Instrument", StringComparison.OrdinalIgnoreCase) ? "Instrument" : "Effect",
+            };
+            try
+            {
+                using var plugin = module.CreatePlugin(info.ClassId);
+                Describe(plugin, d);
+                using var editor = plugin.CreateEditor();
+                d.HasEditor = editor is not null;
+            }
+            catch (Exception ex)
+            {
+                d.Status = PluginStatus.Failed;
+                d.Error = ex.Message;
+            }
+            list.Add(d);
+        }
+        return list;
+    }
+
+    /// <summary>Fills the bus, parameter and latency fields of <paramref name="d"/> from an instance.</summary>
+    public static void Describe(PluginInstance plugin, PluginDescription d)
+    {
+        ArgumentNullException.ThrowIfNull(plugin);
+        ArgumentNullException.ThrowIfNull(d);
+        d.InputChannels = plugin.InputBuses.Where(b => !b.IsAuxiliary).Sum(b => b.ChannelCount);
+        d.OutputChannels = plugin.OutputBuses.Where(b => !b.IsAuxiliary).Sum(b => b.ChannelCount);
+        d.AuxInputChannels = plugin.InputBuses.Where(b => b.IsAuxiliary).Sum(b => b.ChannelCount);
+        d.AuxOutputChannels = plugin.OutputBuses.Where(b => b.IsAuxiliary).Sum(b => b.ChannelCount);
+        d.HasMidiInput = plugin.EventInputCount > 0;
+        d.ParameterCount = plugin.Parameters.Count;
+        if (plugin.IsInstrument) d.Category = "Instrument";
+        try
+        {
+            plugin.Prepare(48000, 512);
+            d.LatencySamples = plugin.LatencySamples;
+            plugin.Stop();
+        }
+        catch (Exception)
+        {
+            d.LatencySamples = plugin.LatencySamples;
+        }
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<PluginDescription> Scan(string modulePath, PluginFormat format, TimeSpan timeout)
+    {
+        if (format == PluginFormat.Vst2)
+        {
+            if (Vst2Scanner is null) throw new NotSupportedException("VST 2 hosting is not installed.");
+            return Vst2Scanner(modulePath);
+        }
+        using var module = Vst3Module.Load(modulePath);
+        return DescribeVst3(module);
+    }
+
+    /// <summary>Describes a VST 2 module (set by the VST 2 package when it is referenced).</summary>
+    public static Func<string, IReadOnlyList<PluginDescription>>? Vst2Scanner { get; set; }
+}
+
+/// <summary>
+/// Scans each module in a child process (<c>executable [prefix…] scan-module --format vst3 "path"</c>, writing the JSON
+/// of <see cref="PluginCatalog.ToJson"/> on its standard output): a plug-in that crashes or hangs while loading cannot
+/// take the host down; it is marked as failed.
+/// </summary>
+public sealed class OutOfProcessModuleScanner(string executable, params string[] argumentsPrefix) : IModuleScanner
+{
+    /// <inheritdoc />
+    public IReadOnlyList<PluginDescription> Scan(string modulePath, PluginFormat format, TimeSpan timeout)
+    {
+        var start = new ProcessStartInfo(executable)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        foreach (string a in argumentsPrefix) start.ArgumentList.Add(a);
+        start.ArgumentList.Add("scan-module");
+        start.ArgumentList.Add("--format");
+        start.ArgumentList.Add(format == PluginFormat.Vst2 ? "vst2" : "vst3");
+        start.ArgumentList.Add(modulePath);
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("Cannot start the scanner.");
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(timeout))
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch (InvalidOperationException)
+            {
+                // Already gone.
+            }
+            throw new TimeoutException($"No answer after {timeout.TotalSeconds:0} s.");
+        }
+        if (process.ExitCode != 0)
+        {
+            string message = error.Result.Trim();
+            throw new InvalidOperationException(message.Length > 0 ? message : $"The scanner stopped (code 0x{process.ExitCode:X8}).");
+        }
+        return PluginCatalog.FromJson(output.Result);
+    }
+}
