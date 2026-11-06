@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -269,7 +269,8 @@ public class Command
 /// a command's <see cref="Command.Gesture"/> runs it (before the focused element sees the key).
 /// </summary>
 /// <remarks>Disabled commands let the key through, so a text box can still receive Ctrl+Z when there is nothing to
-/// undo at the application level.</remarks>
+/// undo at the application level. Keys claimed by the focused element (<see cref="UIElement.ClaimsKey"/>: Ctrl+C,
+/// Del… in a text box) go to it first.</remarks>
 public sealed class CommandSet : List<Command>
 {
     private UIHost? _host;
@@ -319,6 +320,8 @@ public sealed class CommandSet : List<Command>
     private void OnPreviewKeyDown(UIHost host, KeyEventArgs e)
     {
         if (e.Handled || e.IsRepeat && !AllowsRepeat(e)) return;
+        // The focused element goes first for the keys it edits with (a text box and Ctrl+C, Del…).
+        if (host.FocusedElement?.ClaimsKey(e) == true) return;
         if (TryExecute(e)) e.Handled = true;
     }
 

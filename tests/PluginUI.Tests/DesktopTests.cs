@@ -1,4 +1,4 @@
-// 2026/11/05 15:08:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -450,6 +450,57 @@ public class DesktopTests
         Assert.That(new MenuItem(undo.RedoCommand).Description, Is.EqualTo("Rétablit la dernière modification annulée"));
         Assert.That(new MenuItem(undo.RedoCommand) { Description = "x" }.Description, Is.EqualTo("x"));
         Assert.That(UIStrings.French.FormatStatusSaved("a.bqd"), Is.EqualTo("Enregistré : a.bqd"));
+    }
+
+    [Test]
+    public void FocusedTextBoxGoesBeforeTheShortcutsOfTheMenus()
+    {
+        Clipboard.UseTestStore = true;
+        try
+        {
+            int copies = 0, deletes = 0, refreshes = 0;
+            var edit = new MenuItem("&Edit");
+            edit.Items.Add(new MenuItem(new Command("&Copy", () => copies++, KeyGesture.Parse("Ctrl+C"))));
+            edit.Items.Add(new MenuItem(new Command("&Delete", () => deletes++, KeyGesture.Parse("Del"))));
+            edit.Items.Add(new MenuItem(new Command("&Refresh", () => refreshes++, KeyGesture.Parse("F5"))));
+            var bar = new MenuBar(edit) { Dock = Side.Top };
+            var box = new TextBox { Text = "hello", Dock = Side.Top };
+            var other = new Canvas();
+            var root = new DockPanel();
+            root.Children.Add(bar);
+            root.Children.Add(box);
+            root.Children.Add(other);
+            using var host = new UIHost(root, new Size(400f, 200f));
+            var commands = new CommandSet { new Command("Save as text", () => copies += 100, KeyGesture.Parse("Ctrl+A")) };
+            commands.Attach(host);
+            host.UpdateLayout();
+            box.Focus();
+            box.SelectAll();
+            host.DispatchKeyDown(new KeyEventArgs(Key.C, ModifierKeys.Control));
+            host.DispatchKeyDown(new KeyEventArgs(Key.A, ModifierKeys.Control));
+            Assert.Multiple(() =>
+            {
+                Assert.That(Clipboard.TestText, Is.EqualTo("hello"), "the text box copied");
+                Assert.That(copies, Is.EqualTo(0), "neither the menu nor the command set took Ctrl+C / Ctrl+A");
+            });
+            host.DispatchKeyDown(new KeyEventArgs(Key.Delete, ModifierKeys.None));
+            Assert.That(box.Text, Is.Empty);
+            Assert.That(deletes, Is.EqualTo(0));
+            host.DispatchKeyDown(new KeyEventArgs(Key.F5, ModifierKeys.None));
+            Assert.That(refreshes, Is.EqualTo(1), "function keys stay application shortcuts");
+
+            // Without a text box focused, the menu shortcuts run.
+            host.Focus(null);
+            host.DispatchKeyDown(new KeyEventArgs(Key.C, ModifierKeys.Control));
+            host.DispatchKeyDown(new KeyEventArgs(Key.Delete, ModifierKeys.None));
+            Assert.That(copies, Is.EqualTo(1));
+            Assert.That(deletes, Is.EqualTo(1));
+        }
+        finally
+        {
+            Clipboard.UseTestStore = false;
+            Clipboard.TestText = null;
+        }
     }
 
     // ---------------------------------------------------------------- undo stack

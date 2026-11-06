@@ -1,4 +1,4 @@
-// 2026/11/04 17:52:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -75,6 +75,38 @@ public class EditingTests
     }
 
     [Test]
+    public void TextBoxEditMenuShowsLocalizedShortcuts()
+    {
+        Clipboard.UseTestStore = true;
+        try
+        {
+            CheckFrenchEditMenu();
+        }
+        finally
+        {
+            Clipboard.UseTestStore = false;
+        }
+    }
+
+    private static void CheckFrenchEditMenu()
+    {
+        var box = new TextBox { Text = "abc" };
+        var host = new UIHost(box, new Size(200f, 40f)) { Strings = UIStrings.French };
+        host.UpdateLayout();
+        box.SelectAll();
+        var at = box.Bounds.Center;
+        host.DispatchMouseDown(at, MouseButton.Right, 1, ModifierKeys.None);
+        host.DispatchMouseUp(at, MouseButton.Right, ModifierKeys.None);
+        var menu = box.ContextMenu!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(menu.Select(i => i.IsSeparator ? "-" : i.DisplayText), Is.EqualTo(new[] { "Couper", "Copier", "Coller", "Supprimer", "-", "Tout sélectionner" }));
+            Assert.That(menu[3].ShortcutText, Is.EqualTo("Suppr"));
+            Assert.That(menu[0].ShortcutText, Is.EqualTo("Ctrl+X"));
+        });
+    }
+
+    [Test]
     public void ValueEditorsPasteWithTheKeyboardAndTheEditMenu()
     {
         Clipboard.UseTestStore = true;
@@ -106,6 +138,7 @@ public class EditingTests
                 Assert.That(host.Popups.Count(), Is.GreaterThanOrEqualTo(2), "menu shown");
                 Assert.That(menu.Select(i => i.IsSeparator ? "-" : i.DisplayText), Is.EqualTo(new[] { "Cut", "Copy", "Paste", "Delete", "-", "Select All" }));
                 Assert.That(menu[2].IsEnabled, Is.True);
+                Assert.That(menu[3].ShortcutText, Is.EqualTo("Del"));
             });
             host.DispatchKeyDown(new KeyEventArgs(Key.Escape, ModifierKeys.None));   // closes the menu only
             Assert.That(popup.IsOpen, Is.True);

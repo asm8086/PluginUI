@@ -1,4 +1,4 @@
-// 2026/11/05 22:35:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -7,6 +7,22 @@ namespace PluginUI.Tests;
 /// <summary><see cref="BandCenters"/> and <see cref="BandCenterParameter"/>.</summary>
 public class BandCenterTests
 {
+    [Test]
+    public void CentreIsDisplayedInHertzOrKilohertz()
+    {
+        var low = new LocalParameter("Low", defaultValue: 100.0, units: "Hz", scale: ParameterScale.Logarithmic(20.0, 20000.0));
+        var high = new LocalParameter("High", defaultValue: 400.0, units: "Hz", scale: ParameterScale.Logarithmic(20.0, 20000.0));
+        var centre = new BandCenterParameter(low, high);
+        Assert.Multiple(() =>
+        {
+            Assert.That(centre.Units, Is.Empty, "the unit is in the text");
+            Assert.That(centre.ToDisplayStringWithUnits(centre.NormalizedValue), Is.EqualTo("200 Hz"));
+            Assert.That(centre.ToDisplayString(centre.ToNormalized(2500.0)), Is.EqualTo("2.50 kHz"));
+            Assert.That(centre.ToDisplayString(centre.ToNormalized(12650.0)), Is.EqualTo("12.7 kHz"));
+            Assert.That(centre.TryParse(centre.ToDisplayString(centre.ToNormalized(2500.0)), out double n) && Math.Abs(centre.ToPlain(n) - 2500.0) < 1e-6, Is.True, "the text reads back");
+        });
+    }
+
     [Test]
     public void BilinearCentreIsThePeakOfTheConstantinidesTransform()
     {

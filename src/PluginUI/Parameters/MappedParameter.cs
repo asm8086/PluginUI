@@ -1,4 +1,4 @@
-// 2026/11/05 22:35:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -20,8 +20,8 @@ namespace PluginUI;
 /// <code>
 /// // Feedback knob over −0.999 … −0.5 and 0.5 … 0.999 of a −1 … 1 parameter.
 /// var fb = MappedParameter.Ranges(feedback, (-0.999, -0.5), (0.5, 0.999));
-/// // Blend knob that keeps feedback = −blend.
-/// var blend = new MappedParameter(blendParameter).Link(feedback, n => 1.0 - n);
+/// // Blend knob (0 … 1) that keeps feedback (−1 … 1) at −blend: map the blend value to the feedback scale.
+/// var blend = new MappedParameter(blendParameter).Link(feedback, n => feedback.ToNormalized(-blendParameter.ToPlain(n)));
 /// </code>
 /// </example>
 public sealed class MappedParameter : IParameter
@@ -44,6 +44,8 @@ public sealed class MappedParameter : IParameter
     /// <summary>
     /// A parameter covering several plain-value ranges of <paramref name="inner"/> end to end: the outer travel is
     /// split evenly between them (in the inner normalized scale), and the gaps between the ranges are never reached.
+    /// For a discrete <paramref name="inner"/> (<see cref="IParameter.StepCount"/> &gt; 0), the outer steps are the
+    /// inner steps that lie inside the ranges, one per outer step.
     /// </summary>
     /// <param name="inner">The parameter actually edited.</param>
     /// <param name="ranges">Plain ranges, in increasing order.</param>
@@ -62,6 +64,7 @@ public sealed class MappedParameter : IParameter
                 throw new ArgumentException("The ranges must be increasing and must not overlap.", nameof(ranges));
         }
         int count = ranges.Length;
+        if (inner.StepCount > 0) return DiscreteRanges(inner, lo, hi);
         double ToInnerMap(double n)
         {
             double t = Math.Clamp(n, 0.0, 1.0) * count;
@@ -84,6 +87,42 @@ public sealed class MappedParameter : IParameter
         }
         return new MappedParameter(inner, ToInnerMap, FromInnerMap);
     }
+
+    // Discrete inner parameter: the reachable inner steps, end to end.
+    private static MappedParameter DiscreteRanges(IParameter inner, double[] lo, double[] hi)
+    {
+        int steps = inner.StepCount;
+        var reachable = new List<double>();
+        const double tolerance = 1e-9;
+        for (int i = 0; i <= steps; i++)
+        {
+            double v = (double)i / steps;
+            for (int k = 0; k < lo.Length; k++)
+            {
+                if (v >= lo[k] - tolerance && v <= hi[k] + tolerance)
+                {
+                    reachable.Add(v);
+                    break;
+                }
+            }
+        }
+        if (reachable.Count == 0) throw new ArgumentException("No step of the parameter lies inside the ranges.", "ranges");
+        var values = reachable.ToArray();
+        int last = values.Length - 1;
+        double ToInnerMap(double n) => values[last == 0 ? 0 : (int)Math.Round(Math.Clamp(n, 0.0, 1.0) * last, MidpointRounding.AwayFromZero)];
+        double FromInnerMap(double v)
+        {
+            int best = 0;
+            for (int i = 1; i <= last; i++)
+            {
+                if (Math.Abs(values[i] - v) < Math.Abs(values[best] - v)) best = i;
+            }
+            return last == 0 ? 0.0 : (double)best / last;
+        }
+        return new MappedParameter(inner, ToInnerMap, FromInnerMap) { _stepCount = last };
+    }
+
+    private int? _stepCount;
 
     /// <summary>The parameter actually edited.</summary>
     public IParameter Inner { get; }
@@ -117,7 +156,8 @@ public sealed class MappedParameter : IParameter
     public string Units => Inner.Units;
 
     /// <inheritdoc />
-    public int StepCount => Inner.StepCount;
+    /// <remarks>The inner step count, or for <see cref="Ranges"/> of a discrete parameter the reachable steps.</remarks>
+    public int StepCount => _stepCount ?? Inner.StepCount;
 
     /// <inheritdoc />
     public double DefaultNormalizedValue => Clamp01(FromInner(Inner.DefaultNormalizedValue));

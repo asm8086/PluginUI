@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -472,6 +472,14 @@ public abstract class UIElement
 
     /// <summary>Key pressed while focused (bubbles to parents).</summary>
     protected internal virtual void OnKeyDown(KeyEventArgs e) => KeyDown?.Invoke(this, e);
+
+    /// <summary>
+    /// <c>true</c> when this element, having the keyboard focus, handles <paramref name="e"/> itself, before the
+    /// application shortcuts (<see cref="MenuBar"/>, <see cref="CommandSet"/>): a text box claims Ctrl+C, Ctrl+V, Del…
+    /// so that an Edit menu does not take them. Default <c>false</c>.
+    /// </summary>
+    /// <param name="e">Key press about to be routed.</param>
+    protected internal virtual bool ClaimsKey(KeyEventArgs e) => false;
 
     /// <summary>Key released while focused.</summary>
     protected internal virtual void OnKeyUp(KeyEventArgs e) { }

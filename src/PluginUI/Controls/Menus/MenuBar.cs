@@ -1,4 +1,4 @@
-// 2026/11/05 15:08:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -225,7 +225,8 @@ public class MenuBar : UIElement
             if (e.Handled) return;
         }
 
-        if (HandlesShortcuts && _open < 0 && !e.IsRepeat && TryRunShortcut(Items, e)) e.Handled = true;
+        // The focused element goes first for the keys it edits with (a text box and Ctrl+C, Del…), as in Windows.
+        if (HandlesShortcuts && _open < 0 && !e.IsRepeat && host.FocusedElement?.ClaimsKey(e) != true && TryRunShortcut(Items, e)) e.Handled = true;
     }
 
     private void OnPreviewKeyUp(UIHost host, KeyEventArgs e)

@@ -1,4 +1,4 @@
-// 2026/11/05 22:35:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -62,8 +62,8 @@ public sealed class BandCenterParameter : IParameter
     /// <summary>Highest centre of the scale in Hz.</summary>
     public double MaxFrequency { get; }
 
-    /// <summary>Decimals of the display string.</summary>
-    public int Decimals { get; set; } = 1;
+    /// <summary>Decimals of the display string below 1 kHz (above, 2 decimals up to 10 kHz, then 1).</summary>
+    public int Decimals { get; set; }
 
     /// <summary>Centre of the current edges in Hz.</summary>
     public double Frequency => Centers.Center(Low.ToPlain(Low.NormalizedValue), High.ToPlain(High.NormalizedValue));
@@ -72,7 +72,8 @@ public sealed class BandCenterParameter : IParameter
     public string Name { get; set; } = "Center";
 
     /// <inheritdoc />
-    public string Units => "Hz";
+    /// <remarks>Empty: the display string carries its unit, Hz or kHz ("250 Hz", "12.65 kHz").</remarks>
+    public string Units => string.Empty;
 
     /// <inheritdoc />
     public int StepCount => 0;
@@ -87,7 +88,12 @@ public sealed class BandCenterParameter : IParameter
     public bool IsEditing => _editDepth > 0;
 
     /// <inheritdoc />
-    public string ToDisplayString(double normalized) => ToPlain(normalized).ToString("F" + Math.Clamp(Decimals, 0, 6).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+    public string ToDisplayString(double normalized)
+    {
+        double hz = ToPlain(normalized);
+        if (hz >= 1000.0) return InvariantNumber.Format(hz / 1000.0, hz >= 10000.0 ? 1 : 2) + " kHz";
+        return InvariantNumber.Format(hz, Math.Clamp(Decimals, 0, 6)) + " Hz";
+    }
 
     /// <inheritdoc />
     public bool TryParse(string text, out double normalized)

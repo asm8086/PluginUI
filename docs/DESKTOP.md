@@ -1,4 +1,4 @@
-<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
+<!-- 2026/11/06 02:49:00 UTC - PluginUI -->
 
 # Desktop applications with PluginUI
 
@@ -113,7 +113,9 @@ edit.Items.Add(new MenuItem(delete));
 - **Shortcuts.** The menu bar runs the shortcut of any entry of its menus, sub-menus included: the command's
   `Gesture` (plus `AlternateGestures`), or for a plain entry its `ShortcutText` when it can be parsed ("Ctrl+O",
   "F1"). Commands that are not in a menu go into a `CommandSet` (`app.Commands`, or `new CommandSet().Attach(host)`).
-  A shortcut does not repeat while the key is held, unless `AllowsRepeat` (Undo, Redo, Zoom).
+  A shortcut does not repeat while the key is held, unless `AllowsRepeat` (Undo, Redo, Zoom). The focused element
+  goes first for the keys it edits with (`UIElement.ClaimsKey`): in a text box, Ctrl+C, Ctrl+V, Del… edit the text
+  instead of running the Edit menu; function keys and other Ctrl shortcuts still reach the commands.
 - **Gestures.** `KeyGesture.Parse` reads "Ctrl+Shift+S", "Alt+F4", "Ctrl++", "Del", "F5", also with French names
   ("Maj+Suppr"). Menus display them in the interface language (Ctrl+Maj+S in French).
 - **Mnemonics.** `&` before a letter underlines it (shown after Alt, F10 or a menu opened from the keyboard);

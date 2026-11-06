@@ -1,4 +1,4 @@
-<!-- 2026/11/05 22:35:00 UTC - PluginUI -->
+<!-- 2026/11/06 02:49:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -84,8 +84,18 @@ Before 1.0, minor versions may contain breaking changes.
   escape their data (`Mnemonics.Escape`), so "R&B" still shows as is.
 - **Gallery**: explicit `[STAThread] Main` (the file dialogs of `FilePathBox` need a single-threaded apartment).
 - **WM_SYSCHAR** following an Alt+key handled by PluginUI is consumed (no beep).
+- **BandCenterParameter** displays "250 Hz", "2.50 kHz", "12.7 kHz" (the unit is in the text, `Units` is empty);
+  `Decimals` (default 0) applies below 1 kHz.
 
 ### Fixed
+
+- **Shortcuts of the menu bar and of a `CommandSet` no longer take the editing keys of the focused element**: a text
+  box keeps Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, Del, Backspace, the arrows… even when an Edit menu has commands with the
+  same shortcuts, as in Windows (new `UIElement.ClaimsKey`, overridden by `TextBox`); function keys and the other
+  Ctrl shortcuts still run the commands.
+- **TextBox** edit menu: the shortcuts are shown in the interface language ("Suppr" in French instead of "Del").
+- **MappedParameter.Ranges** of a discrete parameter: the outer steps are the inner steps inside the ranges
+  (`StepCount` follows) instead of the inner step count; documentation example of `Link` corrected.
 
 - **Paste in value editors inside a DAW**: hosts that send Ctrl+letter to `IPlugView::onKeyDown` as its control
   character (Ctrl+V = 0x16) now reach the text box (`PluginEditorView.MapKey`); before, the key went back to the DAW.

@@ -1,4 +1,4 @@
-// 2026/11/05 22:35:00 UTC - PluginUI
+// 2026/11/06 02:49:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -252,20 +252,37 @@ public class TextBox : Control
         if (!IsReadOnly && Clipboard.GetText() is { } paste) Insert(paste.Replace("\r", string.Empty).Replace('\n', ' '));
     }
 
-    // Built at each right click: the enabled states follow the selection and the clipboard.
+    // Built at each right click: the enabled states follow the selection and the clipboard; the shortcuts are shown in
+    // the interface language (Suppr in French).
     private List<MenuItem> EditMenu()
     {
         var strings = Host?.Strings ?? UIStrings.English;
         bool selection = SelectionLength > 0;
+        string Shortcut(Key key, ModifierKeys modifiers = ModifierKeys.None) => new KeyGesture(key, modifiers).ToDisplayString(strings);
         return
         [
-            new MenuItem(strings.EditCut, () => { Cut(); Focus(); }) { IsEnabled = selection && !IsReadOnly, ShortcutText = "Ctrl+X" },
-            new MenuItem(strings.EditCopy, () => { Copy(); Focus(); }) { IsEnabled = selection, ShortcutText = "Ctrl+C" },
-            new MenuItem(strings.EditPaste, () => { Paste(); Focus(); }) { IsEnabled = !IsReadOnly && Clipboard.ContainsText, ShortcutText = "Ctrl+V" },
-            new MenuItem(strings.Delete, () => { if (!IsReadOnly) ReplaceSelection(string.Empty); Focus(); }) { IsEnabled = selection && !IsReadOnly, ShortcutText = "Del" },
+            new MenuItem(strings.EditCut, () => { Cut(); Focus(); }) { IsEnabled = selection && !IsReadOnly, ShortcutText = Shortcut(Key.X, ModifierKeys.Control) },
+            new MenuItem(strings.EditCopy, () => { Copy(); Focus(); }) { IsEnabled = selection, ShortcutText = Shortcut(Key.C, ModifierKeys.Control) },
+            new MenuItem(strings.EditPaste, () => { Paste(); Focus(); }) { IsEnabled = !IsReadOnly && Clipboard.ContainsText, ShortcutText = Shortcut(Key.V, ModifierKeys.Control) },
+            new MenuItem(strings.Delete, () => { if (!IsReadOnly) ReplaceSelection(string.Empty); Focus(); }) { IsEnabled = selection && !IsReadOnly, ShortcutText = Shortcut(Key.Delete) },
             MenuItem.Separator(),
-            new MenuItem(strings.EditSelectAll, () => { SelectAll(); Focus(); }) { IsEnabled = _text.Length > 0, ShortcutText = "Ctrl+A" },
+            new MenuItem(strings.EditSelectAll, () => { SelectAll(); Focus(); }) { IsEnabled = _text.Length > 0, ShortcutText = Shortcut(Key.A, ModifierKeys.Control) },
         ];
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The editing keys: every key without Ctrl or Alt except Tab and F1–F12 (characters, arrows, Del, Backspace,
+    /// Enter, Escape), Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+Left / Right, Ctrl+Backspace / Del, Ctrl+Insert,
+    /// Shift+Insert and Shift+Delete.
+    /// </remarks>
+    protected internal override bool ClaimsKey(KeyEventArgs e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        bool alt = (e.Modifiers & ModifierKeys.Alt) != 0;
+        if (alt) return false;
+        if (!e.Control) return e.Key is not (Key.Tab or >= Key.F1 and <= Key.F12);
+        return e.Key is Key.A or Key.C or Key.X or Key.V or Key.Insert or Key.Left or Key.Right or Key.Back or Key.Delete or Key.Home or Key.End;
     }
 
     /// <inheritdoc />

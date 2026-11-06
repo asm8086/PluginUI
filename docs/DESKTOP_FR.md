@@ -1,4 +1,4 @@
-<!-- 2026/11/05 15:08:00 UTC - PluginUI -->
+<!-- 2026/11/06 02:49:00 UTC - PluginUI -->
 
 # Applications de bureau avec PluginUI
 
@@ -117,7 +117,9 @@ edit.Items.Add(new MenuItem(delete));
   `Gesture` de la commande (et ses `AlternateGestures`), ou pour une entrée simple son `ShortcutText` s'il se lit
   (« Ctrl+O », « F1 »). Les commandes absentes des menus vont dans un `CommandSet` (`app.Commands`, ou
   `new CommandSet().Attach(host)`). Un raccourci ne se répète pas quand la touche reste enfoncée, sauf `AllowsRepeat`
-  (Annuler, Rétablir, Zoom).
+  (Annuler, Rétablir, Zoom). L'élément qui a le focus passe en premier pour ses touches d'édition
+  (`UIElement.ClaimsKey`) : dans une zone de texte, Ctrl+C, Ctrl+V, Suppr… modifient le texte au lieu d'exécuter le
+  menu Edition ; les touches de fonction et les autres raccourcis Ctrl atteignent toujours les commandes.
 - **Combinaisons.** `KeyGesture.Parse` lit « Ctrl+Shift+S », « Alt+F4 », « Ctrl++ », « Del », « F5 », aussi avec les
   noms français (« Maj+Suppr »). Les menus les affichent dans la langue de l'interface (Ctrl+Maj+S en français).
 - **Lettres soulignées.** `&` devant une lettre la souligne (visible après Alt, F10 ou un menu ouvert au clavier) ;
