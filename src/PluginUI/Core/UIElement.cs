@@ -1,8 +1,9 @@
-// 2026/11/06 02:49:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -32,6 +33,9 @@ public abstract class UIElement
     private Side _dock = Side.Top;
     private bool _isVisible = true, _isEnabled = true;
     private float _opacity = 1f;
+    private AutomationPeer? _automationPeer;
+    private bool _automationPeerCreated;
+    private string? _automationName;
 
     // ---------------------------------------------------------------- identity / tree
 
@@ -54,8 +58,8 @@ public abstract class UIElement
     /// <summary>Child elements in drawing order (back to front).</summary>
     public virtual IReadOnlyList<UIElement> VisualChildren => Array.Empty<UIElement>();
 
-    /// <summary>Theme in effect (host theme, or the default dark theme when detached).</summary>
-    public Theme Theme => Host?.Theme ?? Theme.Dark;
+    /// <summary>Theme in effect (the host theme, its high contrast replacement, or the default dark theme when detached).</summary>
+    public Theme Theme => Host?.EffectiveTheme ?? Theme.Dark;
 
     /// <summary>Text measurement (device-accurate when attached, approximate otherwise).</summary>
     public ITextMeasurer TextMeasurer => Host?.TextMeasurer ?? FallbackTextMeasurer.Instance;
@@ -138,7 +142,7 @@ public abstract class UIElement
 
     /// <summary>Visible and taking layout space when <c>true</c>; collapsed otherwise.</summary>
     [Category("Appearance")]
-    public bool IsVisible { get => _isVisible; set { if (_isVisible != value) { _isVisible = value; InvalidateMeasure(); OnVisibilityChanged(); } } }
+    public bool IsVisible { get => _isVisible; set { if (_isVisible != value) { _isVisible = value; InvalidateMeasure(); OnVisibilityChanged(); Host?.NotifyAutomationStructureChanged(); } } }
 
     /// <summary>Accepts input when <c>true</c>; drawn dimmed otherwise.</summary>
     [Category("Behavior")]
@@ -210,6 +214,69 @@ public abstract class UIElement
 
     /// <summary><c>true</c> if this element holds the mouse capture.</summary>
     public bool IsMouseCaptured => Host is not null && ReferenceEquals(Host.CapturedElement, this);
+
+    // ---------------------------------------------------------------- accessibility
+
+    /// <summary>
+    /// Name read by screen readers (null = the caption, label or parameter name of the element, else its tooltip).
+    /// Give one to controls without a visible caption: an icon button, a knob labelled by a picture.
+    /// </summary>
+    [Category("Text")]
+    public string? AutomationName
+    {
+        get => _automationName;
+        set
+        {
+            if (_automationName == value) return;
+            string? old = _automationPeer?.Name;
+            _automationName = value;
+            if (_automationPeer is { } peer) peer.RaisePropertyChanged(AutomationProperty.Name, old, peer.Name);
+        }
+    }
+
+    /// <summary>Description read by screen readers after the name (null = the tooltip when it differs from the name).</summary>
+    [Category("Text")]
+    public string? AutomationHelpText { get; set; }
+
+    /// <summary>Element whose text names this one for screen readers (a <see cref="Label"/> placed next to it).</summary>
+    [Browsable(false)]
+    public UIElement? AutomationLabeledBy { get; set; }
+
+    /// <summary>Hides this element and its descendants from screen readers (decoration, duplicated information).</summary>
+    [Category("Behavior")]
+    public bool AutomationHidden { get; set; }
+
+    /// <summary>
+    /// Peer describing this element to assistive technologies (created on first use by
+    /// <see cref="OnCreateAutomationPeer"/>), or null when the element is transparent: its children then take its place.
+    /// </summary>
+    public AutomationPeer? GetAutomationPeer()
+    {
+        if (!_automationPeerCreated)
+        {
+            _automationPeerCreated = true;
+            _automationPeer = OnCreateAutomationPeer();
+        }
+        return _automationPeer;
+    }
+
+    /// <summary>Peer already created, if any (state changes are reported only for elements a client has seen).</summary>
+    internal AutomationPeer? ExistingAutomationPeer => _automationPeer;
+
+    /// <summary>
+    /// Creates the peer of this element. Default: an <see cref="ElementAutomationPeer"/> for focusable elements and
+    /// elements with an <see cref="AutomationName"/>, null (transparent) otherwise. Controls return a peer with
+    /// their role and patterns; override to describe a custom control.
+    /// </summary>
+    /// <returns>The peer, or null.</returns>
+    protected virtual AutomationPeer? OnCreateAutomationPeer()
+        => Focusable || _automationName is not null ? new ElementAutomationPeer(this) : null;
+
+    /// <summary>Tells assistive technologies that the state of this element changed (value, selection, text…).</summary>
+    protected internal void NotifyAutomationStateChanged()
+    {
+        if (_automationPeer is { } peer && Host is { IsAutomationActive: true }) peer.OnOwnerStateChanged();
+    }
 
     // ---------------------------------------------------------------- events
 

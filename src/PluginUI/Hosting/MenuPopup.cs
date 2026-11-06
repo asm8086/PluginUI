@@ -1,6 +1,8 @@
-// 2026/11/05 15:08:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
+
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -10,6 +12,9 @@ namespace PluginUI;
 /// </summary>
 public class MenuPopup : Popup
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new MenuAutomationPeer(this);
+
     private const float ItemHeight = 24f;
     private const float SeparatorHeight = 9f;
     private const float Pad = 4f;
@@ -63,6 +68,7 @@ public class MenuPopup : Popup
             InvalidateVisual();
             var root = Root;
             root.ItemHighlighted?.Invoke(root, value >= 0 ? Items[value] : null);
+            Host?.UpdateAutomationFocus();
         }
     }
 
@@ -93,6 +99,30 @@ public class MenuPopup : Popup
             foreach (var item in Items) h += item.IsSeparator ? SeparatorHeight : ItemHeight;
             return h;
         }
+    }
+
+    /// <summary>Bounds of entry <paramref name="index"/> (host DIPs, scrolled).</summary>
+    internal Rect GetItemBounds(int index) => index >= 0 && index < Items.Count ? ItemRect(index) : Rect.Empty;
+
+    /// <summary><c>true</c> if the sub-menu of entry <paramref name="index"/> is open.</summary>
+    internal bool IsSubmenuOpen(int index)
+        => index >= 0 && index < Items.Count && _child is { IsOpen: true } child && ReferenceEquals(child.Items, Items[index].Items);
+
+    /// <summary>Opens the sub-menu of an entry and highlights its first entry (assistive technologies).</summary>
+    internal void OpenSubmenuFromAutomation(int index)
+    {
+        if (index < 0 || index >= Items.Count || !Items[index].HasSubmenu || !Items[index].IsEnabled) return;
+        HighlightedIndex = index;
+        OpenSubmenu(index, focusFirst: true);
+    }
+
+    /// <summary>Closes the open sub-menu (assistive technologies).</summary>
+    internal void CloseSubmenuFromAutomation() => CloseSubmenu();
+
+    /// <summary>Runs an entry as Enter would (assistive technologies).</summary>
+    internal void ActivateFromAutomation(int index)
+    {
+        if (index >= 0 && index < Items.Count) Activate(index);
     }
 
     private Rect ItemRect(int index)

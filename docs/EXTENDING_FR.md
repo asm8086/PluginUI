@@ -1,4 +1,4 @@
-<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
+<!-- 2026/11/06 12:53:00 UTC - PluginUI -->
 
 # Étendre PluginUI
 
@@ -290,3 +290,11 @@ var result = DesignLoader.Build(design, registry, options);
 
 Le test `DesignConventionTests` vérifie ces règles pour tous les éléments de la bibliothèque. Copiez-le dans vos projets pour vos propres contrôles.
 
+## 14. Accessibilité
+
+Les lecteurs d'écran voient chaque élément par son pair d'automation. Les contrôles dérivés de `ValueControl` sont
+déjà des curseurs ; tout autre élément focalisable est un élément « personnalisé » nommé par son libellé ou son
+info-bulle. Redéfinissez `OnCreateAutomationPeer` pour donner à un contrôle personnalisé son rôle et ses motifs, et
+appelez `NotifyAutomationStateChanged()` quand ce que lisent les lecteurs d'écran change. Vérifiez le dessin
+personnalisé en contraste élevé : utilisez les couleurs du thème (`Theme.Palette`), pas des couleurs fixes. Voir
+[ACCESSIBILITY_FR.md](ACCESSIBILITY_FR.md).

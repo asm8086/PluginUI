@@ -1,8 +1,9 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -15,6 +16,9 @@ namespace PluginUI;
 /// </summary>
 public class DropDown : ValueControl
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new DropDownAutomationPeer(this);
+
     private IReadOnlyList<string>? _items;
     private bool _menuOpen;
 
@@ -119,10 +123,12 @@ public class DropDown : ValueControl
         LayoutParts(EffectiveStyle, out _, out var widget, out _);
         _menuOpen = true;
         InvalidateVisual();
+        NotifyAutomationStateChanged();
         Host.ShowMenu(BuildMenu(), widget, PopupPlacement.Below, widget.Width, () =>
         {
             _menuOpen = false;
             InvalidateVisual();
+            NotifyAutomationStateChanged();
         });
     }
 
@@ -157,6 +163,20 @@ public class DropDown : ValueControl
             }
         }
         return root;
+    }
+
+    /// <summary>Selects the entry whose displayed text is <paramref name="text"/> (case-insensitive), as the user would.</summary>
+    internal bool SelectByText(string text)
+    {
+        var labels = Labels;
+        for (int i = 0; i < labels.Count; i++)
+        {
+            if (IsItemAvailable is { } available && !available(i)) continue;
+            if (!string.Equals(DisplayName(labels[i]), text.Trim(), StringComparison.OrdinalIgnoreCase) && !string.Equals(labels[i], text.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
+            SelectByUser(i);
+            return true;
+        }
+        return false;
     }
 
     private void SelectByUser(int index)

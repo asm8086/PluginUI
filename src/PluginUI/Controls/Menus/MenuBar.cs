@@ -1,8 +1,9 @@
-// 2026/11/06 02:49:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -30,6 +31,9 @@ namespace PluginUI;
 /// </example>
 public class MenuBar : UIElement
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new MenuBarAutomationPeer(this);
+
     private const float ItemPadding = 10f;
     private const long ReopenGuardMs = 150;
 
@@ -78,6 +82,12 @@ public class MenuBar : UIElement
 
     /// <summary>Index of the open menu (-1 = none).</summary>
     public int OpenIndex => _open;
+
+    /// <summary>Title highlighted in keyboard mode (-1 = none).</summary>
+    internal int KeyboardIndex => _keyboardIndex;
+
+    /// <summary><c>true</c> in keyboard mode with no menu open.</summary>
+    internal bool IsInMenuMode => _menuMode && _open < 0;
 
     /// <summary><c>true</c> in keyboard mode (F10 or Alt) or while a menu is open.</summary>
     public bool IsActive => _menuMode || _open >= 0;
@@ -339,6 +349,11 @@ public class MenuBar : UIElement
         _keyboardIndex = NextTop(-1, +1);
         SetShowMnemonics(true);
         InvalidateVisual();
+        if (Host is { } host)
+        {
+            host.MenuModeBar = this;
+            host.UpdateAutomationFocus();
+        }
     }
 
     private void ExitMenuMode()
@@ -347,6 +362,11 @@ public class MenuBar : UIElement
         _keyboardIndex = -1;
         SetShowMnemonics(false);
         InvalidateVisual();
+        if (Host is { } host && ReferenceEquals(host.MenuModeBar, this))
+        {
+            host.MenuModeBar = null;
+            host.UpdateAutomationFocus();
+        }
     }
 
     private void SetShowMnemonics(bool show)
@@ -485,6 +505,7 @@ public class MenuBar : UIElement
             {
                 _menuMode = true;
                 _keyboardIndex = index;
+                if (Host is { } host) host.MenuModeBar = this;
             }
             else ExitMenuMode();
         }

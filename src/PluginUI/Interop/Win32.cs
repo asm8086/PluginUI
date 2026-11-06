@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -51,6 +51,12 @@ internal static partial class Win32
     public const uint WM_DPICHANGED = 0x02E0;
     public const uint WM_DPICHANGED_AFTERPARENT = 0x02E3;
     public const uint WM_APP = 0x8000;
+    public const uint WM_GETOBJECT = 0x003D;
+    public const uint WM_SETTINGCHANGE = 0x001A;
+    public const uint WM_SYSCOLORCHANGE = 0x0015;
+    public const uint WM_THEMECHANGED = 0x031A;
+    public const uint SMTO_BLOCK = 0x0001;
+    public const uint SMTO_ABORTIFHUNG = 0x0002;
 
     // ---- Window styles ----
     public const uint WS_OVERLAPPED = 0x00000000;

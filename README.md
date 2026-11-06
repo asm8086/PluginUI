@@ -1,4 +1,4 @@
-<!-- 2026/11/06 02:49:00 UTC - PluginUI -->
+<!-- 2026/11/06 12:53:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -38,6 +38,7 @@ PluginUI/
 │   ├── EXTENDING.md                Extending the library: themes, skins, controls, containers, popups
 │   ├── EDITOR.md                   Guide to the PluginUIEditor visual designer and the .pluginui format
 │   ├── DESKTOP.md                  Desktop applications with PluginUI.Desktop (menu bar, commands, documents)
+│   ├── ACCESSIBILITY.md            Screen readers (UI Automation), keyboard, announcements, high contrast
 │   └── images/                     Screenshots (English; French ones in images/fr/)
 ├── docfx/                          Documentation site (DocFX): articles + API reference
 ├── src/
@@ -47,6 +48,7 @@ PluginUI/
 │   │   │                           TextStyle, ImageSource / FilmStrip / NineSlice (WIC), SvgImage
 │   │   ├── Core/                   UIElement (layout, rendering, input), Panel, Control, ValueControl
 │   │   ├── Layout/                 Canvas, StackPanel, Grid, WrapPanel, DockPanel, UniformGrid, Border
+│   │   ├── Automation/             Accessibility: automation peers, patterns, Windows UI Automation bridge
 │   │   ├── Hosting/                UIHost (window, input, DPI, popups, timers), Popup, MenuPopup,
 │   │   │                           LiveEditor, StandaloneWindow
 │   │   ├── Parameters/             IParameter, LocalParameter (linear, logarithmic, power, lists), MappedParameter, BandCenterParameter
@@ -71,7 +73,7 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer: desktop application (IL or NativeAOT) built with PluginUI.Desktop
 ├── samples/Designs/                Sample designs (.pluginui), including the DemoSynth layout
-├── tests/PluginUI.Tests/           178 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers)
+├── tests/PluginUI.Tests/           197 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers, accessibility)
 ├── tests/PluginUI.NPlug.Tests/     29 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
 └── tests/PluginUI.Design.Tests/    26 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
 ```
@@ -202,6 +204,15 @@ static int Main()
 Guide: [docs/DESKTOP.md](docs/DESKTOP.md). Example: `samples/PluginUI.DesktopDemo` (Biquad Designer).
 
 ![Biquad Designer](docs/images/desktop-menu.png)
+
+### Accessibility
+
+Screen readers (Narrator, NVDA, JAWS) read and drive PluginUI interfaces through Windows UI Automation, in desktop
+applications and in plug-in editors: every control has a role, a name (its caption, label, parameter name or
+`AutomationName`), a value with units and the actions of its kind (invoke, toggle, set a value, expand a drop-down,
+select an option or a tab, run a menu entry). The focus is followed as the keyboard moves through controls and menus;
+`UIHost.Announce` speaks a message. In Windows high contrast mode, hosts draw with the colors of the user's scheme.
+Nothing to enable; a host costs nothing until a client asks. Guide: [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
 
 ## Concepts
 

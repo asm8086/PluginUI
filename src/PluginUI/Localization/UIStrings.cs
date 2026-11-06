@@ -1,4 +1,4 @@
-// 2026/11/05 22:35:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -112,6 +112,10 @@ public sealed record UIStrings
         HintRedo = "Rétablit la dernière modification annulée",
         HintExit = "Quitte l'application",
         StatusReady = "Prêt",
+        AutomationKnob = "bouton rotatif",
+        AutomationDialog = "boîte de dialogue",
+        AutomationMenu = "Menu",
+        AutomationInvalidEntry = "Saisie non valide",
         StatusSaved = "Enregistré : {0}",
         StatusOpened = "Ouvert : {0}",
         RecentFiles = "Fichiers récents",
@@ -325,6 +329,18 @@ public sealed record UIStrings
 
     /// <summary>Idle text of a status bar.</summary>
     public string StatusReady { get; init; } = "Ready";
+
+    /// <summary>Role of a knob spoken by screen readers (instead of "slider").</summary>
+    public string AutomationKnob { get; init; } = "knob";
+
+    /// <summary>Role of a dialog spoken by screen readers.</summary>
+    public string AutomationDialog { get; init; } = "dialog";
+
+    /// <summary>Name read for a menu button without caption nor tooltip.</summary>
+    public string AutomationMenu { get; init; } = "Menu";
+
+    /// <summary>State read for a text box whose entry was refused.</summary>
+    public string AutomationInvalidEntry { get; init; } = "Invalid entry";
 
     /// <summary>Status bar message after saving ({0}: document name).</summary>
     public string StatusSaved { get; init; } = "Saved: {0}";

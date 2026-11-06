@@ -1,10 +1,11 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
 using TerraFX.Interop.Windows;
 using static TerraFX.Interop.Windows.Windows;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -135,6 +136,9 @@ public sealed unsafe class NativeWindowHost : UIElement
 /// <summary>A thin horizontal or vertical rule.</summary>
 public class Separator : UIElement
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new SeparatorAutomationPeer(this);
+
     /// <summary>Creates a horizontal separator.</summary>
     public Separator() { }
 

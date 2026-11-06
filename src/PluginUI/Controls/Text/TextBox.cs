@@ -1,8 +1,9 @@
-// 2026/11/06 02:49:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -17,6 +18,9 @@ namespace PluginUI;
 /// </remarks>
 public class TextBox : Control
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new TextBoxAutomationPeer(this);
+
     private bool _isInvalid;
     private string _text = string.Empty;
     private int _caret;
@@ -49,6 +53,7 @@ public class TextBox : Control
             IsInvalid = false; // the user is correcting the text
             TextChanged?.Invoke(this, _text);
             InvalidateVisual();
+            NotifyAutomationStateChanged();
         }
     }
 
@@ -533,6 +538,10 @@ public class TextBox : Control
 /// </summary>
 public sealed class TextEditPopup : Popup
 {
+    /// <inheritdoc />
+    /// <remarks>Transparent: the text box appears in its place.</remarks>
+    protected override AutomationPeer? OnCreateAutomationPeer() => null;
+
     private readonly Func<string, bool> _tryCommit;
     private readonly Action? _cancel;
     private bool _done;

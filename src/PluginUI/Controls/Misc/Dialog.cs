@@ -1,8 +1,9 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -47,6 +48,9 @@ public enum MessageBoxResult
 /// </example>
 public class Dialog : Popup
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new PopupAutomationPeer(this);
+
     private readonly StackPanel _buttons;
     private UIElement? _body;
     private object? _cancelResult;
@@ -325,6 +329,9 @@ public class Dialog : Popup
 /// <summary>Wrapped text block used by dialogs (and usable anywhere a paragraph is needed).</summary>
 public class DialogText : UIElement
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new TextAutomationPeer(this, () => Text);
+
     /// <summary>Creates a paragraph.</summary>
     public DialogText(string text) => Text = text;
 

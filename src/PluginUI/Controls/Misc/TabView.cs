@@ -1,9 +1,10 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -54,6 +55,9 @@ public enum TabPlacement
 /// </summary>
 public class TabView : Panel
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new TabViewAutomationPeer(this);
+
     private int _selected = -1;
     private int _hover = -1;
     private float _indicatorPos, _indicatorLength;
@@ -112,6 +116,7 @@ public class TabView : Panel
             StartIndicatorAnimation();
             if (previous != value) SelectionChanged?.Invoke(this, value);
             InvalidateMeasure();
+            NotifyAutomationStateChanged();
         }
     }
 
@@ -217,6 +222,13 @@ public class TabView : Panel
         foreach (var child in Children) child.Arrange(area);
         ComputeTabRects(bounds);
         if (!_indicatorValid || _indicatorAnimation is null || _indicatorAnimation.IsFinished) SnapIndicator();
+    }
+
+    /// <summary>Bounds of the tab of page <paramref name="index"/> (host DIPs).</summary>
+    internal Rect GetTabBounds(int index)
+    {
+        if (_tabRects.Count != Pages.Count) ComputeTabRects(Bounds);
+        return index >= 0 && index < _tabRects.Count ? _tabRects[index] : Rect.Empty;
     }
 
     private void ComputeTabRects(Rect bounds)

@@ -1,4 +1,4 @@
-<!-- 2026/11/06 02:49:00 UTC - PluginUI -->
+<!-- 2026/11/06 12:53:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -10,6 +10,23 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **Accessibility (screen readers)**: PluginUI interfaces are exposed to Narrator, NVDA and JAWS through Windows UI
+  Automation, in desktop applications and plug-in editors (`WM_GETOBJECT`, source-generated COM, NativeAOT compatible;
+  calls from UI Automation threads run on the UI thread). New namespace `PluginUI.Automation`: `AutomationPeer`,
+  `ElementAutomationPeer`, `ItemAutomationPeer`, the patterns `IInvokePattern`, `ITogglePattern`, `IRangeValuePattern`,
+  `IValuePattern`, `IExpandCollapsePattern`, `ISelectionItemPattern`, `ISelectionPattern`, and peers for buttons,
+  toggles, check boxes, knobs and sliders (plain parameter range and displayed text, one gesture per edit), number
+  boxes, option groups, drop-downs, menu buttons, text boxes, labels, lists, tabs, group boxes, menu bar and menus
+  (access keys, shortcuts, check marks), tool bars, status bars, dialogs and progress bars. Focus events follow Tab,
+  option and list navigation, menus and the menu bar keyboard mode; menus report opening and closing, values and states
+  report their changes. `UIElement.AutomationName`, `AutomationHelpText`, `AutomationLabeledBy`, `AutomationHidden`,
+  `GetAutomationPeer`, `OnCreateAutomationPeer`, `NotifyAutomationStateChanged`; `UIHost.AutomationName`,
+  `RootAutomationPeer`, `GetFocusedAutomationPeer`, `Announce` (UI Automation notifications);
+  `StatusBar.AnnounceMessages`. Guide: `docs/ACCESSIBILITY.md`.
+- **High contrast**: hosts draw with a theme built from the Windows high contrast colors while the mode is on
+  (`UIHost.FollowSystemHighContrast`, default on; `EffectiveTheme`, `IsHighContrastActive`, `IsSystemHighContrast`,
+  `CreateSystemHighContrastTheme`), with `Theme.HighContrast`, `Theme.CreateHighContrast` and `Palette.HighContrast`.
+- **UIStrings**: `AutomationKnob`, `AutomationDialog`, `AutomationMenu`, `AutomationInvalidEntry`.
 - **PluginUI.Desktop** (new NuGet package): complete Windows desktop applications with PluginUI as their whole
   interface, compiled as IL or NativeAOT. `DesktopApplication` (DPI awareness, `%APPDATA%` data folder, main window
   placement and recent files saved in `state.json`, application commands, crash report; requires an STA `Main`),
@@ -77,6 +94,8 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Changed
 
+- `UIElement.Theme` returns the host's `EffectiveTheme` (its high contrast replacement while Windows is in high
+  contrast). Code reading `UIHost.Theme` to draw should read `EffectiveTheme`.
 - **Project creation**: the standalone application template has an `[STAThread]` `Main` and an `app.manifest`
   (per-monitor DPI).
 - **MenuItem**: an `&` followed by a letter or a digit is now a mnemonic marker in drawn menus too (it already was in

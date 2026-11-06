@@ -1,8 +1,9 @@
-// 2026/10/24 14:21:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -12,6 +13,9 @@ namespace PluginUI;
 /// </summary>
 public class ToggleButton : ValueControl
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new ToggleAutomationPeer(this);
+
     /// <summary>Creates a toggle button.</summary>
     public ToggleButton()
     {

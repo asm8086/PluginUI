@@ -1,14 +1,18 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
 /// <summary>Check box with a caption on the right. Clicking the box or the caption toggles the value.</summary>
 public class CheckBox : ValueControl
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new ToggleAutomationPeer(this);
+
     private float _anim;
     private Animation? _animation;
 

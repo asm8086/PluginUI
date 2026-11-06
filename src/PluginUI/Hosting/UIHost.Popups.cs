@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -44,6 +44,7 @@ public sealed unsafe partial class UIHost
         _popups.Add(popup);
         popup.AttachTo(this);
         InvalidateLayout();
+        OnPopupShownForAutomation(popup);
     }
 
     /// <summary>Closes a popup and every popup opened after it (sub-menus).</summary>
@@ -53,6 +54,7 @@ public sealed unsafe partial class UIHost
         if (index < 0) return;
         // Detach the whole range first: Closed handlers may open or close popups (re-entrancy).
         var closing = _popups.GetRange(index, _popups.Count - index);
+        for (int i = closing.Count - 1; i >= 0; i--) OnPopupClosingForAutomation(closing[i]);
         _popups.RemoveRange(index, closing.Count);
         for (int i = closing.Count - 1; i >= 0; i--)
         {
@@ -69,6 +71,7 @@ public sealed unsafe partial class UIHost
         }
         if (_captured is null) UpdateHover(HitAt(_lastMouse));
         InvalidateLayout();
+        OnPopupsClosedForAutomation();
     }
 
     /// <summary>Closes every popup.</summary>

@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -65,6 +65,46 @@ public sealed record Palette(
         Focus: Color.FromRgb(0x1E88E5, 0.8f),
         Selection: Color.FromRgb(0x1E88E5, 0.25f),
         Hover: Color.FromRgb(0x000000, 0.05f));
+
+    /// <summary>
+    /// Palette built from the Windows high contrast colors: everything is drawn with the window, text, highlight and
+    /// disabled colors of the user's scheme (no dimmed texts, no shadows).
+    /// </summary>
+    /// <param name="window">Background (COLOR_WINDOW).</param>
+    /// <param name="windowText">Text and frames (COLOR_WINDOWTEXT).</param>
+    /// <param name="highlight">Accent, selection and focus (COLOR_HIGHLIGHT).</param>
+    /// <param name="highlightText">Text over the highlight (COLOR_HIGHLIGHTTEXT).</param>
+    /// <param name="grayText">Disabled texts and tracks (COLOR_GRAYTEXT).</param>
+    /// <param name="buttonFace">Raised surfaces (COLOR_BTNFACE).</param>
+    /// <param name="hotLight">Links and secondary accent (COLOR_HOTLIGHT).</param>
+    public static Palette HighContrast(Color window, Color windowText, Color highlight, Color highlightText, Color grayText, Color buttonFace, Color hotLight) => new(
+        Background: window,
+        Surface: window,
+        SurfaceRaised: buttonFace,
+        Border: windowText,
+        Track: grayText,
+        Accent: highlight,
+        AccentAlt: hotLight,
+        Text: windowText,
+        TextDim: windowText,
+        TextDisabled: grayText,
+        Warning: hotLight,
+        Danger: hotLight,
+        Success: highlight,
+        Shadow: Color.Transparent,
+        Focus: windowText,
+        Selection: highlight.WithAlpha(0.45f),
+        Hover: highlightText.WithAlpha(0.18f));
+
+    /// <summary>The "High Contrast Black" scheme of Windows (used when the system colors cannot be read).</summary>
+    public static Palette HighContrastBlack { get; } = HighContrast(
+        window: Color.FromRgb(0x000000),
+        windowText: Color.FromRgb(0xFFFFFF),
+        highlight: Color.FromRgb(0x1AEBFF),
+        highlightText: Color.FromRgb(0x000000),
+        grayText: Color.FromRgb(0x3FF23F),
+        buttonFace: Color.FromRgb(0x000000),
+        hotLight: Color.FromRgb(0xFFFF00));
 }
 
 /// <summary>Font families and sizes of a theme.</summary>
@@ -150,6 +190,39 @@ public sealed record Theme(string Name, Palette Palette, Typography Typography, 
 
     /// <summary>Light theme.</summary>
     public static Theme Light { get; } = new("Light", Palette.Light, new Typography(), new Metrics());
+
+    /// <summary>High contrast theme ("High Contrast Black" colors); see <see cref="CreateHighContrast"/>.</summary>
+    public static Theme HighContrast { get; } = CreateHighContrast(Palette.HighContrastBlack);
+
+    /// <summary>
+    /// Theme for a high contrast palette: thicker frames and focus rings, no shadows. <see cref="UIHost"/> switches to
+    /// it automatically when Windows runs in high contrast (<see cref="UIHost.FollowSystemHighContrast"/>).
+    /// </summary>
+    /// <param name="palette">Colors (usually <see cref="Palette.HighContrast"/> from the system colors).</param>
+    public static Theme CreateHighContrast(Palette palette)
+    {
+        ArgumentNullException.ThrowIfNull(palette);
+        return new Theme("HighContrast", palette, new Typography(), new Metrics(StrokeWidth: 1.5f, FocusWidth: 2.5f, ShadowBlur: 0f, ShadowOffsetY: 0f))
+        {
+            DefaultStyle = new VectorStyle(
+                Background: palette.Surface,
+                Fill: palette.SurfaceRaised,
+                Pressed: palette.Selection,
+                Frame: palette.Border,
+                Accent: palette.Accent,
+                LabelColor: palette.Text,
+                ValueColor: palette.Text,
+                Shadow: Color.Transparent,
+                Hover: palette.Hover,
+                LabelText: new TextStyle("Segoe UI", 10.5f, FontWeight.SemiBold, Align: HorizontalAlignment.Center),
+                ValueText: new TextStyle("Segoe UI", 10.5f, Align: HorizontalAlignment.Center),
+                DrawShadow: false,
+                FrameThickness: 1.5f,
+                TrackThickness: 4f,
+                ShadowBlur: 0f,
+                ShadowOffset: 0f),
+        };
+    }
 
     /// <summary>Default vector style derived from the palette.</summary>
     public VectorStyle DefaultStyle

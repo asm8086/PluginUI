@@ -1,8 +1,9 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -25,6 +26,9 @@ public enum MenuButtonStyle
 /// </summary>
 public class MenuButton : Control
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new MenuButtonAutomationPeer(this);
+
     private bool _menuOpen;
 
     /// <summary>Creates a menu button.</summary>
@@ -114,10 +118,12 @@ public class MenuButton : Control
         LayoutParts(EffectiveStyle, out _, out var widget, out _);
         _menuOpen = true;
         InvalidateVisual();
+        NotifyAutomationStateChanged();
         Host.ShowMenu(Items, widget, MenuPlacement, 0f, () =>
         {
             _menuOpen = false;
             InvalidateVisual();
+            NotifyAutomationStateChanged();
         });
     }
 

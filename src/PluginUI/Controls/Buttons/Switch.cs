@@ -1,8 +1,9 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -19,8 +20,29 @@ public enum SwitchClickMode
 /// N-position selector switch (waveform, range, mode). Vector look: a slotted track with a lever and position
 /// labels; bitmap look: a film-strip skin (<c>new FilmStripSkin(strip, useStateIndex: true)</c>).
 /// </summary>
-public class Switch : ValueControl
+public class Switch : ValueControl, IAutomationOptions
 {
+    /// <inheritdoc />
+    /// <remarks>A toggle for two positions, a group of options for more.</remarks>
+    protected override AutomationPeer? OnCreateAutomationPeer()
+        => PositionCount <= 2 && Items is not { Count: > 2 } ? new ToggleAutomationPeer(this) : new OptionsAutomationPeer(this);
+
+    int IAutomationOptions.OptionCount => PositionCount;
+    int IAutomationOptions.SelectedOption => SelectedIndex;
+    string IAutomationOptions.GetOptionText(int index)
+    {
+        var labels = StateLabels.For(this, Items);
+        return index < labels.Count ? labels[index] : (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+    Rect IAutomationOptions.GetOptionBounds(int index)
+    {
+        LayoutParts(EffectiveStyle, out _, out var widget, out _);
+        int n = PositionCount;
+        return Orientation == Orientation.Vertical
+            ? new Rect(widget.X, widget.Y + widget.Height * index / n, widget.Width, widget.Height / n)
+            : new Rect(widget.X + widget.Width * index / n, widget.Y, widget.Width / n, widget.Height);
+    }
+
     private IReadOnlyList<string>? _items;
 
     /// <summary>Creates a switch (3 positions unless bound or given items).</summary>

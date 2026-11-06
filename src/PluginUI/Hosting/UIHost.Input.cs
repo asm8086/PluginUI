@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -99,6 +99,7 @@ public sealed unsafe partial class UIHost
         element?.OnGotFocus();
         FocusChanged?.Invoke(this, element);
         Invalidate();
+        UpdateAutomationFocus();
         return true;
     }
 
@@ -207,6 +208,7 @@ public sealed unsafe partial class UIHost
     /// <summary>Dispatches a mouse move (DIPs). Public for custom containers and tests.</summary>
     public void DispatchMouseMove(Point p, ModifierKeys modifiers)
     {
+        using var automationBatch = BeginAutomationBatch();
         bool moved = p != _lastMouse;
         _lastMouse = p;
         if (_liveEditor is { IsEnabled: true } editor && editor.OnMouseMove(p, modifiers)) return;
@@ -234,6 +236,7 @@ public sealed unsafe partial class UIHost
     /// <summary>Dispatches a mouse button press (DIPs).</summary>
     public void DispatchMouseDown(Point p, MouseButton button, int clickCount, ModifierKeys modifiers)
     {
+        using var automationBatch = BeginAutomationBatch();
         _lastMouse = p;
         MousePressCount++;
         HideToolTip();
@@ -281,6 +284,7 @@ public sealed unsafe partial class UIHost
     /// <summary>Dispatches a mouse button release (DIPs).</summary>
     public void DispatchMouseUp(Point p, MouseButton button, ModifierKeys modifiers)
     {
+        using var automationBatch = BeginAutomationBatch();
         _lastMouse = p;
         if (_liveEditor is { IsEnabled: true } editor && editor.OnMouseUp(p, button, modifiers)) return;
 
@@ -312,6 +316,7 @@ public sealed unsafe partial class UIHost
     /// <summary>Dispatches a wheel event (DIPs, notches). Returns <c>true</c> if an element handled it.</summary>
     public bool DispatchWheel(Point p, float notches, bool horizontal, ModifierKeys modifiers)
     {
+        using var automationBatch = BeginAutomationBatch();
         HideToolTip();
         var target = _captured ?? HitAt(p);
         var e = new MouseEventArgs(p, MouseButton.None, modifiers, 0, notches, horizontal);
@@ -406,6 +411,7 @@ public sealed unsafe partial class UIHost
     /// <summary>Dispatches a key press. Returns <c>true</c> if handled (unhandled keys go back to the DAW).</summary>
     public bool DispatchKeyDown(KeyEventArgs e)
     {
+        using var automationBatch = BeginAutomationBatch();
         HideToolTip();
         PreviewKeyDown?.Invoke(this, e);
         if (e.Handled) return true;
@@ -444,6 +450,7 @@ public sealed unsafe partial class UIHost
     /// <summary>Dispatches a key release.</summary>
     public bool DispatchKeyUp(KeyEventArgs e)
     {
+        using var automationBatch = BeginAutomationBatch();
         PreviewKeyUp?.Invoke(this, e);
         if (e.Handled) return true;
         var start = TopKeyboardPopup() is { } popup && (_focused is null || !popup.IsAncestorOf(_focused)) ? popup : _focused;
@@ -454,6 +461,7 @@ public sealed unsafe partial class UIHost
     /// <summary>Dispatches typed text to the focused element.</summary>
     public bool DispatchTextInput(string text)
     {
+        using var automationBatch = BeginAutomationBatch();
         var popup = TopKeyboardPopup();
         var start = popup is not null && (_focused is null || !popup.IsAncestorOf(_focused)) ? popup : _focused;
         if (start is null) return false;

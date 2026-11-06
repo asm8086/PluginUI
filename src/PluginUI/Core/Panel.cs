@@ -1,4 +1,4 @@
-// 2026/11/05 15:08:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -225,6 +225,7 @@ public sealed class ElementCollection : IList<UIElement>, IReadOnlyList<UIElemen
         item.Parent = _owner;
         if (_owner.Host is not null) item.AttachTo(_owner.Host);
         _owner.InvalidateMeasure();
+        _owner.Host?.NotifyAutomationStructureChanged();
     }
 
     private void Detach(UIElement item)
@@ -232,6 +233,7 @@ public sealed class ElementCollection : IList<UIElement>, IReadOnlyList<UIElemen
         item.DetachFromHost();
         if (ReferenceEquals(item.Parent, _owner)) item.Parent = null;
         _owner.InvalidateMeasure();
+        _owner.Host?.NotifyAutomationStructureChanged();
     }
 }
 

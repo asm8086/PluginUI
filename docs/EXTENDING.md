@@ -1,4 +1,4 @@
-<!-- 2026/10/18 17:31:00 UTC - PluginUI -->
+<!-- 2026/11/06 12:53:00 UTC - PluginUI -->
 
 # Extending PluginUI
 
@@ -289,3 +289,11 @@ var result = DesignLoader.Build(design, registry, options);
 ```
 
 The `DesignConventionTests` test checks these rules for every element of the library. Copy it into your projects for your own controls.
+
+## 14. Accessibility
+
+Screen readers see each element through its automation peer. Controls derived from `ValueControl` are sliders
+already; any other focusable element is a "custom" element named by its label or tooltip. Override
+`OnCreateAutomationPeer` to give a custom control its role and patterns, and call `NotifyAutomationStateChanged()`
+when what screen readers read changes. Check custom drawing in high contrast: use the theme colors
+(`Theme.Palette`), not fixed ones. See [ACCESSIBILITY.md](ACCESSIBILITY.md).

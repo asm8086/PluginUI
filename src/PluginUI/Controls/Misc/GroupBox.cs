@@ -1,8 +1,9 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -13,6 +14,9 @@ namespace PluginUI;
 /// <remarks>Collapsing hides the content (its <see cref="UIElement.IsVisible"/> is restored on expand).</remarks>
 public class GroupBox : ContentPanel
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new GroupBoxAutomationPeer(this);
+
     private string? _header;
     private bool _collapsed;
     private bool _contentWasVisible = true;

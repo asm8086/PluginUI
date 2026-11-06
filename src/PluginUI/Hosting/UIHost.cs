@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -92,6 +92,7 @@ public sealed partial class UIHost : IDisposable
             _root = value;
             _root.AttachTo(this);
             InvalidateLayout();
+            NotifyAutomationStructureChanged();
         }
     }
 
@@ -386,7 +387,7 @@ public sealed partial class UIHost : IDisposable
 
     private void Paint(DrawingContext dc)
     {
-        dc.Clear(BackgroundColor ?? _theme.Palette.Background);
+        dc.Clear(_highContrastTheme is { } hc ? hc.Palette.Background : BackgroundColor ?? _theme.Palette.Background);
         _root.RenderTree(dc);
         RenderPopups(dc);
         _liveEditor?.Render(dc);

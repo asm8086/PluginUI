@@ -1,8 +1,9 @@
-// 2026/11/05 15:08:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -65,6 +66,9 @@ public sealed class StatusBarSegment
 /// </example>
 public class StatusBar : UIElement, ITickable
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new StatusBarAutomationPeer(this);
+
     private string? _message;
     private double _messageLeft;
 
@@ -95,6 +99,10 @@ public class StatusBar : UIElement, ITickable
 
     private TextStyle SegmentStyle => Theme.Typography.Small with { Ellipsis = true };
 
+    /// <summary>Screen readers speak the messages of <see cref="ShowMessage"/> (default <c>true</c>).</summary>
+    [Category("Behavior")]
+    public bool AnnounceMessages { get; set; } = true;
+
     /// <summary>Shows a message in the first stretched field for a while (a hint, if any, stays on top).</summary>
     /// <param name="text">Message.</param>
     /// <param name="seconds">Duration (0 or less: until the next message or <see cref="ClearMessage"/>).</param>
@@ -104,6 +112,7 @@ public class StatusBar : UIElement, ITickable
         _messageLeft = seconds > 0 ? seconds : double.PositiveInfinity;
         if (seconds > 0) Host?.AddTicker(this);
         InvalidateVisual();
+        if (AnnounceMessages && !string.IsNullOrEmpty(text)) Host?.Announce(text);
     }
 
     /// <summary>Removes the temporary message.</summary>

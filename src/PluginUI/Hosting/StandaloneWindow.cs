@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -289,7 +289,7 @@ public sealed unsafe class StandaloneWindow : IWindowMessageHandler, IDisposable
     private void ApplyTitleBarTheme()
     {
         if (_hwnd == HWND.NULL) return;
-        var bg = Host.Theme.Palette.Background;
+        var bg = Host.EffectiveTheme.Palette.Background;
         bool dark = DarkTitleBar ?? (0.2126f * bg.R + 0.7152f * bg.G + 0.0722f * bg.B) < 0.45f;
         BOOL value = dark ? BOOL.TRUE : BOOL.FALSE;
         try

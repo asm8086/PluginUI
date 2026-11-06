@@ -1,9 +1,10 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
 using System.Globalization;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -286,6 +287,9 @@ public abstract class ValueControl : Control
         if (owns) EndGesture();
     }
 
+    /// <summary>Sets the value as a complete user gesture, on behalf of an assistive technology.</summary>
+    internal void SetValueFromAutomation(double normalized) => SetValueByUser(normalized);
+
     /// <summary>Resets to <see cref="DefaultValue"/> as a user gesture.</summary>
     public void ResetToDefault() => SetValueByUser(DefaultValue);
 
@@ -294,7 +298,12 @@ public abstract class ValueControl : Control
     {
         ValueChanged?.Invoke(this, Value);
         InvalidateVisual();
+        NotifyAutomationStateChanged();
     }
+
+    /// <inheritdoc />
+    /// <remarks>A slider with the value range and the formatted value (two-state and multi-option controls override it).</remarks>
+    protected override AutomationPeer? OnCreateAutomationPeer() => new RangeValueAutomationPeer(this);
 
     // ---------------------------------------------------------------- default keyboard / wheel behavior
 

@@ -1,8 +1,9 @@
-// 2026/11/05 15:08:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -209,6 +210,9 @@ public static class ToolGlyphs
 /// </summary>
 public class ToolBarButton : UIElement
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new ToolBarButtonAutomationPeer(this);
+
     private bool _pressed;
 
     /// <summary>Creates a button with an empty command (set <see cref="Command"/>; designers).</summary>
@@ -362,6 +366,9 @@ public class ToolBarButton : UIElement
 public class ToolBarSeparator : UIElement
 {
     /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new SeparatorAutomationPeer(this);
+
+    /// <inheritdoc />
     protected override Size MeasureOverride(Size available) => new(9f, Theme.Metrics.ControlHeight + 4f);
 
     /// <inheritdoc />
@@ -390,6 +397,9 @@ public class ToolBarSeparator : UIElement
 /// </example>
 public class ToolBar : Panel
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new ToolBarAutomationPeer(this);
+
     /// <summary>Creates an empty tool bar.</summary>
     public ToolBar() => Padding = new Thickness(6f, 3f, 6f, 3f);
 

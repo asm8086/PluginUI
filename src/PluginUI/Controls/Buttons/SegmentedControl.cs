@@ -1,8 +1,9 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -10,8 +11,16 @@ namespace PluginUI;
 /// Row (or column) of mutually exclusive segments — radio buttons / tab switch in one shape. The selection
 /// highlight slides between segments. Segment texts come from <see cref="Items"/> or the parameter's state labels.
 /// </summary>
-public class SegmentedControl : ValueControl
+public class SegmentedControl : ValueControl, IAutomationOptions
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new OptionsAutomationPeer(this);
+
+    int IAutomationOptions.OptionCount => Count;
+    int IAutomationOptions.SelectedOption => SelectedIndex;
+    string IAutomationOptions.GetOptionText(int index) => index < Labels.Count ? Labels[index] : (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    Rect IAutomationOptions.GetOptionBounds(int index) => SegmentRect(TrackRect, index);
+
     private IReadOnlyList<string>? _items;
     private float _highlight = -1f;
     private Animation? _animation;

@@ -1,8 +1,9 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -29,6 +30,9 @@ public enum PopupPlacement
 /// </summary>
 public class Popup : ContentPanel
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new PopupAutomationPeer(this);
+
     /// <summary>Closes when the user clicks outside it.</summary>
     [Category("Behavior")]
     public bool IsLightDismiss { get; set; } = true;

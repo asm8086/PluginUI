@@ -1,8 +1,9 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -10,8 +11,20 @@ namespace PluginUI;
 /// Vertical (or horizontal) list of radio buttons bound to one discrete value. Texts come from <see cref="Items"/>
 /// or the parameter's state labels.
 /// </summary>
-public class RadioGroup : ValueControl
+public class RadioGroup : ValueControl, IAutomationOptions
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new OptionsAutomationPeer(this);
+
+    int IAutomationOptions.OptionCount => Count;
+    int IAutomationOptions.SelectedOption => SelectedIndex;
+    string IAutomationOptions.GetOptionText(int index) => index < Labels.Count ? Labels[index] : (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    Rect IAutomationOptions.GetOptionBounds(int index)
+    {
+        LayoutParts(EffectiveStyle, out _, out var widget, out _);
+        return ItemRect(widget, index);
+    }
+
     private IReadOnlyList<string>? _items;
     private int _hoverIndex = -1;
 

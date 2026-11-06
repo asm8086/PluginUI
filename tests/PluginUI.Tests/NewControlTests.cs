@@ -1,4 +1,4 @@
-// 2026/11/04 20:47:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -345,7 +345,7 @@ public class NewControlTests
             .Where(p => p.PropertyType == typeof(string) && p.Name != nameof(UIStrings.LanguageCode))
             .Where(p => (string?)p.GetValue(UIStrings.French) == (string?)p.GetValue(UIStrings.English))
             .Select(p => p.Name).ToArray();
-        Assert.That(same, Is.EquivalentTo(new[] { nameof(UIStrings.Ok), nameof(UIStrings.PresetPlaceholder), nameof(UIStrings.VersionFormat) }));
+        Assert.That(same, Is.EquivalentTo(new[] { nameof(UIStrings.Ok), nameof(UIStrings.PresetPlaceholder), nameof(UIStrings.VersionFormat), nameof(UIStrings.AutomationMenu) }));
     }
     [Test]
     public void ViewSwitcherShowsTheViewOfTheParameterValue()

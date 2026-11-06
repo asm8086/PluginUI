@@ -1,9 +1,10 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
 using System.Collections;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -26,6 +27,9 @@ public readonly record struct ListItemState(int Index, bool IsSelected, bool IsH
 /// </remarks>
 public class ListBox : Control
 {
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new ListBoxAutomationPeer(this);
+
     private readonly SelectionModel _selection = new();
     private readonly SlimScrollBar _bar = new(Orientation.Vertical);
     private IList? _items;
@@ -57,7 +61,7 @@ public class ListBox : Control
             _items = value;
             _scroll = 0f;
             _hover = -1;
-            if (_selection.Clear()) SelectionChanged?.Invoke(this);
+            if (_selection.Clear()) RaiseSelectionChanged();
             InvalidateVisual();
         }
     }
@@ -105,7 +109,7 @@ public class ListBox : Control
         set
         {
             value = value < 0 || value >= Count ? -1 : value;
-            if (_selection.Set(value)) SelectionChanged?.Invoke(this);
+            if (_selection.Set(value)) RaiseSelectionChanged();
             if (value >= 0) ScrollIntoView(value);
             InvalidateVisual();
         }
@@ -129,7 +133,7 @@ public class ListBox : Control
     /// <summary>Re-reads the list after it changed (clamps the selection and the scroll position).</summary>
     public void Refresh()
     {
-        if (_selection.Clamp(Count)) SelectionChanged?.Invoke(this);
+        if (_selection.Clamp(Count)) RaiseSelectionChanged();
         ClampScroll();
         InvalidateVisual();
     }
@@ -148,6 +152,41 @@ public class ListBox : Control
         if (top < _scroll) _scroll = top;
         else if (bottom > _scroll + rows.Height) _scroll = bottom - rows.Height;
         ClampScroll();
+        InvalidateVisual();
+    }
+
+    private void RaiseSelectionChanged()
+    {
+        SelectionChanged?.Invoke(this);
+        NotifyAutomationStateChanged();
+    }
+
+    /// <summary>Row of the keyboard cursor (-1 = none).</summary>
+    internal int CurrentIndex => _selection.Current;
+
+    /// <summary>Text of entry <paramref name="index"/>.</summary>
+    internal string GetItemText(int index) => _items is { } items && index >= 0 && index < items.Count ? TextOf(items[index]) : string.Empty;
+
+    /// <summary>Bounds of row <paramref name="index"/> (host DIPs, scrolled; may lie outside the list).</summary>
+    internal Rect GetRowBounds(int index)
+    {
+        var rows = RowsArea;
+        return new Rect(rows.X, rows.Y + index * ItemHeight - _scroll, rows.Width, ItemHeight);
+    }
+
+    /// <summary>Changes the selection on behalf of an assistive technology.</summary>
+    internal void SelectFromAutomation(int index, Automation.ListSelectionChange change)
+    {
+        if (index < 0 || index >= Count) return;
+        bool changed = change switch
+        {
+            Automation.ListSelectionChange.Add => !_selection.IsSelected(index) && _selection.Toggle(index),
+            Automation.ListSelectionChange.Remove => _selection.IsSelected(index) && (MultiSelect ? _selection.Toggle(index) : _selection.Clear()),
+            _ => _selection.Set(index),
+        };
+        ScrollIntoView(index);
+        if (changed) RaiseSelectionChanged();
+        else NotifyAutomationStateChanged();
         InvalidateVisual();
     }
 
@@ -302,7 +341,7 @@ public class ListBox : Control
             ItemActivated?.Invoke(this, index);
             return;
         }
-        if (_selection.Click(index, e.Control, e.Shift)) SelectionChanged?.Invoke(this);
+        if (_selection.Click(index, e.Control, e.Shift)) RaiseSelectionChanged();
         _pressIndex = index;
         _pressPosition = e.Position;
         InvalidateVisual();
@@ -386,7 +425,7 @@ public class ListBox : Control
         _items.Insert(to, item);
         _selection.OnItemMoved(from, to);
         ItemMoved?.Invoke(this, from, to);
-        SelectionChanged?.Invoke(this);
+        RaiseSelectionChanged();
         InvalidateVisual();
     }
 
@@ -412,7 +451,7 @@ public class ListBox : Control
         if (target != int.MinValue)
         {
             target = Math.Clamp(target, 0, Count - 1);
-            if (_selection.MoveTo(target, e.Shift)) SelectionChanged?.Invoke(this);
+            if (_selection.MoveTo(target, e.Shift)) RaiseSelectionChanged();
             ScrollIntoView(target);
             e.Handled = true;
             return;
@@ -420,7 +459,7 @@ public class ListBox : Control
         switch (e.Key)
         {
             case Key.A when e.Control:
-                if (_selection.SelectAll(Count)) SelectionChanged?.Invoke(this);
+                if (_selection.SelectAll(Count)) RaiseSelectionChanged();
                 e.Handled = MultiSelect;
                 InvalidateVisual();
                 return;
@@ -429,7 +468,7 @@ public class ListBox : Control
                 e.Handled = true;
                 return;
             case Key.Space when current >= 0 && MultiSelect:
-                if (_selection.Toggle(current)) SelectionChanged?.Invoke(this);
+                if (_selection.Toggle(current)) RaiseSelectionChanged();
                 InvalidateVisual();
                 e.Handled = true;
                 return;
@@ -452,7 +491,7 @@ public class ListBox : Control
             int i = (start + k) % Count;
             if (TextOf(_items![i]).StartsWith(_typeAhead, StringComparison.OrdinalIgnoreCase))
             {
-                if (_selection.MoveTo(i, false)) SelectionChanged?.Invoke(this);
+                if (_selection.MoveTo(i, false)) RaiseSelectionChanged();
                 ScrollIntoView(i);
                 return;
             }

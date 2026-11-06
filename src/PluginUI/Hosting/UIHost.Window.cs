@@ -1,8 +1,10 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 12:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using PluginUI.Automation.Windows;
 using PluginUI.Interop;
 using PluginUI.Rendering;
 using TerraFX.Interop.Windows;
@@ -19,6 +21,7 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
     private bool _holdsClass;
     private bool _acceptsFiles;
     private int _uiThreadId;
+    private UiaBridge? _uia;
 
     /// <summary>
     /// Called when an exception is caught at a native boundary (window procedure, timers, posted actions).
@@ -95,6 +98,7 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
                 Win32.WS_CHILD | Win32.WS_VISIBLE | Win32.WS_CLIPCHILDREN | Win32.WS_CLIPSIBLINGS | Win32.WS_TABSTOP,
                 0, 0, 0, _pixelWidth, _pixelHeight, (HWND)parentHwnd);
             _renderer.AttachWindow(_hwnd, (uint)_pixelWidth, (uint)_pixelHeight, Scale);
+            CheckHighContrast(force: true);
             UpdateFileDropRegistration();
             InvalidateLayout();
             if (Animator.IsRunning || _tickers.Count > 0) EnsureFrameTimer();
@@ -125,6 +129,7 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
         // Release the render target before the window it is bound to.
         _renderer?.Dispose();
         _renderer = null;
+        DisconnectAutomation(_hwnd);
         if (_hwnd != HWND.NULL)
         {
             var hwnd = _hwnd;
@@ -146,6 +151,7 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
     {
         // Normally our own DestroyWindow; the parent may also have been destroyed without a detach.
         if (_hwnd != hwnd) return;
+        DisconnectAutomation(hwnd);
         _hwnd = HWND.NULL;
         _frameTimerRunning = false;
         CancelInteraction();
@@ -202,6 +208,7 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
 
             case Win32.WM_PAINT:
             {
+                CheckHighContrast(force: false);
                 PAINTSTRUCT paint;
                 BeginPaint(hwnd, &paint);
                 bool presented = true;
@@ -352,9 +359,36 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
                 ProcessPostedActions();
                 return true;
 
+            case Win32.WM_APP + 2:
+                RunMarshalledWork(lParam);
+                return true;
+
+            case Win32.WM_GETOBJECT when (int)lParam == Uia.RootObjectId:
+                try
+                {
+                    if (_uia is null)
+                    {
+                        _uia = new UiaBridge(this);
+                        AutomationSink = _uia;
+                    }
+                    result = _uia.ReturnRootProvider((nint)hwnd.Value, wParam, lParam);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    ReportException(ex, "WM_GETOBJECT");
+                    return false;
+                }
+
             case Win32.WM_DROPFILES:
                 OnNativeDropFiles((HDROP)(nint)wParam);
                 return true;
+
+            case Win32.WM_SETTINGCHANGE:
+            case Win32.WM_SYSCOLORCHANGE:
+            case Win32.WM_THEMECHANGED:
+                CheckHighContrast(force: true);
+                return false;
 
             case Win32.WM_DPICHANGED_AFTERPARENT:
                 if (FollowWindowDpi)
@@ -446,6 +480,92 @@ public sealed unsafe partial class UIHost : IWindowMessageHandler
         finally
         {
             DragFinish(drop);
+        }
+    }
+
+    /// <summary>Converts a point in screen pixels to host DIPs.</summary>
+    internal Point ScreenToDip(int x, int y)
+    {
+        var pt = new POINT { x = x, y = y };
+        if (_hwnd != HWND.NULL) ScreenToClient(_hwnd, &pt);
+        float s = Scale;
+        var offset = ContentOffset;
+        return new Point(pt.x / s - offset.X, pt.y / s - offset.Y);
+    }
+
+    private void DisconnectAutomation(HWND hwnd)
+    {
+        if (_uia is not { } uia) return;
+        _uia = null;
+        if (ReferenceEquals(AutomationSink, uia)) AutomationSink = null;
+        try
+        {
+            uia.Disconnect((nint)hwnd.Value);
+        }
+        catch (Exception ex)
+        {
+            ReportException(ex, "UI Automation disconnect");
+        }
+    }
+
+    // ---------------------------------------------------------------- calls from other threads
+
+    private abstract class MarshalledWork
+    {
+        public Exception? Error;
+
+        public abstract void Run();
+    }
+
+    private sealed class MarshalledWork<T>(Func<T> func) : MarshalledWork
+    {
+        public T Result = default!;
+
+        public override void Run() => Result = func();
+    }
+
+    /// <summary>
+    /// Runs <paramref name="func"/> on the UI thread and returns its result (UI Automation may call providers from its
+    /// own threads). Exceptions are rethrown on the calling thread.
+    /// </summary>
+    internal T RunOnUIThread<T>(Func<T> func)
+    {
+        if (_hwnd == HWND.NULL || Environment.CurrentManagedThreadId == _uiThreadId)
+        {
+            if (_hwnd == HWND.NULL && _uiThreadId != 0 && Environment.CurrentManagedThreadId != _uiThreadId)
+            {
+                throw new COMException("The window is closed.", Uia.E_ELEMENTNOTAVAILABLE);
+            }
+            return func();
+        }
+        var work = new MarshalledWork<T>(func);
+        var handle = GCHandle.Alloc(work);
+        try
+        {
+            nuint unused;
+            if (SendMessageTimeoutW(_hwnd, Win32.WM_APP + 2, 0, GCHandle.ToIntPtr(handle), Win32.SMTO_BLOCK | Win32.SMTO_ABORTIFHUNG, 5000, &unused) == 0)
+            {
+                throw new COMException("The user interface thread does not respond.", Uia.E_ELEMENTNOTAVAILABLE);
+            }
+        }
+        finally
+        {
+            handle.Free();
+        }
+        if (work.Error is { } error) ExceptionDispatchInfo.Throw(error);
+        return work.Result;
+    }
+
+    private static void RunMarshalledWork(nint lParam)
+    {
+        if (lParam == 0 || GCHandle.FromIntPtr(lParam).Target is not MarshalledWork work) return;
+        try
+        {
+            work.Run();
+        }
+        catch (Exception ex)
+        {
+            work.Error = ex;
         }
     }
 
