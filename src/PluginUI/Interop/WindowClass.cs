@@ -34,12 +34,15 @@ internal sealed unsafe class WindowClass
     private readonly Lock _lock = new();
     private readonly uint _style;
     private int _refCount;
+    private bool _registered;
 
     public WindowClass(string prefix, uint style)
     {
         Name = prefix + "." + Guid.NewGuid().ToString("N");
         _style = style;
     }
+
+    private const int ErrorClassAlreadyExists = 1410;
 
     /// <summary>Registered class name.</summary>
     public string Name { get; }
@@ -53,6 +56,8 @@ internal sealed unsafe class WindowClass
         lock (_lock)
         {
             if (_refCount++ > 0) return;
+            // Still registered: the last release came while its window was being destroyed, and Windows refused.
+            if (_registered) return;
 
             delegate* unmanaged<HWND, uint, WPARAM, LPARAM, LRESULT> proc = &WndProc;
 
@@ -78,9 +83,13 @@ internal sealed unsafe class WindowClass
                 if (RegisterClassExW(&windowClass) == 0)
                 {
                     int error = Marshal.GetLastSystemError();
-                    _refCount--;
-                    throw new InvalidOperationException($"RegisterClassExW failed (error {error}).");
+                    if (error != ErrorClassAlreadyExists)
+                    {
+                        _refCount--;
+                        throw new InvalidOperationException($"RegisterClassExW failed (error {error}).");
+                    }
                 }
+                _registered = true;
             }
         }
     }
@@ -93,7 +102,9 @@ internal sealed unsafe class WindowClass
             if (_refCount == 0 || --_refCount > 0) return;
             fixed (char* name = Name)
             {
-                UnregisterClassW(name, Instance);
+                // Fails while a window of the class still exists (the release often comes from its WM_NCDESTROY):
+                // the class then stays registered and the next AddRef uses it.
+                if (UnregisterClassW(name, Instance) != BOOL.FALSE) _registered = false;
             }
         }
     }

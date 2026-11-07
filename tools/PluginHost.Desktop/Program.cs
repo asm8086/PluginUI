@@ -138,6 +138,12 @@ internal static class Snapshots
         host.RenderToPng(Path.Combine(dir, "pluginhost-asio" + suffix + ".png"), 1f);
         host.CloseAllPopups();
 
+        main.MenuBar.OpenMenu(2); // View: details, full screen (F11)…
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-view" + suffix + ".png"), 1f);
+        main.MenuBar.CloseMenu();
+        host.CloseAllPopups();
+
         host.ShowMenu(main.Table.GetColumnMenuItems(), new Point(420f, 130f));
         Settle(host);
         host.RenderToPng(Path.Combine(dir, "pluginhost-columns" + suffix + ".png"), 1f);

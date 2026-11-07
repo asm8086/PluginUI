@@ -30,12 +30,14 @@ public enum WindowStartPosition
 /// <param name="Width">Outer width.</param>
 /// <param name="Height">Outer height.</param>
 /// <param name="IsMaximized">The window was maximized.</param>
-public readonly record struct WindowPlacement(int X, int Y, int Width, int Height, bool IsMaximized = false);
+/// <param name="IsFullScreen">The window was in full screen (the other values are its bounds outside full screen).</param>
+public readonly record struct WindowPlacement(int X, int Y, int Width, int Height, bool IsMaximized = false, bool IsFullScreen = false);
 
 /// <summary>
 /// Top-level window hosting a <see cref="UIHost"/>: desktop applications, standalone versions of plug-ins, test
 /// benches, the gallery. Handles per-monitor DPI, resizing constraints, the message loop, modal dialogs
-/// (<see cref="ShowDialog"/>), the dark title bar, the application icon and the saved placement.
+/// (<see cref="ShowDialog"/>), the dark title bar, the application icon, the saved placement and full screen
+/// (<see cref="IsFullScreen"/>).
 /// </summary>
 /// <example>
 /// <code>
@@ -60,6 +62,9 @@ public sealed unsafe class StandaloneWindow : IWindowMessageHandler, IDisposable
     private HICON _bigIcon, _smallIcon;
     private bool _ownsIcons;
     private WindowPlacement? _placement;
+    private bool _fullScreen;
+    private WINDOWPLACEMENT _windowed;
+    private uint _windowedStyle;
 
     /// <summary>Creates the window object (the native window is created by <see cref="Show"/> or <see cref="Run"/>).</summary>
     public StandaloneWindow(UIHost host, string title)
@@ -121,18 +126,98 @@ public sealed unsafe class StandaloneWindow : IWindowMessageHandler, IDisposable
         get
         {
             if (_hwnd == HWND.NULL) return _placement;
+            // In full screen, the placement to keep is the one the window returns to.
+            if (_fullScreen) return FromNative(_windowed, fullScreen: true);
             var wp = new WINDOWPLACEMENT { length = (uint)sizeof(WINDOWPLACEMENT) };
             if (GetWindowPlacement(_hwnd, &wp) == BOOL.FALSE) return _placement;
-            var r = wp.rcNormalPosition;
-            // rcNormalPosition is in work-area coordinates: convert to screen coordinates.
-            var offset = WorkAreaOffset(r);
-            return new WindowPlacement(r.left + offset.x, r.top + offset.y, r.right - r.left, r.bottom - r.top, wp.showCmd == Win32.SW_SHOWMAXIMIZED || (wp.showCmd == Win32.SW_SHOWMINIMIZED && (wp.flags & Win32.WPF_RESTORETOMAXIMIZED) != 0));
+            return FromNative(wp, fullScreen: false);
         }
         set
         {
             _placement = value;
-            if (_hwnd != HWND.NULL && value is { } v) ApplyPlacement(v, show: false);
+            if (_hwnd == HWND.NULL || value is not { } v) return;
+            if (_fullScreen) IsFullScreen = false;
+            ApplyPlacement(v, show: false);
+            if (v.IsFullScreen) IsFullScreen = true;
         }
+    }
+
+    private static WindowPlacement FromNative(WINDOWPLACEMENT wp, bool fullScreen)
+    {
+        var r = wp.rcNormalPosition;
+        // rcNormalPosition is in work-area coordinates: convert to screen coordinates.
+        var offset = WorkAreaOffset(r);
+        bool maximized = wp.showCmd == Win32.SW_SHOWMAXIMIZED || (wp.showCmd == Win32.SW_SHOWMINIMIZED && (wp.flags & Win32.WPF_RESTORETOMAXIMIZED) != 0);
+        return new WindowPlacement(r.left + offset.x, r.top + offset.y, r.right - r.left, r.bottom - r.top, maximized, fullScreen);
+    }
+
+    /// <summary>
+    /// Full screen: the window loses its title bar and borders and covers the whole monitor it is on, taskbar
+    /// included; leaving it gives the window back its previous position, size and maximized state. Can be set before
+    /// <see cref="Show"/>. Meant for resizable hosts (<see cref="SizingMode.Relayout"/>, <see cref="SizingMode.ScaleToFit"/>):
+    /// a <see cref="SizingMode.Fixed"/> host keeps its size in the corner of the screen.
+    /// </summary>
+    public bool IsFullScreen
+    {
+        get => _fullScreen;
+        set
+        {
+            if (_fullScreen == value) return;
+            if (_hwnd == HWND.NULL)
+            {
+                _fullScreen = value; // applied by Show
+                return;
+            }
+            if (value) EnterFullScreen(); else LeaveFullScreen();
+            FullScreenChanged?.Invoke(this);
+        }
+    }
+
+    /// <summary>Raised when the window enters or leaves full screen.</summary>
+    public event Action<StandaloneWindow>? FullScreenChanged;
+
+    /// <summary>Esc leaves full screen when no element of the window uses the key (default <c>true</c>).</summary>
+    public bool ExitFullScreenOnEscape { get; set; } = true;
+
+    /// <summary>Enters or leaves full screen.</summary>
+    public void ToggleFullScreen() => IsFullScreen = !IsFullScreen;
+
+    private void EnterFullScreen()
+    {
+        var wp = new WINDOWPLACEMENT { length = (uint)sizeof(WINDOWPLACEMENT) };
+        GetWindowPlacement(_hwnd, &wp);
+        _windowed = wp;
+        _windowedStyle = _style;
+        _fullScreen = true;
+        nint style = GetWindowLongPtrW(_hwnd, Win32.GWL_STYLE);
+        SetWindowLongPtrW(_hwnd, Win32.GWL_STYLE, style & ~(nint)Win32.WS_OVERLAPPEDWINDOW);
+        _style &= ~Win32.WS_OVERLAPPEDWINDOW;
+        FitToMonitor(frameChanged: true);
+    }
+
+    private void LeaveFullScreen()
+    {
+        _fullScreen = false;
+        nint style = GetWindowLongPtrW(_hwnd, Win32.GWL_STYLE);
+        SetWindowLongPtrW(_hwnd, Win32.GWL_STYLE, style | (nint)(_windowedStyle & Win32.WS_OVERLAPPEDWINDOW));
+        _style = _windowedStyle;
+        var wp = _windowed;
+        if (wp.length == 0) return;
+        if (wp.showCmd == Win32.SW_SHOWMINIMIZED) wp.showCmd = Win32.SW_SHOWNORMAL;
+        SetWindowPlacement(_hwnd, &wp);
+        SetWindowPos(_hwnd, HWND.NULL, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOZORDER | Win32.SWP_NOOWNERZORDER | Win32.SWP_FRAMECHANGED);
+        ApplyTitleBarTheme();
+    }
+
+    /// <summary>Covers the monitor the window is on (full screen; again after a change of monitor or resolution).</summary>
+    private void FitToMonitor(bool frameChanged)
+    {
+        var monitor = MonitorFromWindow(_hwnd, Win32.MONITOR_DEFAULTTONEAREST);
+        var info = new MONITORINFO { cbSize = (uint)sizeof(MONITORINFO) };
+        if (monitor == HMONITOR.NULL || GetMonitorInfoW(monitor, &info) == BOOL.FALSE) return;
+        var r = info.rcMonitor;
+        SetWindowPos(_hwnd, HWND.HWND_TOP, r.left, r.top, r.right - r.left, r.bottom - r.top,
+            Win32.SWP_NOOWNERZORDER | (frameChanged ? Win32.SWP_FRAMECHANGED : 0));
     }
 
     /// <summary>Native handle (0 before <see cref="Show"/>).</summary>
@@ -195,11 +280,21 @@ public sealed unsafe class StandaloneWindow : IWindowMessageHandler, IDisposable
         SetClientSize(cw, ch);
         Host.SetPixelSize(cw, ch);
         Host.AttachToParent((nint)_hwnd.Value, detectDpi: false);
-        if (_placement is { } saved && IsOnAMonitor(saved)) ApplyPlacement(saved, show: true);
+        if (_placement is { } saved && IsOnAMonitor(saved))
+        {
+            ApplyPlacement(saved, show: true);
+            if (saved.IsFullScreen) _fullScreen = true;
+        }
         else
         {
             PlaceAtStart(owner);
             ShowWindow(_hwnd, Win32.SW_SHOW);
+        }
+        if (_fullScreen)
+        {
+            // Asked before Show (or restored): enter it now that the window is on its monitor.
+            _fullScreen = false;
+            IsFullScreen = true;
         }
         Host.RequestKeyboardFocus();
     }
@@ -454,6 +549,7 @@ public sealed unsafe class StandaloneWindow : IWindowMessageHandler, IDisposable
     private bool OnHostResizeRequest(int pixelWidth, int pixelHeight)
     {
         if (_hwnd == HWND.NULL || _inDpiChange) return true;
+        if (_fullScreen) return false; // the window keeps covering the monitor
         SetClientSize(pixelWidth, pixelHeight); // WM_SIZE then calls Host.SetPixelSize
         return true;
     }
@@ -506,7 +602,7 @@ public sealed unsafe class StandaloneWindow : IWindowMessageHandler, IDisposable
 
             case Win32.WM_GETMINMAXINFO:
             {
-                if (!Host.IsResizable) return false;
+                if (!Host.IsResizable || _fullScreen) return false;
                 var info = (MINMAXINFO*)lParam;
                 var (ew, eh) = FrameExtra();
                 float k = Host.DpiScale * (Host.Sizing == SizingMode.Relayout ? Host.Zoom : 1f);
@@ -545,9 +641,24 @@ public sealed unsafe class StandaloneWindow : IWindowMessageHandler, IDisposable
                 {
                     _inDpiChange = false;
                 }
-                SetWindowPos(hwnd, HWND.NULL, suggested->left, suggested->top, suggested->right - suggested->left, suggested->bottom - suggested->top, Win32.SWP_NOZORDER | Win32.SWP_NOACTIVATE);
+                if (_fullScreen) FitToMonitor(frameChanged: false);
+                else SetWindowPos(hwnd, HWND.NULL, suggested->left, suggested->top, suggested->right - suggested->left, suggested->bottom - suggested->top, Win32.SWP_NOZORDER | Win32.SWP_NOACTIVATE);
                 return true;
             }
+
+            case Win32.WM_DISPLAYCHANGE:
+                // New resolution or monitor layout: cover the monitor again.
+                if (_fullScreen) FitToMonitor(frameChanged: false);
+                return false;
+
+            case Win32.WM_KEYDOWN:
+                // Keys the hosted UI did not use come here.
+                if (_fullScreen && ExitFullScreenOnEscape && (int)wParam == Win32.VK_ESCAPE)
+                {
+                    IsFullScreen = false;
+                    return true;
+                }
+                return false;
 
             case Win32.WM_CLOSE:
             {

@@ -102,6 +102,7 @@ public sealed record UIStrings
         MenuSave = "&Enregistrer",
         MenuSaveAs = "Enregistrer &sous…",
         MenuExit = "&Quitter",
+        MenuFullScreen = "&Plein écran",
         MenuAbout = "À &propos de {0}…",
         AllFiles = "Tous les fichiers",
         HintNew = "Crée un nouveau document",
@@ -111,6 +112,7 @@ public sealed record UIStrings
         HintUndo = "Annule la dernière modification",
         HintRedo = "Rétablit la dernière modification annulée",
         HintExit = "Quitte l'application",
+        HintFullScreen = "Affiche la fenêtre sur tout l'écran (Échap pour en sortir)",
         StatusReady = "Prêt",
         AutomationKnob = "bouton rotatif",
         AutomationDialog = "boîte de dialogue",
@@ -300,6 +302,9 @@ public sealed record UIStrings
     /// <summary>File / Exit.</summary>
     public string MenuExit { get; init; } = "E&xit";
 
+    /// <summary>View / Full Screen.</summary>
+    public string MenuFullScreen { get; init; } = "&Full Screen";
+
     /// <summary>Help / About ({0}: application name).</summary>
     public string MenuAbout { get; init; } = "&About {0}…";
 
@@ -326,6 +331,9 @@ public sealed record UIStrings
 
     /// <summary>Status bar description of File / Exit.</summary>
     public string HintExit { get; init; } = "Quits the application";
+
+    /// <summary>Status bar description of View / Full Screen.</summary>
+    public string HintFullScreen { get; init; } = "Shows the window on the whole screen (Esc to leave)";
 
     /// <summary>Idle text of a status bar.</summary>
     public string StatusReady { get; init; } = "Ready";

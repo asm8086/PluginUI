@@ -231,6 +231,9 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   utilisations, dossier, état. Largeurs, colonnes, tri et filtres sont conservés d'un lancement à l'autre.
 - **Détails** (Ctrl+I) : format et SDK, version, catégories, bus, entrée MIDI, latence en échantillons et en
   millisecondes, paramètres, éditeur, chemin du module, dates, nombre d'utilisations, et la raison d'un échec.
+- **Plein écran** (F11, menu Affichage ; Échap pour en sortir) : la fenêtre couvre tout l'écran, sans barre de titre.
+
+![Menu Affichage](images/fr/pluginhost-view.png)
 - **Menu Plug-in** (aussi le clic droit sur une ligne, ou la touche Menu) : ouvrir (Entrée, double-clic), favori
   (Ctrl+D), afficher dans l'Explorateur, copier le chemin, ignorer le module (il est laissé de côté aux recherches
   suivantes).
@@ -279,6 +282,10 @@ du bas de la fenêtre contient :
 Les canaux de sortie principaux du plug-in vont aux canaux du périphérique dans l'ordre (une sortie mono sur les deux
 premiers) : un plug-in multicanal s'entend sur un périphérique multicanal. Sans périphérique, le plug-in tourne sur une
 horloge à 48 kHz avec une sortie muette, pour que son éditeur et ses paramètres se comportent comme dans une STAN.
+
+**Plein écran** (le bouton de la barre du haut, ou F11) affiche la fenêtre du plug-in sur tout l'écran, pour la scène
+ou un second écran : un éditeur redimensionnable la remplit, un éditeur de taille fixe est centré. Échap ou le bouton
+en sortent ; quand l'éditeur du plug-in a le clavier, cliquez d'abord sur la barre du haut.
 
 `PluginHost.exe` sert aussi de processus enfant de la recherche (`PluginHost.exe scan-module …`), comme `pluginhost`.
 `PluginHost.exe --config <dossier>` utilise un autre dossier de réglages ; les réglages de l'interface sont dans

@@ -199,6 +199,7 @@ internal sealed class MainWindow
         var viewMenu = new MenuItem(t.MenuView);
         viewMenu.Items.Add(new MenuItem(search));
         viewMenu.Items.Add(new MenuItem(details));
+        viewMenu.Items.Add(new MenuItem(app.FullScreenCommand));
         var columns = new MenuItem(L.T("&Columns", "&Colonnes"));
         viewMenu.Items.Add(columns);
         viewMenu.Items.Add(MenuItem.Separator());

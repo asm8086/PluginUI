@@ -30,6 +30,7 @@ internal sealed class PluginWindow : ITickable
     private readonly TestSignalGenerator _generator = new();
     private readonly DeviceInputSource _deviceInput = new();
     private FileSource? _file;
+    private readonly ToggleButton _fullScreen;
     private readonly PluginEditor? _editor;
     private readonly NativeWindowHost? _native;
     private readonly DataTable _parameters;
@@ -92,6 +93,12 @@ internal sealed class PluginWindow : ITickable
             _generic.ValueChanged += (_, _) => ShowGeneric(_generic.IsOn);
             buttons.Add(_generic);
         }
+        _fullScreen = new ToggleButton(L.T("Full screen", "Plein écran"))
+        {
+            Height = 26f, Width = 110f,
+            ToolTip = L.T("Shows the window on the whole screen (F11; Esc or this button to leave)", "Affiche la fenêtre sur tout l'écran (F11 ; Échap ou ce bouton pour en sortir)"),
+        };
+        buttons.Add(_fullScreen);
         bar.Children.Add(buttons);
         bar.Children.Add(_info);
 
@@ -167,6 +174,14 @@ internal sealed class PluginWindow : ITickable
             MaximizeBox = _editor is null || _editor.CanResize,
         };
         Window.Closed += _ => Close();
+        _fullScreen.ValueChanged += (_, _) => Window.IsFullScreen = _fullScreen.IsOn;
+        Window.FullScreenChanged += w => _fullScreen.IsOn = w.IsFullScreen;
+        Host.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key != Key.F11 || e.Control || e.Shift || (e.Modifiers & ModifierKeys.Alt) != 0) return;
+            Window.ToggleFullScreen();
+            e.Handled = true;
+        };
 
         plugin.ParameterChanged += (_, _, _) => _parameters.InvalidateVisual();
         plugin.Restarted += _ =>
@@ -376,7 +391,14 @@ internal sealed class PluginWindow : ITickable
 
     private void OnAreaResized(NativeWindowHost native, int width, int height)
     {
-        if (_editor is null || _fitting || !_editor.CanResize) return;
+        if (_editor is null || _fitting) return;
+        if (!_editor.CanResize)
+        {
+            // A fixed-size editor stays at its size, centred (maximized window, full screen).
+            var (ew, eh) = _editor.Size;
+            CenterEditor(native, ew, eh);
+            return;
+        }
         var (w, h) = FitInside(_editor, width, height);
         _editor.SetSize(w, h);
         CenterEditor(native, w, h);

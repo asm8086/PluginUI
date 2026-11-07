@@ -161,6 +161,7 @@ internal sealed class DesignerWindow
         };
         viewMenu.Items.Add(new MenuItem(phase));
         viewMenu.Items.Add(new MenuItem(bands));
+        viewMenu.Items.Add(new MenuItem(app.FullScreenCommand));
         viewMenu.Items.Add(MenuItem.Separator());
         viewMenu.Items.Add(new MenuItem(light));
         var language = new MenuItem(L.T("L&anguage", "L&angue"));

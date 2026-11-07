@@ -10,7 +10,7 @@ namespace PluginUI.Desktop;
 
 /// <summary>
 /// The application object of a PluginUI desktop program: DPI awareness, data folder, main window with its saved
-/// placement, recent files, application-wide commands, the message loop and a crash report. Works the same compiled
+/// placement, recent files, application-wide commands (exit, full screen), the message loop and a crash report. Works the same compiled
 /// as IL (<c>dotnet run</c>, debugging) and as NativeAOT (<c>dotnet publish</c> with <c>PublishAot</c>).
 /// </summary>
 /// <example>
@@ -79,6 +79,12 @@ public sealed partial class DesktopApplication
     /// <summary>Saved placement of the main window (restored by <see cref="Run"/>).</summary>
     public WindowPlacement? MainWindowPlacement { get; set; }
 
+    /// <summary>
+    /// Opens the main window in full screen when it was closed in full screen (default <c>false</c>: it opens as a
+    /// normal window, at its bounds outside full screen).
+    /// </summary>
+    public bool RestoreFullScreen { get; set; }
+
     /// <summary>Main window while <see cref="Run"/> runs.</summary>
     public StandaloneWindow? MainWindow => _mainWindow;
 
@@ -93,7 +99,8 @@ public sealed partial class DesktopApplication
     {
         ArgumentNullException.ThrowIfNull(mainWindow);
         _mainWindow = mainWindow;
-        if (MainWindowPlacement is { } placement && mainWindow.Placement is null) mainWindow.Placement = placement;
+        if (MainWindowPlacement is { } placement && mainWindow.Placement is null)
+            mainWindow.Placement = RestoreFullScreen ? placement : placement with { IsFullScreen = false };
         Commands.Attach(mainWindow.Host);
         mainWindow.Closed += w => MainWindowPlacement = w.Placement;
         try
@@ -120,6 +127,34 @@ public sealed partial class DesktopApplication
     {
         var t = UIStrings.ForLanguage(UIHost.DefaultLanguage);
         return new Command(t.MenuExit, Exit, KeyGesture.Parse("Alt+F4")) { Description = t.HintExit };
+    }
+
+    /// <summary>
+    /// View / Full Screen command (shortcut F11, checked while in full screen, texts in
+    /// <see cref="UIHost.DefaultLanguage"/> at first use): runs <see cref="ToggleFullScreen"/>. Disabled when the main
+    /// window has a fixed size (<see cref="SizingMode.Fixed"/>). Esc also leaves full screen (<see cref="StandaloneWindow.ExitFullScreenOnEscape"/>).
+    /// </summary>
+    public Command FullScreenCommand => _fullScreenCommand ??= CreateFullScreenCommand();
+
+    private Command? _fullScreenCommand;
+
+    private Command CreateFullScreenCommand()
+    {
+        var t = UIStrings.ForLanguage(UIHost.DefaultLanguage);
+        return new Command(t.MenuFullScreen, ToggleFullScreen, KeyGesture.Parse("F11"))
+        {
+            Description = t.HintFullScreen,
+            IsCheckable = true,
+            IsCheckedWhen = () => _mainWindow?.IsFullScreen == true,
+            // Disabled for a fixed-size main window, which would stay at its size in a corner of the screen.
+            CanExecuteWhen = () => _mainWindow?.Host.IsResizable ?? true,
+        };
+    }
+
+    /// <summary>Puts the main window in full screen, or back.</summary>
+    public void ToggleFullScreen()
+    {
+        if (_mainWindow is { WindowHandle: not 0 } w) w.ToggleFullScreen();
     }
 
     /// <summary>Asks the main window to close (File / Exit): its <see cref="StandaloneWindow.Closing"/> handlers can cancel.</summary>

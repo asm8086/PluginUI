@@ -151,7 +151,8 @@ doc.Saved += (_, path) => status.ShowMessage(host.Strings.FormatStatusSaved(Path
   the text is shown.
 - The status bar shows `Command.Description` (or `MenuItem.Description`) while an entry is highlighted or a button
   hovered, in its first stretched field; `ShowMessage(text, seconds)` writes a temporary message there. The commands
-  of `DocumentSession`, `UndoStack` and `DesktopApplication.ExitCommand` have localized descriptions.
+  of `DocumentSession`, `UndoStack`, `DesktopApplication.ExitCommand` and `DesktopApplication.FullScreenCommand` have
+  localized descriptions.
 
 Put the bars in a `DockPanel` in this order: menu bar and tool bar (`Side.Top`), status bar (`Side.Bottom`), then the
 content, which takes the rest.
@@ -219,7 +220,19 @@ A missing file gives the defaults; an unreadable one too, and it is kept as `set
 - `Closing` (cancelable) and `RequestClose()` (like the close button) let the application refuse to quit.
 - `DarkTitleBar` follows the theme of the host (dark background → dark title bar); call `UpdateTitleBarTheme()` after
   changing theme. `IconPath` or the project's `<ApplicationIcon>` gives the title bar and taskbar icon.
-- `Placement` gets or sets the restored bounds and the maximized state (saved by `DesktopApplication`).
+- `Placement` gets or sets the restored bounds, the maximized state and full screen (saved by `DesktopApplication`).
+- **Full screen**: `IsFullScreen` (or `ToggleFullScreen()`) removes the title bar and the borders and covers the whole
+  monitor the window is on, taskbar included; leaving it gives back the previous position, size and maximized state.
+  It can be set before `Show`, follows a change of monitor or resolution, and raises `FullScreenChanged`. Esc leaves
+  it when no element of the window uses the key (`ExitFullScreenOnEscape`). Meant for resizable hosts (`Relayout`,
+  `ScaleToFit`). `DesktopApplication.FullScreenCommand` is the ready-made View / Full Screen entry (F11, checked in
+  full screen); `DesktopApplication.RestoreFullScreen` (default `false`) reopens the main window in full screen when it
+  was closed so.
+
+```csharp
+viewMenu.Items.Add(new MenuItem(app.FullScreenCommand));   // F11 runs from anywhere in the window
+app.RestoreFullScreen = true;                              // optional: come back in full screen
+```
 
 ## Example: Biquad Designer
 

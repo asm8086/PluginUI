@@ -223,6 +223,9 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   version, installed, last used, uses, folder, status. Widths, columns, sort and filters are kept between runs.
 - **Details** (Ctrl+I): format and SDK, version, categories, buses, MIDI input, latency in samples and milliseconds,
   parameters, editor, module path, dates, use count, and the reason of a failure.
+- **Full screen** (F11, View menu; Esc to leave): the window covers the whole screen, without title bar.
+
+![View menu](images/pluginhost-view.png)
 - **Plug-in menu** (also the right click on a row, or the menu key): open (Enter, double-click), favorite (Ctrl+D),
   show in Explorer, copy the path, ignore the module (it is left out of later scans).
 - **Scan** (F5: new and changed modules; Shift+F5: everything again; **Stop the scan** in the File menu or the tool bar): the scan runs in separate processes,
@@ -265,6 +268,10 @@ heard (their outputs are added). The bar at the bottom of the window holds:
 The plug-in's main output channels go to the device channels in order (a mono output to the first two): a multichannel
 plug-in is heard on a multichannel device. Without a device, the plug-in runs on a clock at 48 kHz with silent output,
 so that its editor and parameters still behave as in a DAW.
+
+**Full screen** (the button of the top bar, or F11) shows the plug-in window on the whole screen, for a stage or a
+second monitor: a resizable editor fills it, a fixed-size one is centred. Esc or the button leaves it; when the
+plug-in's own editor has the keyboard, click the top bar first.
 
 `PluginHost.exe` also serves as the scanner's child process (`PluginHost.exe scan-module …`), like `pluginhost`.
 `PluginHost.exe --config <folder>` uses another settings folder; the interface settings are in `gui.json` next to

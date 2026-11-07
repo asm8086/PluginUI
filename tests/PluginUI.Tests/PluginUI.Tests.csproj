@@ -9,6 +9,7 @@
     <IsTestProject>true</IsTestProject>
     <!-- Logic tests only (layout, input routing, parameters, DSP): no window or Direct2D needed, they also run on Linux CI. -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

@@ -10,6 +10,13 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **Full screen** for `StandaloneWindow`: `IsFullScreen`, `ToggleFullScreen`, `FullScreenChanged`,
+  `ExitFullScreenOnEscape` (no title bar or border, the whole monitor, back to the previous bounds and maximized state;
+  follows monitor and resolution changes); `WindowPlacement.IsFullScreen`. PluginUI.Desktop:
+  `DesktopApplication.FullScreenCommand` (F11, checkable), `ToggleFullScreen`, `RestoreFullScreen` (default `false`);
+  texts `UIStrings.MenuFullScreen` and `HintFullScreen` (English, French). Plug-in Host: View / Full Screen, and a Full
+  screen button (F11) in the plug-in windows, where fixed-size editors are now centred. Biquad Designer: View / Full
+  Screen.
 - **VST 2 hosting** (new package `PluginUI.Host.Vst2`, VST 2.4 interface written from its public description; no part
   of the VST SDK): `Vst2Hosting.Register` plugs it into the scanner and `PluginLoader`; `Vst2Module` (modules and the
   plug-ins of shell modules, `FromEntryPoint`), `Vst2Plugin` (parameters with names, units, steps and typed values,
@@ -189,6 +196,8 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Fixed
 
+- A window could not be created again after the last PluginUI window of the process was closed (the window class
+  stayed registered while PluginUI believed it gone: `RegisterClassExW` error 1410).
 - Offline renders dropped the MIDI the last plug-in produced in its first samples when it has latency (the messages are
   now placed at the start).
 - `pluginhost info` read the parameter displays while the plug-in was active.

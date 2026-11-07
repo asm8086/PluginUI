@@ -156,7 +156,7 @@ doc.Saved += (_, path) => status.ShowMessage(host.Strings.FormatStatusSaved(Path
   dessin avec `ToolBarButton.DrawIcon` ; sans icône, le texte est affiché.
 - La barre d'état affiche `Command.Description` (ou `MenuItem.Description`) pendant qu'une entrée est en surbrillance
   ou qu'un bouton est survolé, dans son premier champ étiré ; `ShowMessage(text, seconds)` y écrit un message
-  temporaire. Les commandes de `DocumentSession`, `UndoStack` et `DesktopApplication.ExitCommand` ont des descriptions
+  temporaire. Les commandes de `DocumentSession`, `UndoStack` et `DesktopApplication.ExitCommand` et `DesktopApplication.FullScreenCommand` ont des descriptions
   traduites.
 
 Placez les barres dans un `DockPanel` dans cet ordre : barre de menus et barre d'outils (`Side.Top`), barre d'état
@@ -230,7 +230,19 @@ Un fichier absent donne les valeurs par défaut ; un fichier illisible aussi, et
 - `Closing` (annulable) et `RequestClose()` (comme le bouton de fermeture) permettent de refuser de quitter.
 - `DarkTitleBar` suit le thème de l'hôte (fond sombre → barre de titre sombre) ; appelez `UpdateTitleBarTheme()` après
   un changement de thème. `IconPath` ou l'`<ApplicationIcon>` du projet donne l'icône de la barre de titre et des tâches.
-- `Placement` lit ou fixe la position restaurée et l'état agrandi (mémorisés par `DesktopApplication`).
+- `Placement` lit ou fixe la position restaurée, l'état agrandi et le plein écran (mémorisés par `DesktopApplication`).
+- **Plein écran** : `IsFullScreen` (ou `ToggleFullScreen()`) retire la barre de titre et les bordures et couvre tout
+  l'écran où se trouve la fenêtre, barre des tâches comprise ; en sortir rend la position, la taille et l'état agrandi
+  d'avant. On peut le demander avant `Show` ; il suit un changement d'écran ou de résolution et déclenche
+  `FullScreenChanged`. Échap en sort quand aucun élément de la fenêtre n'utilise la touche (`ExitFullScreenOnEscape`).
+  Prévu pour les hôtes redimensionnables (`Relayout`, `ScaleToFit`). `DesktopApplication.FullScreenCommand` est
+  l'entrée Affichage / Plein écran toute prête (F11, cochée en plein écran) ; `DesktopApplication.RestoreFullScreen`
+  (`false` par défaut) rouvre la fenêtre principale en plein écran quand elle a été fermée ainsi.
+
+```csharp
+viewMenu.Items.Add(new MenuItem(app.FullScreenCommand));   // F11 fonctionne depuis toute la fenêtre
+app.RestoreFullScreen = true;                              // facultatif : revenir en plein écran
+```
 
 ## Exemple : Biquad Designer
 

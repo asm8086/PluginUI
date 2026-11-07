@@ -86,6 +86,8 @@ internal static partial class Win32
     public const uint SWP_NOACTIVATE = 0x0010;
     public const uint SWP_SHOWWINDOW = 0x0040;
     public const uint SWP_HIDEWINDOW = 0x0080;
+    public const uint SWP_FRAMECHANGED = 0x0020;
+    public const uint SWP_NOOWNERZORDER = 0x0200;
     public const int SW_SHOW = 5;
     public const int SW_HIDE = 0;
     public const int SW_SHOWMAXIMIZED = 3;
@@ -135,6 +137,9 @@ internal static partial class Win32
     public const uint GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT = 0x00000002;
     public const uint GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = 0x00000004;
     public const int GWLP_USERDATA = -21;
+    public const int GWL_STYLE = -16;
+    public const uint WM_DISPLAYCHANGE = 0x007E;
+    public const int VK_ESCAPE = 0x1B;
     public const uint CF_UNICODETEXT = 13;
     public const uint GMEM_MOVEABLE = 0x0002;
     public const int D2DERR_RECREATE_TARGET = unchecked((int)0x8899000C);
