@@ -7,7 +7,8 @@
 `PluginUI.Host` charge des plug-ins VST3 et les fait fonctionner depuis du code .NET. L'outil en ligne de commande
 `pluginhost`, construit dessus, recherche et liste les plug-ins installés, traite des fichiers WAV par des chaînes de
 plug-ins, rend des fichiers MIDI avec des instruments et mesure des réponses en fréquence : il remplace les scripts
-écrits avec Python et Pedalboard, et se compile en un seul exécutable natif (NativeAOT).
+écrits avec Python et Pedalboard, et se compile en un seul exécutable natif (NativeAOT). **Plug-in Host** est l'hôte graphique, construit avec PluginUI sur la
+même bibliothèque.
 
 Ce qui existe et ce qui vient ensuite :
 
@@ -18,7 +19,7 @@ Ce qui existe et ce qui vient ensuite :
 | Traitement hors temps réel, rendu MIDI, mesure de réponse (`pluginhost`) | fait |
 | Plug-ins VST 2 | prévu (paquet séparé, écrit d'après la documentation publique) |
 | Périphériques audio et MIDI temps réel (WASAPI, puis ASIO), sources de signal | prévu |
-| Hôte graphique (liste de plug-ins avec ordres de tri, fenêtres d'éditeur) | prévu |
+| Hôte graphique : liste de plug-ins avec ordres de tri et colonnes, fenêtres d'éditeur, presets | fait |
 
 ## Sommaire
 
@@ -32,6 +33,7 @@ Ce qui existe et ce qui vient ensuite :
   - [Mesurer une réponse](#mesurer-une-réponse)
   - [Presets](#presets)
   - [De Pedalboard à pluginhost](#de-pedalboard-à-pluginhost)
+- [L'hôte graphique](#lhôte-graphique)
 - [La bibliothèque](#la-bibliothèque)
 - [Fichiers](#fichiers)
 - [Fonctionnement](#fonctionnement)
@@ -185,6 +187,49 @@ Les fichiers `.vstpreset` sont ceux du SDK de Steinberg : ils s'ouvrent dans tou
 Principales différences : les plug-ins sont recherchés une fois et retrouvés par leur nom ; un plug-in qui plante
 n'arrête pas la recherche ; la latence est compensée ; les réponses se mesurent directement ; un seul exécutable, sans
 installation de Python.
+
+## L'hôte graphique
+
+**Plug-in Host** (`tools/PluginHost.Desktop`, `PluginHost.exe`) est le même hôte avec une fenêtre, construit avec
+PluginUI. Il partage les dossiers et la liste des plug-ins avec `pluginhost` : une recherche faite par l'un est vue par
+l'autre.
+
+```
+dotnet run --project tools/PluginHost.Desktop                                    # IL, avec le débogueur
+dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true # un seul PluginHost.exe natif
+```
+
+![Plug-in Host](images/fr/pluginhost-main.png)
+
+- **Liste des plug-ins** : recherche (nom, marque, catégories ; Ctrl+F), format (VST3 / VST2), instruments ou effets,
+  favoris seulement, échecs affichés ou non. Un clic sur l'en-tête d'une colonne trie (un second pour l'ordre inverse),
+  ou choisissez un ordre dans la liste **Tri** : nom, marque, catégorie, format, canaux d'entrée ou de sortie, latence,
+  date d'installation, utilisés récemment, les plus utilisés, favoris d'abord, dossier, état. Un clic droit sur
+  l'en-tête (ou **Affichage > Colonnes**) affiche ou masque les colonnes : favori, nom, marque, type, catégories,
+  format, entrées, sorties, sidechain, MIDI, latence, paramètres, éditeur, version, installé, utilisé le,
+  utilisations, dossier, état. Largeurs, colonnes, tri et filtres sont conservés d'un lancement à l'autre.
+- **Détails** (Ctrl+I) : format et SDK, version, catégories, bus, entrée MIDI, latence en échantillons et en
+  millisecondes, paramètres, éditeur, chemin du module, dates, nombre d'utilisations, et la raison d'un échec.
+- **Menu Plug-in** (aussi le clic droit sur une ligne, ou la touche Menu) : ouvrir (Entrée, double-clic), favori
+  (Ctrl+D), afficher dans l'Explorateur, copier le chemin, ignorer le module (il est laissé de côté aux recherches
+  suivantes).
+- **Recherche** (F5 : modules nouveaux ou modifiés ; Maj+F5 : tout à nouveau ; **Arrêter la recherche** dans le menu Fichier ou la barre d'outils) : elle se fait dans des
+  processus séparés, avec sa progression dans la barre d'état ; la liste ne change qu'une fois la recherche terminée.
+- **Dossiers de plug-ins** (Ctrl+Maj+F) : dossiers VST3 et VST2, dossiers standard.
+
+![Dossiers de plug-ins](images/fr/pluginhost-folders.png)
+
+Chaque plug-in ouvert a sa fenêtre : l'éditeur du plug-in, à la taille qu'il demande (et redimensionnable quand il le
+permet), ou la **table générique des paramètres** quand il n'en a pas (bouton **Paramètres** sinon). Les valeurs se
+saisissent dans la table comme le plug-in les affiche (`-6 dB`, `Warm`) ou en valeurs normalisées. **Charger un
+preset** / **Enregistrer le preset** lisent et écrivent des fichiers `.vstpreset`. Tant que sa fenêtre est ouverte, le
+plug-in est traité en temps réel à 48 kHz avec une entrée silencieuse, comme dans une STAN : ses paramètres arrivent
+au processeur et les indicateurs de l'éditeur bougent. Les périphériques audio (WASAPI, ASIO), les sources de signal et
+un clavier à l'écran pour les instruments viendront ensuite.
+
+`PluginHost.exe` sert aussi de processus enfant de la recherche (`PluginHost.exe scan-module …`), comme `pluginhost`.
+`PluginHost.exe --config <dossier>` utilise un autre dossier de réglages ; les réglages de l'interface sont dans
+`gui.json`, à côté de `settings.json`.
 
 ## La bibliothèque
 

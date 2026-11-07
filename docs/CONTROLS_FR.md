@@ -1,4 +1,4 @@
-<!-- 2026/11/06 15:32:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 
 # Catalogue des éléments
 
@@ -111,7 +111,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `ScrollViewer` | Défilement vertical et horizontal, barres fines superposées, molette (Maj : horizontal), `ScrollIntoView` | `CScrollView` |
 | `SplitView` | Deux volets et séparateur déplaçable | `CSplitView` |
 | `ListBox` | Liste virtualisée, sélection simple ou étendue, clavier, recherche par frappe, réordonnancement par glisser | `CListControl`, `CStringList` |
-| `DataTable` | Colonnes fixes ou étoiles, tri, redimensionnement, ajustement automatique, lignes virtualisées, édition de cellules | `CDataBrowser` |
+| `DataTable` | Colonnes fixes ou étoiles, tri, redimensionnement, ajustement automatique, lignes virtualisées, édition de cellules, colonnes affichées ou masquées depuis le menu de l'en-tête, disposition enregistrée (`SaveLayout` / `RestoreLayout`), menu contextuel des lignes (`RowContextMenu`, touche Menu), cellules dessinées (`CellRenderer`), lecteurs d'écran | `CDataBrowser` |
 | `CornerResizer` | Poignée de redimensionnement de l'éditeur (double-clic : 100 %) | `ICornerResizerControl` |
 | `Separator`, `Spacer` | Ligne de séparation, espace fixe ou extensible | — |
 | `LayeredPanel` | Calques superposés pleine taille, opacité composée par calque, `BringToFront` / `SendToBack` | `CLayeredViewContainer` |
@@ -134,7 +134,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 |---|---|---|
 | `ImageView` | Image ajustée (`ImageFit`) ou film-strip animé (boucle, aller-retour) | `CMovieBitmap`, `CAutoAnimation`, `IBitmapControl` |
 | `SvgView` | SVG natif, ajustement, rotation | `ISVGControl` |
-| `NativeWindowHost` | Incruste une fenêtre Win32 tierce (vidéo, WebView2 créée par l'application) | `CExternalView`, `IPlatformViewControl`, `CExternalControl` |
+| `NativeWindowHost` | Incruste une fenêtre Win32 tierce (vidéo, WebView2 créée par l'application), ou fournit une fenêtre conteneur vide pour un contenu qui a besoin d'un parent (`ProvidesContainer` : éditeurs de plug-ins VST3) ; masquée sous les popups sur demande (`HideUnderPopups`) | `CExternalView`, `IPlatformViewControl`, `CExternalControl` |
 
 ## Habillages (`Skins`)
 

@@ -1,0 +1,33 @@
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Plug-in Host: the graphical host of PluginUI.Host, with PluginUI as its whole interface.
+      IL (JIT):    dotnet publish -c Release                      (needs the .NET 10 runtime)
+      NativeAOT:   dotnet publish -c Release -p:PublishAot=true   (one native PluginHost.exe)
+    The same executable is the out-of-process scanner ("PluginHost.exe scan-module ...").
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>PluginUI.Host.Desktop</RootNamespace>
+    <AssemblyName>PluginHost</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- No CET shadow stack: some plug-ins manipulate the stack in ways CET forbids (see tools/PluginHost.Cli). -->
+    <CETCompat>false</CETCompat>
+    <IsAotCompatible>true</IsAotCompatible>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PluginUI\PluginUI.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.Desktop\PluginUI.Desktop.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.Host\PluginUI.Host.csproj" />
+  </ItemGroup>
+
+</Project>

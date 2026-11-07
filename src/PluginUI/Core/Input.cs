@@ -1,4 +1,4 @@
-// 2026/11/05 14:06:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -141,6 +141,8 @@ public enum Key
     X, /// <summary>Y.</summary>
     Y, /// <summary>Z.</summary>
     Z,
+    /// <summary>Menu (application) key, which opens the context menu.</summary>
+    Apps = 0x5D,
     /// <summary>Numeric keypad 0.</summary>
     NumPad0 = 0x60,
     /// <summary>Numeric keypad multiply.</summary>

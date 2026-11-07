@@ -1,9 +1,12 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel;
 using System.Collections;
+using System.Globalization;
+using System.Text;
+using PluginUI.Automation;
 
 namespace PluginUI;
 
@@ -24,6 +27,23 @@ public sealed class DataColumn
     /// <summary>Header caption.</summary>
     [Category("Text")]
     public string Header { get; set; }
+
+    /// <summary>
+    /// Stable identifier used by <see cref="DataTable.SaveLayout"/> (defaults to the header; set it when the header is
+    /// translated, so that a saved layout survives a change of language).
+    /// </summary>
+    [Category("Behavior")]
+    public string Key { get => _key ?? Header; set => _key = value; }
+
+    private string? _key;
+
+    /// <summary>Shown in the table. Hidden columns keep their width, sort and editing settings.</summary>
+    [Category("Appearance")]
+    public bool IsVisible { get; set; } = true;
+
+    /// <summary>The user can hide the column from the header menu (right click on the header).</summary>
+    [Category("Behavior")]
+    public bool CanHide { get; set; } = true;
 
     /// <summary>Cell text for a row item.</summary>
     [Browsable(false)]
@@ -56,6 +76,13 @@ public sealed class DataColumn
     /// <summary>Optional per-cell text color.</summary>
     [Browsable(false)]
     public Func<object, Color?>? CellColor { get; set; }
+
+    /// <summary>
+    /// Draws the cell instead of its text (icons, stars, bars): drawing context, cell bounds (padding removed), row item and
+    /// the text color. <see cref="CellText"/> still gives the sort, the automatic width and what screen readers say.
+    /// </summary>
+    [Browsable(false)]
+    public Action<DrawingContext, Rect, object, Color>? CellRenderer { get; set; }
 
     /// <summary>Lets the user resize the column.</summary>
     [Category("Behavior")]
@@ -111,7 +138,7 @@ public class DataTable : Control
             _items = value;
             _scrollY = 0f;
             _orderDirty = true;
-            if (_selection.Clear()) SelectionChanged?.Invoke(this);
+            if (_selection.Clear()) RaiseSelectionChanged();
             InvalidateVisual();
         }
     }
@@ -160,6 +187,29 @@ public class DataTable : Control
     /// <summary>Raised when the sort changes.</summary>
     public event Action<DataTable>? SortChanged;
 
+    /// <summary>Raised when the user resizes, shows or hides a column (to save the layout).</summary>
+    public event Action<DataTable>? ColumnsChanged;
+
+    /// <summary>
+    /// Entries of the context menu of the selected rows (right click on a row, the menu key or Shift+F10), or null for
+    /// no menu. The argument is the selection, in view order.
+    /// </summary>
+    [Browsable(false)]
+    public Func<IReadOnlyList<object>, IList<MenuItem>?>? RowContextMenu { get; set; }
+
+    /// <summary>Right click on the header shows a menu to show or hide the columns that <see cref="DataColumn.CanHide"/>.</summary>
+    [Category("Behavior")]
+    public bool ShowColumnMenu { get; set; } = true;
+
+    /// <summary>Columns shown, in order.</summary>
+    public IEnumerable<DataColumn> VisibleColumns => Columns.Where(c => c.IsVisible);
+
+    private void RaiseSelectionChanged()
+    {
+        SelectionChanged?.Invoke(this);
+        NotifyAutomationStateChanged();
+    }
+
     /// <summary>Selected row items (in view order).</summary>
     public IEnumerable<object> SelectedItems
     {
@@ -194,7 +244,7 @@ public class DataTable : Control
                     if (Equals(_items[_order[v]], value)) { view = v; break; }
                 }
             }
-            if (_selection.Set(view)) SelectionChanged?.Invoke(this);
+            if (_selection.Set(view)) RaiseSelectionChanged();
             if (view >= 0) ScrollRowIntoView(view);
             InvalidateVisual();
         }
@@ -214,8 +264,9 @@ public class DataTable : Control
         SortColumn = column?.Comparison is null ? null : column;
         SortDescending = descending;
         _orderDirty = true;
-        if (_selection.Clear()) SelectionChanged?.Invoke(this);
+        if (_selection.Clear()) RaiseSelectionChanged();
         SortChanged?.Invoke(this);
+        NotifyAutomationStateChanged();
         InvalidateVisual();
     }
 
@@ -223,7 +274,7 @@ public class DataTable : Control
     public void Refresh()
     {
         _orderDirty = true;
-        if (_selection.Clamp(RowCount)) SelectionChanged?.Invoke(this);
+        if (_selection.Clamp(RowCount)) RaiseSelectionChanged();
         InvalidateVisual();
     }
 
@@ -269,6 +320,7 @@ public class DataTable : Control
         float fixedSum = 0f, stars = 0f;
         foreach (var c in Columns)
         {
+            if (!c.IsVisible) continue;
             if (float.IsNaN(c.Width)) stars += MathF.Max(0.01f, c.Star);
             else fixedSum += MathF.Max(c.MinWidth, c.Width);
         }
@@ -277,7 +329,7 @@ public class DataTable : Control
         for (int i = 0; i < n; i++)
         {
             var c = Columns[i];
-            float w = float.IsNaN(c.Width) ? MathF.Max(c.MinWidth, remaining * MathF.Max(0.01f, c.Star) / MathF.Max(0.01f, stars)) : MathF.Max(c.MinWidth, c.Width);
+            float w = !c.IsVisible ? 0f : float.IsNaN(c.Width) ? MathF.Max(c.MinWidth, remaining * MathF.Max(0.01f, c.Star) / MathF.Max(0.01f, stars)) : MathF.Max(c.MinWidth, c.Width);
             _colX[i] = x;
             _colW[i] = w;
             x += w;
@@ -337,11 +389,14 @@ public class DataTable : Control
         if (!HeaderArea.Contains(p)) return -1;
         for (int i = 0; i < _colX.Length; i++)
         {
+            if (_colW[i] <= 0f) continue;
             float edge = _colX[i] + _colW[i] - _scrollX;
             if (MathF.Abs(p.X - edge) <= 4f && Columns[i].IsResizable) return i;
         }
         return -1;
     }
+
+    private int LastVisibleColumn => Columns.FindLastIndex(c => c.IsVisible);
 
     private Rect CellRect(int view, int column)
     {
@@ -428,17 +483,27 @@ public class DataTable : Control
                     object item = _items![_order[v]]!;
                     for (int c = 0; c < Columns.Count; c++)
                     {
+                        if (_colW[c] <= 0f) continue;
                         var cell = CellRect(v, c);
                         if (cell.Right < rows.X || cell.X > rows.Right) continue;
                         var column = Columns[c];
                         var color = column.CellColor?.Invoke(item) ?? (selected ? p.Text : p.Text.WithAlpha(0.88f));
-                        dc.DrawText(column.CellText(item), cell.Deflate(new Thickness(8f, 0f)), cellStyle with { Align = column.Alignment }, color);
+                        if (column.CellRenderer is { } renderer)
+                        {
+                            using (dc.Clip(cell)) renderer(dc, cell.Deflate(new Thickness(8f, 0f)), item, color);
+                        }
+                        else
+                        {
+                            dc.DrawText(column.CellText(item), cell.Deflate(new Thickness(8f, 0f)), cellStyle with { Align = column.Alignment }, color);
+                        }
                     }
                 }
                 if (ShowGridLines)
                 {
-                    for (int c = 0; c < Columns.Count - 1; c++)
+                    int lastGrid = LastVisibleColumn;
+                    for (int c = 0; c < lastGrid; c++)
                     {
+                        if (_colW[c] <= 0f) continue;
                         float x = MathF.Round((_colX[c] + _colW[c] - _scrollX) * dc.Scale) / dc.Scale + hair * 0.5f;
                         dc.DrawLine(new Point(x, rows.Y), new Point(x, rows.Bottom), p.Border.WithAlpha(0.6f), hair);
                     }
@@ -453,8 +518,10 @@ public class DataTable : Control
                 var headerStyle = Theme.Typography.Small with { Weight = FontWeight.SemiBold };
                 using (dc.Clip(header))
                 {
+                    int lastHeader = LastVisibleColumn;
                     for (int c = 0; c < Columns.Count; c++)
                     {
+                        if (_colW[c] <= 0f) continue;
                         var column = Columns[c];
                         var r = new Rect(_colX[c] - _scrollX, header.Y, _colW[c], header.Height);
                         if (c == _pressedHeader) dc.FillRect(r, p.Hover);
@@ -469,7 +536,7 @@ public class DataTable : Control
                                 : [new(a.X - 3.5f, a.Y + 2f), new(a.X + 3.5f, a.Y + 2f), new(a.X, a.Y - 2f)];
                             dc.FillPolygon(arrow, p.Accent);
                         }
-                        if (c < Columns.Count - 1)
+                        if (c < lastHeader)
                         {
                             float x = MathF.Round(r.Right * dc.Scale) / dc.Scale - hair * 0.5f;
                             dc.DrawLine(new Point(x, r.Y + 6f), new Point(x, r.Bottom - 6f), c == _resizeColumn ? p.Accent : p.Border, c == _resizeColumn ? 2f : hair);
@@ -529,7 +596,21 @@ public class DataTable : Control
     protected internal override void OnMouseDown(MouseEventArgs e)
     {
         base.OnMouseDown(e);
-        if (e.Handled || e.Button != MouseButton.Left) return;
+        if (e.Handled) return;
+        if (e.Button == MouseButton.Right)
+        {
+            // The row under the mouse joins the selection (or replaces it) before its menu opens.
+            Prepare();
+            int row = RowAt(e.Position);
+            if (row >= 0 && !_selection.IsSelected(row))
+            {
+                if (_selection.Set(row)) RaiseSelectionChanged();
+                InvalidateVisual();
+            }
+            Focus();
+            return;
+        }
+        if (e.Button != MouseButton.Left) return;
         e.Handled = true;
         Prepare();
         if (_vbar.HitTest(e.Position)) { _barDrag = _vbar; _scrollY = _vbar.Press(e.Position); InvalidateVisual(); return; }
@@ -565,7 +646,8 @@ public class DataTable : Control
             else RowActivated?.Invoke(this, _items![_order[view]]!);
             return;
         }
-        if (_selection.Click(view, e.Control, e.Shift)) SelectionChanged?.Invoke(this);
+        if (_selection.Click(view, e.Control, e.Shift)) RaiseSelectionChanged();
+        else NotifyAutomationStateChanged();
         InvalidateVisual();
     }
 
@@ -573,6 +655,13 @@ public class DataTable : Control
     protected internal override void OnMouseUp(MouseEventArgs e)
     {
         base.OnMouseUp(e);
+        if (e.Button == MouseButton.Right && !e.Handled)
+        {
+            Prepare();
+            if (HeaderArea.Contains(e.Position)) e.Handled = ShowColumnMenuAt(e.Position);
+            else if (RowAt(e.Position) >= 0) e.Handled = ShowRowMenuAt(e.Position);
+            return;
+        }
         if (_pressedHeader >= 0 && HeaderArea.Contains(e.Position) && ColumnAt(e.Position.X) == _pressedHeader)
         {
             var column = Columns[_pressedHeader];
@@ -597,6 +686,7 @@ public class DataTable : Control
     {
         _barDrag?.Release();
         _barDrag = null;
+        if (_resizeColumn >= 0) ColumnsChanged?.Invoke(this);
         _resizeColumn = -1;
         _pressedHeader = -1;
         InvalidateVisual();
@@ -628,6 +718,7 @@ public class DataTable : Control
         int count = Math.Min(RowCount, 2000); // bounded cost
         for (int i = 0; i < count; i++) w = MathF.Max(w, TextMeasurer.Measure(column.CellText(_items![i]!), style).Width + 18f);
         column.Width = MathF.Max(column.MinWidth, w);
+        ColumnsChanged?.Invoke(this);
         InvalidateVisual();
     }
 
@@ -649,6 +740,159 @@ public class DataTable : Control
             commit(item, text);
             Refresh();
         }, () => Focus(), Theme.Typography.Normal with { Align = col.Alignment });
+    }
+
+    // ---------------------------------------------------------------- menus
+
+    private bool ShowRowMenuAt(Point at)
+    {
+        if (Host is null || RowContextMenu is null) return false;
+        var selection = SelectedItems.ToList();
+        if (selection.Count == 0) return false;
+        var items = RowContextMenu(selection);
+        if (items is not { Count: > 0 }) return false;
+        Host.ShowMenu(items, at);
+        return true;
+    }
+
+    private bool ShowColumnMenuAt(Point at)
+    {
+        if (Host is null || !ShowColumnMenu) return false;
+        var items = GetColumnMenuItems();
+        if (items.Count == 0) return false;
+        Host.ShowMenu(items, at);
+        return true;
+    }
+
+    /// <summary>Entries of the header menu: one checked entry per column that can be hidden.</summary>
+    public IList<MenuItem> GetColumnMenuItems()
+    {
+        var items = new List<MenuItem>();
+        foreach (var column in Columns)
+        {
+            if (!column.CanHide || string.IsNullOrEmpty(column.Header)) continue;
+            var c = column;
+            items.Add(new MenuItem(c.Header.Replace("&", "&&", StringComparison.Ordinal), () => SetColumnVisible(c, !c.IsVisible))
+            {
+                IsChecked = c.IsVisible,
+                // The last visible column stays.
+                IsEnabled = !c.IsVisible || Columns.Count(x => x.IsVisible) > 1,
+            });
+        }
+        return items;
+    }
+
+    /// <summary>Shows or hides a column.</summary>
+    public void SetColumnVisible(DataColumn column, bool visible)
+    {
+        ArgumentNullException.ThrowIfNull(column);
+        if (column.IsVisible == visible) return;
+        if (!visible && Columns.Count(c => c.IsVisible) <= 1) return;
+        column.IsVisible = visible;
+        ColumnsChanged?.Invoke(this);
+        NotifyAutomationStateChanged();
+        InvalidateVisual();
+    }
+
+    // ---------------------------------------------------------------- layout persistence
+
+    /// <summary>
+    /// Text describing the column widths, visibility and the sort, for <see cref="RestoreLayout"/> (saved with the
+    /// application settings).
+    /// </summary>
+    public string SaveLayout()
+    {
+        var sb = new StringBuilder();
+        foreach (var c in Columns)
+        {
+            if (sb.Length > 0) sb.Append(';');
+            sb.Append(Uri.EscapeDataString(c.Key)).Append(':')
+              .Append(float.IsNaN(c.Width) ? "*" : c.Width.ToString("0.#", CultureInfo.InvariantCulture)).Append(':')
+              .Append(c.IsVisible ? '1' : '0');
+        }
+        sb.Append('|');
+        if (SortColumn is not null) sb.Append(Uri.EscapeDataString(SortColumn.Key)).Append(':').Append(SortDescending ? 'd' : 'a');
+        return sb.ToString();
+    }
+
+    /// <summary>Applies a layout saved by <see cref="SaveLayout"/>; unknown columns and malformed parts are ignored.</summary>
+    public void RestoreLayout(string? layout)
+    {
+        if (string.IsNullOrEmpty(layout)) return;
+        string[] halves = layout.Split('|');
+        foreach (string part in halves[0].Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] f = part.Split(':');
+            if (f.Length < 3) continue;
+            var column = Columns.Find(c => c.Key == Uri.UnescapeDataString(f[0]));
+            if (column is null) continue;
+            if (f[1] == "*") column.Width = float.NaN;
+            else if (float.TryParse(f[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float w) && w > 0f) column.Width = w;
+            column.IsVisible = f[2] != "0" || !column.CanHide;
+        }
+        if (!Columns.Exists(c => c.IsVisible) && Columns.Count > 0) Columns[0].IsVisible = true;
+        if (halves.Length > 1)
+        {
+            string[] f = halves[1].Split(':');
+            var column = f.Length == 2 ? Columns.Find(c => c.Key == Uri.UnescapeDataString(f[0])) : null;
+            Sort(column, f.Length == 2 && f[1] == "d");
+        }
+        InvalidateVisual();
+    }
+
+    // ---------------------------------------------------------------- accessibility
+
+    /// <inheritdoc />
+    protected override AutomationPeer? OnCreateAutomationPeer() => new DataTableAutomationPeer(this);
+
+    /// <summary>Row of the keyboard cursor (view index, -1 = none).</summary>
+    internal int CurrentRow => _selection.Current;
+
+    /// <summary><c>true</c> if a row (view index) is selected.</summary>
+    internal bool IsRowSelected(int view) => _selection.IsSelected(view);
+
+    /// <summary>Selected rows (view indices).</summary>
+    internal IReadOnlyCollection<int> SelectedRows => _selection.Selected;
+
+    /// <summary>Spoken text of a row (view index): the first visible column, then "Header: value" for the others.</summary>
+    internal string GetRowText(int view)
+    {
+        EnsureOrder();
+        if (view < 0 || view >= _order.Length) return string.Empty;
+        object item = _items![_order[view]]!;
+        var sb = new StringBuilder();
+        foreach (var c in Columns)
+        {
+            if (!c.IsVisible) continue;
+            string text = c.CellText(item);
+            if (string.IsNullOrEmpty(text)) continue;
+            if (sb.Length == 0) sb.Append(text);
+            else sb.Append(", ").Append(Mnemonics.Strip(c.Header)).Append(": ").Append(text);
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>Bounds of a row (view index), scrolled (may lie outside the table).</summary>
+    internal Rect GetRowBounds(int view)
+    {
+        var rows = RowsArea;
+        return new Rect(rows.X, rows.Y + view * RowHeight - _scrollY, rows.Width, RowHeight);
+    }
+
+    /// <summary>Changes the selection on behalf of an assistive technology.</summary>
+    internal void SelectFromAutomation(int view, ListSelectionChange change)
+    {
+        if (view < 0 || view >= RowCount) return;
+        bool changed = change switch
+        {
+            ListSelectionChange.Add => !_selection.IsSelected(view) && _selection.Toggle(view),
+            ListSelectionChange.Remove => _selection.IsSelected(view) && (MultiSelect ? _selection.Toggle(view) : _selection.Clear()),
+            _ => _selection.Set(view),
+        };
+        ScrollRowIntoView(view);
+        if (changed) RaiseSelectionChanged();
+        else NotifyAutomationStateChanged();
+        InvalidateVisual();
     }
 
     // ---------------------------------------------------------------- keyboard
@@ -674,7 +918,8 @@ public class DataTable : Control
         if (target != int.MinValue)
         {
             target = Math.Clamp(target, 0, RowCount - 1);
-            if (_selection.MoveTo(target, e.Shift)) SelectionChanged?.Invoke(this);
+            if (_selection.MoveTo(target, e.Shift)) RaiseSelectionChanged();
+            else NotifyAutomationStateChanged();
             ScrollRowIntoView(target);
             e.Handled = true;
             return;
@@ -682,7 +927,7 @@ public class DataTable : Control
         switch (e.Key)
         {
             case Key.A when e.Control:
-                if (_selection.SelectAll(RowCount)) SelectionChanged?.Invoke(this);
+                if (_selection.SelectAll(RowCount)) RaiseSelectionChanged();
                 InvalidateVisual();
                 e.Handled = MultiSelect;
                 break;
@@ -690,8 +935,14 @@ public class DataTable : Control
                 RowActivated?.Invoke(this, _items![_order[current]]!);
                 e.Handled = true;
                 break;
+            case Key.Apps when current >= 0:
+            case Key.F10 when e.Shift && current >= 0:
+                if (!_selection.IsSelected(current) && _selection.Set(current)) RaiseSelectionChanged();
+                var rowRect = CellRect(current, 0);
+                e.Handled = ShowRowMenuAt(new Point(MathF.Max(RowsArea.X, rowRect.X) + 16f, MathF.Min(rowRect.Bottom, RowsArea.Bottom)));
+                break;
             case Key.F2 when current >= 0:
-                int editable = Columns.FindIndex(c => c.IsEditable);
+                int editable = Columns.FindIndex(c => c.IsEditable && c.IsVisible);
                 if (editable >= 0) BeginEdit(current, editable);
                 e.Handled = true;
                 break;

@@ -1,0 +1,145 @@
+// 2026/11/06 23:57:00 UTC - PluginUI
+// SPDX-FileCopyrightText: 2026 asm8086
+// SPDX-License-Identifier: MIT
+
+using PluginUI;
+using PluginUI.Desktop;
+using PluginUI.Host;
+using PluginUI.Host.Catalog;
+using PluginUI.Host.Desktop;
+
+/// <summary>Entry point.</summary>
+internal static class Program
+{
+    // Usage:
+    //   PluginHost [--config <folder>] [--lang en|fr]          the application
+    //   PluginHost --snapshot <dir> [--lang en|fr]            renders the window with sample plug-ins to PNG files (docs)
+    //   PluginHost scan-module --format vst3 --out <file> <module>   child process of a scan
+    // [STAThread]: plug-ins, file dialogs and the clipboard need a single-threaded apartment.
+    [STAThread]
+    private static int Main(string[] args)
+    {
+        int scan = Array.IndexOf(args, ModuleScanProcess.CommandName);
+        if (scan >= 0) return ModuleScanProcess.Run(args[(scan + 1)..]);
+
+        var arguments = new List<string>(args);
+        string? language = TakeOption(arguments, "--lang");
+        string? config = TakeOption(arguments, "--config");
+        string? snapshot = TakeOption(arguments, "--snapshot");
+        if (snapshot is not null) config = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PluginUI", "PluginHost-snapshot");
+        if (config is not null) HostPaths.ConfigFolder = Path.GetFullPath(config);
+
+        var app = new DesktopApplication("Plug-in Host", company: "asm8086", dataFolder: HostPaths.ConfigFolder);
+        var settings = AppSettings<GuiSettings>.Load(app.GetDataPath("gui.json"), GuiJson.Default.GuiSettings);
+        language ??= settings.Value.Language;
+        UIHost.DefaultLanguage = language;
+        L.French = UIStrings.ForLanguage(language).LanguageCode.StartsWith("fr", StringComparison.OrdinalIgnoreCase);
+
+        if (snapshot is not null)
+        {
+            settings.Value = new GuiSettings();
+            var folders = new HostSettings
+            {
+                Vst3Folders = [@"C:\Program Files\Common Files\VST3", @"C:\Users\me\AppData\Local\Programs\Common\VST3"],
+                Vst2Folders = [@"C:\Program Files\VSTPlugins", @"C:\Program Files\Steinberg\VSTPlugins", @"C:\Program Files\Common Files\VST2"],
+            };
+            var demo = new MainWindow(app, settings, Snapshots.SampleCatalog(), folders, saveChanges: false);
+            return Snapshots.Run(demo, snapshot);
+        }
+
+        var hostSettings = HostSettings.Load(HostPaths.SettingsFile);
+        if (!File.Exists(HostPaths.SettingsFile)) hostSettings.Save(HostPaths.SettingsFile);
+        var main = new MainWindow(app, settings, PluginCatalog.Load(HostPaths.CatalogFile), hostSettings, saveChanges: true);
+        return app.Run(main.Window);
+    }
+
+    private static string? TakeOption(List<string> arguments, string name)
+    {
+        int i = arguments.IndexOf(name);
+        if (i < 0) return null;
+        string? value = i + 1 < arguments.Count ? arguments[i + 1] : null;
+        arguments.RemoveRange(i, value is null ? 1 : 2);
+        return value;
+    }
+}
+
+/// <summary>Texts of the host in the interface language.</summary>
+internal static class L
+{
+    public static bool French { get; set; }
+
+    public static string T(string english, string french) => French ? french : english;
+}
+
+/// <summary>Offscreen rendering of the window for the documentation (no window is created, no plug-in is loaded).</summary>
+internal static class Snapshots
+{
+    public static PluginCatalog SampleCatalog()
+    {
+        static PluginDescription P(string name, string vendor, string sub, int ins, int outs, int latency = 0, bool favorite = false, int uses = 0,
+            int aux = 0, bool midi = false, PluginStatus status = PluginStatus.Ok, string error = "", int days = 30, string folder = @"C:\Program Files\Common Files\VST3")
+            => new()
+            {
+                Format = PluginFormat.Vst3, Name = name, Vendor = vendor, SubCategories = sub, Path = Path.Combine(folder, name + ".vst3"),
+                Category = sub.Contains("Instrument", StringComparison.Ordinal) ? "Instrument" : "Effect", InputChannels = ins, OutputChannels = outs,
+                AuxInputChannels = aux, HasMidiInput = midi, LatencySamples = latency, IsFavorite = favorite, UseCount = uses, Status = status, Error = error,
+                Version = "1.2.0", SdkVersion = "VST 3.7.12", ParameterCount = 12 + name.Length, HasEditor = status == PluginStatus.Ok,
+                ModuleTimeUtc = new DateTime(2026, 10, 1, 12, 0, 0, DateTimeKind.Utc).AddDays(-days),
+                LastUsedUtc = uses > 0 ? new DateTime(2026, 11, 6, 20, 0, 0, DateTimeKind.Utc).AddHours(-uses) : null,
+                ClassId = (name + vendor).GetHashCode(StringComparison.Ordinal).ToString("X8", System.Globalization.CultureInfo.InvariantCulture),
+            };
+        const string ours = @"C:\Program Files\VSTPlugins";
+        return new PluginCatalog
+        {
+            Plugins =
+            [
+                P("6B-EQ", "Particles", "Fx|EQ", 2, 2, favorite: true, uses: 14, folder: ours),
+                P("MiddleAgeVerb Stereo", "Particles", "Fx|Reverb", 2, 2, favorite: true, uses: 9, folder: ours),
+                P("MiddleAgeVerb Mono-Stereo", "Particles", "Fx|Reverb", 1, 2, uses: 2, folder: ours),
+                P("MultibandSplitter", "Particles", "Fx|Tools", 2, 12, uses: 5, folder: ours),
+                P("Glass Delay", "Example Audio", "Fx|Delay", 2, 2, days: 200),
+                P("Glass Compressor", "Example Audio", "Fx|Dynamics", 2, 2, latency: 64, aux: 2, days: 200),
+                P("Granite Limiter", "Example Audio", "Fx|Dynamics|Mastering", 2, 2, latency: 1024, days: 120, uses: 1),
+                P("Oak Organ", "Woodworks", "Instrument|Synth", 0, 8, midi: true, days: 60, uses: 3),
+                P("Felt Piano", "Woodworks", "Instrument|Piano", 0, 2, midi: true, days: 60, favorite: true, uses: 7),
+                P("Spectral Cleaner", "Restoration Lab", "Fx|Restoration", 2, 2, latency: 2047, days: 400),
+                P("Breath Tamer", "Restoration Lab", "Fx|Restoration", 2, 2, latency: 26623, days: 400),
+                P("Mono Analyzer", "Measure Co", "Fx|Analyzer", 1, 1, days: 10),
+                P("Old Shell", "Unknown", "", 0, 0, status: PluginStatus.Failed, error: "The scanner stopped (code 0xC0000005: access violation in the plug-in)."),
+            ],
+            LastScanUtc = new DateTime(2026, 11, 6, 21, 30, 0, DateTimeKind.Utc),
+        };
+    }
+
+    public static int Run(MainWindow main, string dir)
+    {
+        Directory.CreateDirectory(dir);
+        var host = main.Host;
+        string suffix = L.French ? "-fr" : "";
+        main.Table.Sort(main.Table.Columns.First(c => c.Key == "vendor"));
+        main.SelectByName("MiddleAgeVerb Stereo");
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-main" + suffix + ".png"), 1f);
+
+        main.ShowFoldersDialog();
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-folders" + suffix + ".png"), 1f);
+        host.CloseAllPopups();
+
+        host.ShowMenu(main.Table.GetColumnMenuItems(), new Point(420f, 130f));
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-columns" + suffix + ".png"), 1f);
+        host.CloseAllPopups();
+
+        Console.WriteLine($"Snapshots written to {Path.GetFullPath(dir)}");
+        return 0;
+    }
+
+    private static void Settle(UIHost host)
+    {
+        host.UpdateLayout();
+        for (int i = 0; i < 10; i++) host.StepFrame(1.0 / 60.0);
+        host.ProcessPostedActions();
+        host.UpdateLayout();
+    }
+}

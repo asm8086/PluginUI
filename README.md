@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -73,14 +73,15 @@ PluginUI/
 │                                   rendering, response measurement, WAV and MIDI files (no UI dependency)
 ├── tools/PluginUIEditor/           WinForms visual designer (toolbox, properties, preview, code, new projects)
 ├── tools/PluginHost.Cli/           pluginhost: command line plug-in host (scan, list, process, render, measure, presets)
+├── tools/PluginHost.Desktop/       Plug-in Host: graphical host built with PluginUI (sortable plug-in list, editors, presets)
 ├── samples/PluginUI.Gallery/       Demo application (standalone window + PNG capture mode)
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer: desktop application (IL or NativeAOT) built with PluginUI.Desktop
 ├── samples/Designs/                Sample designs (.pluginui), including the DemoSynth layout
-├── tests/PluginUI.Tests/           197 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers, accessibility)
+├── tests/PluginUI.Tests/           203 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers, accessibility, tables, native windows)
 ├── tests/PluginUI.NPlug.Tests/     29 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
 ├── tests/PluginUI.Design.Tests/    26 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
-├── tests/PluginUI.Host.Tests/      17 NUnit tests (VST3 hosting of DemoSynth and a test plug-in, parameters, MIDI mapping, presets, rendering, measurement, WAV, MIDI, plug-in list)
+├── tests/PluginUI.Host.Tests/      26 NUnit tests (VST3 hosting of DemoSynth and a test plug-in, parameters, MIDI mapping, presets, rendering, measurement, WAV, MIDI, plug-in list, out-of-process scanning)
 └── tests/PluginUI.Host.TestGain/   Test VST3 effect with latency (also published as a NativeAOT .vst3 for manual tests)
 ```
 
@@ -236,8 +237,15 @@ pluginhost render -p "Diva" --midi chords.mid -o pad.wav
 pluginhost measure -p "Pro-Q 3" -o response.csv --db 6log2
 ```
 
-VST 2 plug-ins, real-time audio devices (WASAPI, ASIO) and a graphical host come next. Guide:
-[docs/PLUGIN_HOST.md](docs/PLUGIN_HOST.md).
+**Plug-in Host** (`tools/PluginHost.Desktop`) is the graphical host, built with PluginUI and shipped as one NativeAOT
+executable: the plug-in list with a search, filters and sortable, configurable columns (vendor, category, format,
+channels, latency, installation date, recent and frequent use, favorites…), the details of each plug-in, scans with
+their progress, the plug-in folders, and one window per open plug-in with its own editor or a generic parameter table,
+and presets. It shares the folders and the plug-in list with `pluginhost`.
+
+![Plug-in Host](docs/images/pluginhost-main.png)
+
+VST 2 plug-ins and real-time audio devices (WASAPI, ASIO) come next. Guide: [docs/PLUGIN_HOST.md](docs/PLUGIN_HOST.md).
 
 ## Concepts
 

@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -284,9 +284,14 @@ public abstract unsafe class PluginInstance : IDisposable
         _outputs = [];
     }
 
-    /// <summary>Releases the plug-in.</summary>
+    /// <summary><c>true</c> once the plug-in is released.</summary>
+    public bool IsDisposed { get; private set; }
+
+    /// <summary>Releases the plug-in (calling it again does nothing).</summary>
     public void Dispose()
     {
+        if (IsDisposed) return;
+        IsDisposed = true;
         Stop();
         Dispose(true);
         FreeBuffers();

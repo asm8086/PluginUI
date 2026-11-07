@@ -10,6 +10,21 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **Plug-in Host** (`tools/PluginHost.Desktop`): graphical plug-in host built with PluginUI (IL or NativeAOT). Plug-in
+  list with search, filters (format, instruments or effects, favorites, failures), sort orders (name, vendor,
+  category, format, input or output channels, latency, installation date, recently used, most used, favorites,
+  folder, status) and columns shown or hidden from the header; details pane; scans in separate processes with their
+  progress; plug-in folders dialog; favorites, show in Explorer, copy the path, ignore a module; one window per open
+  plug-in with its editor or a generic parameter table (typed values), presets, real-time processing with silent input
+  until audio devices arrive. Folders and plug-in list shared with `pluginhost`; interface settings in `gui.json`.
+- **DataTable**: `DataColumn.IsVisible`, `CanHide`, `Key` and `CellRenderer`; header menu to show or hide columns
+  (`ShowColumnMenu`, `GetColumnMenuItems`, `SetColumnVisible`, `VisibleColumns`, `ColumnsChanged`); `SaveLayout` /
+  `RestoreLayout` (widths, visibility, sort); `RowContextMenu` (right click, menu key, Shift+F10); screen readers
+  (`DataTableAutomationPeer`, `DataRowAutomationPeer`). `Key.Apps` (menu key).
+- **NativeWindowHost**: `ProvidesContainer` creates an empty container window for content that needs a parent window
+  (VST3 plug-in editors), with `ContainerCreated` / `ContainerDestroying`; `HideUnderPopups`, `ContainerBackground`,
+  `PreferredPixelSize`, `PixelSize`, `PixelSizeChanged`, `PixelsToDips`.
+- **PluginUI.Host**: `PluginInstance.IsDisposed`; `Dispose` can be called more than once.
 - **PluginUI.Host** (new library, not published on NuGet yet): VST3 plug-in host for .NET, without UI dependency and
   NativeAOT compatible. `Vst3Module` (`.vst3` files and bundles on Windows and Linux, or an NPlug factory in the same
   process with `FromFactory`), `PluginInstance` / `Vst3Plugin` (buses and channel layouts, parameters with display

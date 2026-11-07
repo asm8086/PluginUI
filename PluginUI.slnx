@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/PluginUI/PluginUI.csproj" />
@@ -14,6 +14,7 @@
     <File Path="samples/Designs/DemoSynth.pluginui" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/PluginHost.Desktop/PluginHost.Desktop.csproj" />
     <Project Path="tools/PluginUIEditor/PluginUIEditor.csproj" />
     <Project Path="tools/PluginHost.Cli/PluginHost.Cli.csproj" />
   </Folder>

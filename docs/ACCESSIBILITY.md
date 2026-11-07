@@ -1,4 +1,4 @@
-<!-- 2026/11/06 12:53:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 
 # Accessibility
 
@@ -26,6 +26,7 @@ There is nothing to turn on. A host costs nothing until a screen reader or anoth
 | `TextBox` | Edit | Text value, read-only state, "invalid entry" state |
 | `Label`, `DialogText`, status bar fields | Text | Content |
 | `ListBox` | List of list items | Select, add to and remove from the selection; the focus is on the current row |
+| `DataTable` | List of rows, each read as its first visible column then "Header: value" | Select, add to and remove from the selection; the focus is on the current row; menu key or Shift+F10 opens the row menu |
 | `TabView` | Tab with tab items | Select a tab; the page content follows the tabs |
 | `GroupBox` | Group named by its header | Expand / Collapse when collapsible |
 | `MenuBar`, menus | Menu bar, menus, menu items | Expand / Collapse sub-menus, Invoke, check marks, access keys (Alt+F) and shortcuts (Ctrl+S) |

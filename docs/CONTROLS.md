@@ -1,4 +1,4 @@
-<!-- 2026/11/06 15:32:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 
 # Element catalog
 
@@ -111,7 +111,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `ScrollViewer` | Vertical and horizontal scrolling, thin overlay scroll bars, mouse wheel (Shift: horizontal), `ScrollIntoView` | `CScrollView` |
 | `SplitView` | Two panes and a movable splitter | `CSplitView` |
 | `ListBox` | Virtualized list, single or extended selection, keyboard, type-ahead search, reordering by dragging | `CListControl`, `CStringList` |
-| `DataTable` | Fixed or star columns, sorting, resizing, auto-fit, virtualized rows, cell editing | `CDataBrowser` |
+| `DataTable` | Fixed or star columns, sorting, resizing, auto-fit, virtualized rows, cell editing, columns shown or hidden from the header menu, saved layout (`SaveLayout` / `RestoreLayout`), row context menu (`RowContextMenu`, menu key), drawn cells (`CellRenderer`), screen readers | `CDataBrowser` |
 | `CornerResizer` | Editor resize grip (double-click: 100 %) | `ICornerResizerControl` |
 | `Separator`, `Spacer` | Separator line, fixed or stretchable space | — |
 | `LayeredPanel` | Full-size stacked layers, composited opacity per layer, `BringToFront` / `SendToBack` | `CLayeredViewContainer` |
@@ -134,7 +134,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 |---|---|---|
 | `ImageView` | Fitted image (`ImageFit`) or animated film strip (loop, ping-pong) | `CMovieBitmap`, `CAutoAnimation`, `IBitmapControl` |
 | `SvgView` | Native SVG, fitting, rotation | `ISVGControl` |
-| `NativeWindowHost` | Embeds a third-party Win32 window (video, WebView2 created by the application) | `CExternalView`, `IPlatformViewControl`, `CExternalControl` |
+| `NativeWindowHost` | Embeds a third-party Win32 window (video, WebView2 created by the application), or provides an empty container window for content that needs a parent (`ProvidesContainer`: VST3 plug-in editors); hidden under popups on request (`HideUnderPopups`) | `CExternalView`, `IPlatformViewControl`, `CExternalControl` |
 
 ## Skins (`Skins`)
 

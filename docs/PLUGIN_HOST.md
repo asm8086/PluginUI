@@ -7,7 +7,7 @@
 `PluginUI.Host` loads VST3 plug-ins and runs them from .NET code. The `pluginhost` command line tool, built on it,
 scans and lists the installed plug-ins, processes WAV files through chains of plug-ins, renders MIDI files with
 instruments and measures frequency responses: it replaces scripts written with Python and Pedalboard, and it compiles
-to one native executable (NativeAOT).
+to one native executable (NativeAOT). **Plug-in Host** is the graphical host, built with PluginUI on the same library.
 
 What exists today and what comes next:
 
@@ -18,7 +18,7 @@ What exists today and what comes next:
 | Offline processing, MIDI rendering, response measurement (`pluginhost`) | done |
 | VST 2 plug-ins | planned (separate package, written from public documentation) |
 | Real-time audio and MIDI devices (WASAPI, then ASIO), signal sources | planned |
-| Graphical host (plug-in list with sort orders, editor windows) | planned |
+| Graphical host: plug-in list with sort orders and columns, editor windows, presets | done |
 
 ## Contents
 
@@ -32,6 +32,7 @@ What exists today and what comes next:
   - [Measuring a response](#measuring-a-response)
   - [Presets](#presets)
   - [From Pedalboard to pluginhost](#from-pedalboard-to-pluginhost)
+- [The graphical host](#the-graphical-host)
 - [The library](#the-library)
 - [Files](#files)
 - [How it works](#how-it-works)
@@ -181,6 +182,45 @@ pluginhost preset save "Pro-Q 3" --set "Output Level=-3 dB" -o quieter.vstpreset
 
 Main differences: plug-ins are scanned once and found by name; a crashing plug-in does not stop the scan; latency is
 compensated; responses are measured directly; one executable, no Python installation.
+
+## The graphical host
+
+**Plug-in Host** (`tools/PluginHost.Desktop`, `PluginHost.exe`) is the same host with a window, built with PluginUI. It
+shares the plug-in folders and the plug-in list with `pluginhost`: a scan made by one is seen by the other.
+
+```
+dotnet run --project tools/PluginHost.Desktop                                    # IL, with the debugger
+dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true # one native PluginHost.exe
+```
+
+![Plug-in Host](images/pluginhost-main.png)
+
+- **Plug-in list**: search (name, vendor, categories; Ctrl+F), format (VST3 / VST2), instruments or effects, favorites
+  only, failures shown or not. Click a column header to sort (again for the reverse order), or choose an order in the
+  **Sort** list: name, vendor, category, format, input or output channels, latency, installation date, recently used,
+  most used, favorites first, folder, status. Right click on the header (or **View > Columns**) shows or hides columns:
+  favorite, name, vendor, type, categories, format, inputs, outputs, sidechain, MIDI, latency, parameters, editor,
+  version, installed, last used, uses, folder, status. Widths, columns, sort and filters are kept between runs.
+- **Details** (Ctrl+I): format and SDK, version, categories, buses, MIDI input, latency in samples and milliseconds,
+  parameters, editor, module path, dates, use count, and the reason of a failure.
+- **Plug-in menu** (also the right click on a row, or the menu key): open (Enter, double-click), favorite (Ctrl+D),
+  show in Explorer, copy the path, ignore the module (it is left out of later scans).
+- **Scan** (F5: new and changed modules; Shift+F5: everything again; **Stop the scan** in the File menu or the tool bar): the scan runs in separate processes,
+  with its progress in the status bar; the list changes only when it is complete.
+- **Plug-in folders** (Ctrl+Shift+F): VST3 and VST2 folders, standard folders.
+
+![Plug-in folders](images/pluginhost-folders.png)
+
+Each open plug-in has its own window: the plug-in's editor, sized as the plug-in asks (and resizable when the plug-in
+allows it), or the **generic parameter table** when it has none (**Parameters** button otherwise). Values can be typed
+in the table as the plug-in displays them (`-6 dB`, `Warm`) or as normalized values. **Load preset** / **Save preset**
+read and write `.vstpreset` files. While its window is open the plug-in is processed in real time at 48 kHz with silent
+input, as in a DAW: its parameters reach the processor and the editor's meters move. Audio devices (WASAPI, ASIO), the
+signal sources and an on-screen keyboard for instruments come next.
+
+`PluginHost.exe` also serves as the scanner's child process (`PluginHost.exe scan-module …`), like `pluginhost`.
+`PluginHost.exe --config <folder>` uses another settings folder; the interface settings are in `gui.json` next to
+`settings.json`.
 
 ## The library
 

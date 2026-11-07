@@ -1,4 +1,4 @@
-<!-- 2026/11/06 12:53:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 
 # Accessibilité
 
@@ -27,6 +27,7 @@ Il n'y a rien à activer. Un hôte ne coûte rien tant qu'aucun lecteur d'écran
 | `TextBox` | Zone d'édition | Texte, lecture seule, état « saisie non valide » |
 | `Label`, `DialogText`, champs de la barre d'état | Texte | Contenu |
 | `ListBox` | Liste d'éléments | Sélectionner, ajouter à la sélection, en retirer ; le focus est sur la ligne courante |
+| `DataTable` | Liste de lignes, chacune lue par sa première colonne visible puis « En-tête : valeur » | Sélectionner, ajouter à la sélection, en retirer ; le focus est sur la ligne courante ; la touche Menu ou Maj+F10 ouvre le menu de la ligne |
 | `TabView` | Onglets | Choisir un onglet ; le contenu de la page suit les onglets |
 | `GroupBox` | Groupe nommé par son en-tête | Développer / Réduire s'il est repliable |
 | `MenuBar`, menus | Barre de menus, menus, éléments de menu | Développer / Réduire les sous-menus, Activer, coches, touches d'accès (Alt+F) et raccourcis (Ctrl+S) |

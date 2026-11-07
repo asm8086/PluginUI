@@ -1,4 +1,4 @@
-// 2026/11/06 12:53:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -576,6 +576,144 @@ public sealed class ListItemAutomationPeer : ItemAutomationPeer, ISelectionItemP
 
     /// <inheritdoc />
     public override void SetFocus() => List.Focus();
+}
+
+/// <summary>
+/// Peer of a <see cref="DataTable"/>: a list whose entries are the rows (in view order); each row reads its first visible
+/// column, then "Header: value" for the others. The focus is on the current row.
+/// </summary>
+/// <param name="owner">The table.</param>
+public class DataTableAutomationPeer(DataTable owner) : ElementAutomationPeer<DataTable>(owner), ISelectionPattern
+{
+    private readonly List<DataRowAutomationPeer> _rows = new();
+    private int _reportedCurrent = -2;
+
+    /// <inheritdoc />
+    public override AutomationControlType ControlType => AutomationControlType.List;
+
+    /// <inheritdoc />
+    public override AutomationOrientation Orientation => AutomationOrientation.Vertical;
+
+    /// <summary>Peer of row <paramref name="index"/> (view order).</summary>
+    /// <param name="index">Row index.</param>
+    public AutomationPeer GetRow(int index)
+    {
+        while (_rows.Count <= index) _rows.Add(new DataRowAutomationPeer(this, _rows.Count));
+        return _rows[index];
+    }
+
+    /// <inheritdoc />
+    protected override void CollectChildren(List<AutomationPeer> children)
+    {
+        for (int i = 0; i < Owner.RowCount; i++) children.Add(GetRow(i));
+    }
+
+    /// <inheritdoc />
+    public override AutomationPeer GetFocusTarget()
+    {
+        int current = Owner.CurrentRow;
+        return current >= 0 && current < Owner.RowCount ? GetRow(current) : this;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<AutomationPeer> GetSelection()
+    {
+        var result = new List<AutomationPeer>();
+        foreach (int i in Owner.SelectedRows.Order())
+        {
+            if (i >= 0 && i < Owner.RowCount) result.Add(GetRow(i));
+        }
+        return result;
+    }
+
+    /// <inheritdoc />
+    public bool CanSelectMultiple => Owner.MultiSelect;
+
+    /// <inheritdoc />
+    public bool IsSelectionRequired => false;
+
+    /// <inheritdoc />
+    protected internal override void OnOwnerStateChanged()
+    {
+        int current = Owner.CurrentRow;
+        if (current != _reportedCurrent)
+        {
+            _reportedCurrent = current;
+            if (current >= 0 && current < Owner.RowCount && Owner.IsRowSelected(current)) GetRow(current).RaiseEvent(AutomationEvent.ElementSelected);
+        }
+        Host?.UpdateAutomationFocus();
+    }
+}
+
+/// <summary>Peer of one row of a <see cref="DataTable"/>.</summary>
+public sealed class DataRowAutomationPeer : ItemAutomationPeer, ISelectionItemPattern
+{
+    private readonly DataTableAutomationPeer _table;
+
+    internal DataRowAutomationPeer(DataTableAutomationPeer table, int index) : base(table)
+    {
+        _table = table;
+        Index = index;
+    }
+
+    /// <summary>Row index (view order).</summary>
+    public int Index { get; }
+
+    private DataTable Table => _table.Owner;
+
+    /// <inheritdoc />
+    protected override bool Exists => Index < Table.RowCount;
+
+    /// <inheritdoc />
+    public override AutomationControlType ControlType => AutomationControlType.ListItem;
+
+    /// <inheritdoc />
+    public override string Name => Exists ? Table.GetRowText(Index) : string.Empty;
+
+    /// <inheritdoc />
+    public override bool IsKeyboardFocusable => IsEnabled;
+
+    /// <inheritdoc />
+    public override Rect BoundingRectangle => Exists ? Table.GetRowBounds(Index) : Rect.Empty;
+
+    /// <inheritdoc />
+    public override bool IsOffscreen => !Exists || !Table.GetRowBounds(Index).Intersects(Table.Bounds) || base.IsOffscreen;
+
+    /// <inheritdoc />
+    public override int PositionInSet => Index + 1;
+
+    /// <inheritdoc />
+    public override int SizeOfSet => Table.RowCount;
+
+    /// <inheritdoc />
+    public bool IsSelected => Table.IsRowSelected(Index);
+
+    /// <inheritdoc />
+    public AutomationPeer? SelectionContainer => _table;
+
+    /// <inheritdoc />
+    public void Select()
+    {
+        ThrowIfNotEnabled();
+        Table.SelectFromAutomation(Index, ListSelectionChange.Replace);
+    }
+
+    /// <inheritdoc />
+    public void AddToSelection()
+    {
+        ThrowIfNotEnabled();
+        Table.SelectFromAutomation(Index, Table.MultiSelect ? ListSelectionChange.Add : ListSelectionChange.Replace);
+    }
+
+    /// <inheritdoc />
+    public void RemoveFromSelection()
+    {
+        ThrowIfNotEnabled();
+        Table.SelectFromAutomation(Index, ListSelectionChange.Remove);
+    }
+
+    /// <inheritdoc />
+    public override void SetFocus() => Table.Focus();
 }
 
 /// <summary>How <see cref="ListBox"/> selection changes from automation.</summary>

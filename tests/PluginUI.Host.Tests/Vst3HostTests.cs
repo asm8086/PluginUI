@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +13,18 @@ public class Vst3HostTests
     private static Vst3Module GainModule() => Vst3Module.FromFactory(TestGainPlugin.GetFactory().Export(), "Host Tests");
 
     private static Vst3Module SynthModule() => Vst3Module.FromFactory(DemoSynthPlugin.GetFactory().Export(), "Host Tests");
+
+    [Test]
+    public void DisposingTwiceIsHarmless()
+    {
+        using var module = GainModule();
+        var plugin = module.CreatePlugin();
+        plugin.Prepare(48000, 64, realtime: true);
+        plugin.Process(64);
+        plugin.Dispose();
+        Assert.That(plugin.IsDisposed, Is.True);
+        Assert.DoesNotThrow(plugin.Dispose, "a window and the loader may both release the plug-in");
+    }
 
     [Test]
     public void FactoryListsTheClasses()
