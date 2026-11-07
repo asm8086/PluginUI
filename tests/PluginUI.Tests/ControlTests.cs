@@ -214,6 +214,24 @@ public class ControlTests
     }
 
     [Test]
+    public void TabsTooWideForTheStripShrinkToFit()
+    {
+        var tabs = Add(new TabView(), 0f, 0f, 300f, 200f);
+        for (int i = 0; i < 12; i++) tabs.AddPage("Page number " + i, new Probe());
+        _host.UpdateLayout();
+        var last = tabs.GetTabBounds(11);
+        Assert.Multiple(() =>
+        {
+            Assert.That(last.Right, Is.EqualTo(300f).Within(0.5f), "the last tab ends at the right edge");
+            Assert.That(tabs.GetTabBounds(1).X, Is.EqualTo(tabs.GetTabBounds(0).Right).Within(0.01f));
+        });
+        var roomy = Add(new TabView(), 0f, 0f, 2000f, 200f);
+        roomy.AddPage("One", new Probe()).AddPage("Two", new Probe());
+        _host.UpdateLayout();
+        Assert.That(roomy.GetTabBounds(1).Right, Is.LessThan(400f), "natural widths when they fit");
+    }
+
+    [Test]
     public void ScrollViewerScrollsWithTheWheel()
     {
         var content = new StackPanel();

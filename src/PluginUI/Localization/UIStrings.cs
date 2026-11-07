@@ -86,6 +86,12 @@ public sealed record UIStrings
         BandFormat = "Bande {0}",
         CrossoverFormat = "Séparation {0}",
         AutomationCrossoverEditor = "séparateur de bandes",
+        AutomationPatternEditor = "éditeur de motif",
+        PatternNoteFormat = "{0}, mesure {1}, temps {2}, durée {3} temps, vélocité {4} %",
+        NotesSelectedFormat = "{0} notes sur {1} sélectionnées",
+        NoteCountFormat = "{0} notes, aucune sélectionnée",
+        AutomationDrumPads = "pads de batterie",
+        PadFormat = "Pad {0}",
         KeyNames = KeyNameTables.French,
         Untitled = "Sans titre",
         SaveChangesQuestion = "Voulez-vous enregistrer les modifications de « {0} » ?",
@@ -255,6 +261,27 @@ public sealed record UIStrings
 
     /// <summary>Role of a <see cref="CrossoverEditor"/> spoken by screen readers.</summary>
     public string AutomationCrossoverEditor { get; init; } = "crossover editor";
+
+    /// <summary>Role of a <see cref="PatternEditor"/> spoken by screen readers.</summary>
+    public string AutomationPatternEditor { get; init; } = "pattern editor";
+
+    /// <summary>
+    /// A note of a <see cref="PatternEditor"/> for screen readers ({0}: pitch name, {1}: bar from 1, {2}: beat in the bar
+    /// from 1, {3}: length in beats, {4}: velocity in percent).
+    /// </summary>
+    public string PatternNoteFormat { get; init; } = "{0}, bar {1}, beat {2}, length {3} beats, velocity {4} %";
+
+    /// <summary>Several selected notes ({0}: selected, {1}: total).</summary>
+    public string NotesSelectedFormat { get; init; } = "{0} of {1} notes selected";
+
+    /// <summary>Notes of a pattern, none selected ({0}: total).</summary>
+    public string NoteCountFormat { get; init; } = "{0} notes, none selected";
+
+    /// <summary>Role of <see cref="DrumPads"/> spoken by screen readers.</summary>
+    public string AutomationDrumPads { get; init; } = "drum pads";
+
+    /// <summary>Default name of a drum pad ({0}: its number from 1).</summary>
+    public string PadFormat { get; init; } = "Pad {0}";
 
     /// <summary>
     /// Names of keys in shortcut texts (modifiers <see cref="Key.Control"/>, <see cref="Key.Shift"/>,

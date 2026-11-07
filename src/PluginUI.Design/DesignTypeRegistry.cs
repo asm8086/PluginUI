@@ -391,6 +391,8 @@ public static class BuiltInDesignTypes
         registry.Register<ModWheel>(Instrument);
         registry.Register<WheelControl>();
         registry.Register<StepSequencer>(Instrument);
+        registry.Register<PatternEditor>(Instrument);
+        registry.Register<DrumPads>(Instrument);
         registry.Register<ModulationSourceButton>(Instrument);
         registry.Register<WaveformView>(Instrument);
 

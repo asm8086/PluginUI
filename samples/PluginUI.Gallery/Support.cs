@@ -67,6 +67,14 @@ internal sealed class DemoAudio : ITickable
     /// <summary>Current step of the simulated sequencer.</summary>
     public int CurrentStep { get; private set; }
 
+    /// <summary>Position in beats of the simulated pattern player (120 BPM, 16 beats).</summary>
+    public double PatternBeat { get; private set; }
+
+    /// <summary>Drum pads lit by the simulated drum pattern.</summary>
+    public DrumPads? Pads { get; set; }
+
+    private int _lastEighth = -1;
+
     private readonly List<PeakValue[]> _peakSets = new();
     private readonly List<PeakValue[]> _rmsSets = new();
 
@@ -124,6 +132,16 @@ internal sealed class DemoAudio : ITickable
         GainReduction.Push((float)CompressorMath.GainReductionDb(peak, -18.0, 4.0, 6.0));
         PlayPosition = _time * 0.4 % 1.0;
         CurrentStep = (int)(_time * 4.0) % 16;
+        PatternBeat = _time * 2.0 % 16.0;
+        int eighth = (int)(PatternBeat * 2.0);
+        if (Pads is not null && eighth != _lastEighth)
+        {
+            _lastEighth = eighth;
+            // Kick on 1 and 3, snare on 2 and 4, closed hi-hat on every eighth.
+            if (eighth % 4 == 0) Pads.Flash(36, 1f);
+            if (eighth % 4 == 2) Pads.Flash(38, 0.9f);
+            Pads.Flash(42, eighth % 2 == 0 ? 0.7f : 0.45f);
+        }
         foreach (var set in _peakSets)
         {
             set[0].PushBlockPeak(_left.AsSpan(0, count));

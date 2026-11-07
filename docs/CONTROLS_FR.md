@@ -97,6 +97,8 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 |---|---|---|
 | `PitchWheel`, `ModWheel` (`WheelControl`) | Molettes de pitch (retour au centre animé dans le même geste) et de modulation | `IWheelControl` |
 | `PianoKeyboard` | Étendue configurable, glissando, vélocité selon la hauteur du clic, `NoteOn`/`NoteOff`, `SetNoteState` utilisable depuis n'importe quel thread, notes du processeur par `ActivitySource` (`NoteActivity`, sans verrou), jeu au clavier d'ordinateur ; dans un plugin NPlug, `ConnectKeyboard` envoie les notes au processeur | `KeyboardView`, `IVKeyboardControl` |
+| `PatternEditor`, `PatternNote` | Mini piano roll pour des motifs de quelques mesures : clavier et règle des mesures, notes ajoutées, déplacées et allongées sur la grille (Alt = libre), sélection au rectangle et par Ctrl+clic, couloir de vélocité, curseur de lecture (`PlayPositionSource`), défilement des hauteurs à la molette ; édition au clavier (flèches, Maj+flèches pour la durée et l'octave, Ctrl+flèches pour la sélection et la vélocité, Inser, Ctrl+D, Suppr) ; `PatternChanged` une fois par modification, `PreviewNoteOn` / `PreviewNoteOff` pour entendre les notes touchées | — (bonus) |
+| `DrumPads`, `DrumPad` | Grille de pads de batterie (4 × 4 par défaut, premier pad en bas à gauche), vélocité selon la hauteur du clic, rangées du clavier d'ordinateur 1234 / QWER / ASDF / ZXCV, flèches et Espace, `PadPressed` / `PadReleased`, pads allumés par `ActivitySource` ou par `Flash` depuis le thread audio ; chaque pad est un bouton pour les lecteurs d'écran | — (bonus) |
 
 ## Conteneurs et mise en page
 
@@ -107,7 +109,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `Grid` | Lignes/colonnes `Auto` / pixels / étoiles, fusion, espacements (`new Grid("Auto,*", "120,*")`) | Flexbox iPlug2 |
 | `Border`, `Panel` | Fond (couleur ou dégradé, équivalent de `CGradientView`), bordure, arrondi, ombre portée, marge interne | `CShadowViewContainer`, `IVPanelControl`, `IPanelControl` |
 | `GroupBox` | Cadre titré, barre d'accent, repliable | `IVGroupControl` |
-| `TabView` | Onglets en haut ou à gauche, indicateur animé, pages désactivables, Ctrl+Tab ; seule la page visible est attachée | `CTabView`, `IVTabbedPagesControl` |
+| `TabView` | Onglets en haut ou à gauche (ils se resserrent pour tenir dans la bande), indicateur animé, pages désactivables, Ctrl+Tab ; seule la page visible est attachée | `CTabView`, `IVTabbedPagesControl` |
 | `ViewSwitcher` | Affiche un seul enfant à la fois, choisi par `SelectedIndex` ou par un paramètre lié (discret : indice du pas ; continu : valeur répartie sur les enfants) ; les vues masquées gardent leur état | `UIViewSwitchContainer` |
 | `ScrollViewer` | Défilement vertical et horizontal, barres fines superposées, molette (Maj : horizontal), `ScrollIntoView` | `CScrollView` |
 | `SplitView` | Deux volets et séparateur déplaçable | `CSplitView` |

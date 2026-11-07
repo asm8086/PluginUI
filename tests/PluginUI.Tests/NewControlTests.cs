@@ -345,7 +345,7 @@ public class NewControlTests
             .Where(p => p.PropertyType == typeof(string) && p.Name != nameof(UIStrings.LanguageCode))
             .Where(p => (string?)p.GetValue(UIStrings.French) == (string?)p.GetValue(UIStrings.English))
             .Select(p => p.Name).ToArray();
-        Assert.That(same, Is.EquivalentTo(new[] { nameof(UIStrings.Ok), nameof(UIStrings.PresetPlaceholder), nameof(UIStrings.VersionFormat), nameof(UIStrings.AutomationMenu), nameof(UIStrings.Solo) }));
+        Assert.That(same, Is.EquivalentTo(new[] { nameof(UIStrings.Ok), nameof(UIStrings.PresetPlaceholder), nameof(UIStrings.VersionFormat), nameof(UIStrings.AutomationMenu), nameof(UIStrings.Solo), nameof(UIStrings.PadFormat) }));
     }
     [Test]
     public void ViewSwitcherShowsTheViewOfTheParameterValue()

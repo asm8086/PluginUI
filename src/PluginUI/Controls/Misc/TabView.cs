@@ -238,9 +238,19 @@ public class TabView : Panel
         {
             float x = bounds.X;
             float stretch = StretchTabs && Pages.Count > 0 ? bounds.Width / Pages.Count : 0f;
+            // Natural width: the text plus 28 px. When the tabs do not fit, the padding shrinks to 10 px, then every tab
+            // shrinks in proportion (the headers end with an ellipsis).
+            float text = 0f;
+            foreach (var page in Pages) text += TextMeasurer.Measure(page.Header, TabStyle(true)).Width;
+            float padding = 28f, scale = 1f;
+            if (Pages.Count > 0 && text + padding * Pages.Count > bounds.Width && bounds.Width > 0f)
+            {
+                padding = MathF.Max(10f, (bounds.Width - text) / Pages.Count);
+                if (text + padding * Pages.Count > bounds.Width) scale = bounds.Width / (text + padding * Pages.Count);
+            }
             foreach (var page in Pages)
             {
-                float w = stretch > 0f ? stretch : TextMeasurer.Measure(page.Header, TabStyle(true)).Width + 28f;
+                float w = stretch > 0f ? stretch : (TextMeasurer.Measure(page.Header, TabStyle(true)).Width + padding) * scale;
                 _tabRects.Add(new Rect(x, bounds.Y, w, TabHeight));
                 x += w;
             }

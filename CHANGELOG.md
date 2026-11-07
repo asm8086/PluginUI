@@ -16,6 +16,22 @@ Before 1.0, minor versions may contain breaking changes.
   splits, gains, solo and mute bindable to parameters with edit gestures; full keyboard control and a screen reader
   peer. Registered in the designer (Analysis) and shown on the new Multiband page of the gallery. Texts
   `UIStrings.Solo`, `Mute`, `BandFormat`, `CrossoverFormat`, `AutomationCrossoverEditor` (English, French).
+- **`PatternEditor`** (with `PatternNote`): mini piano roll for patterns of a few bars, with a keyboard, a bar ruler,
+  grid snapping (`StepsPerBeat`, Alt for free placement), rectangle and Ctrl+click selection, a velocity lane, a play
+  cursor polled from the audio side and full keyboard editing; `PatternChanged` is raised once per edit and
+  `PreviewNoteOn` / `PreviewNoteOff` let the plug-in play the notes the user touches. `GetNotes` and `SetNotes` copy
+  the pattern for the processor and the plug-in state.
+- **`DrumPads`** (with `DrumPad`): grid of drum pads (first pad at the bottom left by default) played with the mouse
+  (velocity from the click height), the computer keyboard or the arrows and Space; pads lit by `ActivitySource` or by
+  the thread-safe `Flash`; one button per pad for screen readers.
+- Both registered in the designer (Instrument) and shown on the new Sequencer page of the gallery. Texts
+  `UIStrings.AutomationPatternEditor`, `PatternNoteFormat`, `NotesSelectedFormat`, `NoteCountFormat`,
+  `AutomationDrumPads`, `PadFormat` (English, French).
+
+### Changed
+
+- `TabView`: tabs on top that do not fit the strip shrink their padding, then their width, instead of running past
+  the right edge.
 
 ## [0.3.0] - 2026-11-07
 

@@ -97,6 +97,8 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 |---|---|---|
 | `PitchWheel`, `ModWheel` (`WheelControl`) | Pitch wheel (animated return to center within the same gesture) and modulation wheel | `IWheelControl` |
 | `PianoKeyboard` | Configurable range, glissando, velocity from the vertical click position, `NoteOn`/`NoteOff`, `SetNoteState` callable from any thread, processor notes via `ActivitySource` (`NoteActivity`, lock-free), playing from the computer keyboard; in an NPlug plug-in, `ConnectKeyboard` sends the notes to the processor | `KeyboardView`, `IVKeyboardControl` |
+| `PatternEditor`, `PatternNote` | Mini piano roll for patterns of a few bars: keyboard and bar ruler, notes added, moved and resized on the grid (Alt = free), rectangle and Ctrl+click selection, velocity lane, play cursor (`PlayPositionSource`), pitch scrolling with the wheel; keyboard editing (arrows, Shift+arrows for length and octave, Ctrl+arrows for selection and velocity, Insert, Ctrl+D, Delete); `PatternChanged` once per edit, `PreviewNoteOn` / `PreviewNoteOff` to hear the notes touched | — (bonus) |
+| `DrumPads`, `DrumPad` | Grid of drum pads (4 × 4 by default, first pad at the bottom left), velocity from the height of the click, computer keyboard rows 1234 / QWER / ASDF / ZXCV, arrows and Space, `PadPressed` / `PadReleased`, pads lit by `ActivitySource` or by `Flash` from the audio thread; each pad is a button for screen readers | — (bonus) |
 
 ## Containers and layout
 
@@ -107,7 +109,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `Grid` | `Auto` / pixel / star rows and columns, spanning, spacing (`new Grid("Auto,*", "120,*")`) | iPlug2 Flexbox |
 | `Border`, `Panel` | Background (color or gradient, equivalent to `CGradientView`), border, rounded corners, drop shadow, padding | `CShadowViewContainer`, `IVPanelControl`, `IPanelControl` |
 | `GroupBox` | Titled frame, accent bar, collapsible | `IVGroupControl` |
-| `TabView` | Tabs on top or on the left, animated indicator, pages that can be disabled, Ctrl+Tab; only the visible page is attached | `CTabView`, `IVTabbedPagesControl` |
+| `TabView` | Tabs on top or on the left (they shrink to fit the strip), animated indicator, pages that can be disabled, Ctrl+Tab; only the visible page is attached | `CTabView`, `IVTabbedPagesControl` |
 | `ViewSwitcher` | Shows one child at a time, chosen by `SelectedIndex` or a bound parameter (discrete: step index; continuous: value spread over the children); hidden views keep their state | `UIViewSwitchContainer` |
 | `ScrollViewer` | Vertical and horizontal scrolling, thin overlay scroll bars, mouse wheel (Shift: horizontal), `ScrollIntoView` | `CScrollView` |
 | `SplitView` | Two panes and a movable splitter | `CSplitView` |
