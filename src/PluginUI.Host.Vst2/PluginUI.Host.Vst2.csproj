@@ -1,0 +1,32 @@
+<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PluginUI.Host.Vst2</RootNamespace>
+    <AssemblyName>PluginUI.Host.Vst2</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
+    <Description>VST 2.4 plug-in hosting for PluginUI.Host: scanning (shell plug-ins included), 32 and 64-bit processing, MIDI in and out, parameters, programs, .fxp / .fxb presets, editors. Written from the public description of the VST 2.4 interface; no part of the Steinberg SDK is used. NativeAOT compatible.</Description>
+    <IsAotCompatible>true</IsAotCompatible>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PluginUI.Host.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PluginUI.Host\PluginUI.Host.csproj" />
+  </ItemGroup>
+
+</Project>

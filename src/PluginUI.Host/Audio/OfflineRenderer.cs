@@ -99,8 +99,9 @@ public static class OfflineRenderer
                 {
                     foreach (var e in chain[i].OutputMidi)
                     {
-                        long at = position + e.SampleOffset - latency;
-                        if (at >= 0) midiOut(at, e with { SampleOffset = 0 });
+                        // Messages from the first samples fall before 0 once compensated: they belong at the start.
+                        long at = Math.Max(0, position + e.SampleOffset - latency);
+                        midiOut(at, e with { SampleOffset = 0 });
                     }
                 }
                 chain[i].Idle();

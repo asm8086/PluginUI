@@ -1,0 +1,25 @@
+<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The fake VST 2 plug-in of the host tests as a real module: dotnet publish -r win-x64 (or linux-x64) gives
+       TestVst2.dll / TestVst2.so, a native VST 2 effect (gain, MIDI echo an octave up, chunks, editor rectangle). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>TestVst2</AssemblyName>
+    <RootNamespace>PluginUI.Host.Tests</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <!-- The interface types are compiled in (no reference to the host): the module stands alone. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\PluginUI.Host.Vst2\Vst2Native.cs" Link="Vst2Native.cs" />
+  </ItemGroup>
+
+</Project>

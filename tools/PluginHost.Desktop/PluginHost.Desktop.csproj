@@ -28,6 +28,7 @@
     <ProjectReference Include="..\..\src\PluginUI\PluginUI.csproj" />
     <ProjectReference Include="..\..\src\PluginUI.Desktop\PluginUI.Desktop.csproj" />
     <ProjectReference Include="..\..\src\PluginUI.Host\PluginUI.Host.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.Host.Vst2\PluginUI.Host.Vst2.csproj" />
     <ProjectReference Include="..\..\src\PluginUI.Host.Windows\PluginUI.Host.Windows.csproj" />
   </ItemGroup>
 

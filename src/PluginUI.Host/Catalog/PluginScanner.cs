@@ -84,7 +84,10 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
             }
             foreach (string module in files)
             {
-                if (!ignored.Contains(module) && seen.Add(module)) yield return (module, PluginFormat.Vst2);
+                if (ignored.Contains(module) || !seen.Add(module)) continue;
+                // Plug-in folders also hold the libraries the plug-ins use: only modules with a VST 2 entry point count.
+                if (vst2Extension == ".dll" && !PeExports.MayExport(module, "VSTPluginMain", "main")) continue;
+                yield return (module, PluginFormat.Vst2);
             }
         }
     }

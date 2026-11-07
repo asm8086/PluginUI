@@ -323,7 +323,7 @@ public sealed unsafe class Vst3Module : IDisposable
 }
 
 /// <summary>A VST 3 module or plug-in failed.</summary>
-public sealed class Vst3Exception : Exception
+public sealed class Vst3Exception : PluginException
 {
     /// <summary>Creates the exception.</summary>
     public Vst3Exception(string message) : base(message)

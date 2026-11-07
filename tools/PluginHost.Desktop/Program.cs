@@ -20,6 +20,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        PluginUI.Host.Vst2.Vst2Hosting.Register(); // VST 2 plug-ins, in the host and in its scan processes
         int scan = Array.IndexOf(args, ModuleScanProcess.CommandName);
         if (scan >= 0) return ModuleScanProcess.Run(args[(scan + 1)..]);
 

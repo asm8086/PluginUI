@@ -71,7 +71,8 @@ PluginUI/
 │   │                               AppSettings (JSON AOT), RecentFiles, MessageDialog
 │   ├── PluginUI.Host/              Hôte de plug-ins : modules et instances VST3, liste et recherche des plug-ins, rendu
 │   │                               hors temps réel, mesure de réponse, rack en direct et sources de signal, WAV et MIDI
-│   └── PluginUI.Host.Windows/      Périphériques Windows de l'hôte : sortie et entrée WASAPI, entrée MIDI
+│   ├── PluginUI.Host.Vst2/         Hébergement VST 2.4 : modules et shells, plug-ins, éditeurs, presets .fxp / .fxb
+│   └── PluginUI.Host.Windows/      Périphériques Windows de l'hôte : ASIO, sortie et entrée WASAPI, entrée et sortie MIDI
 ├── tools/PluginUIEditor/           Concepteur visuel WinForms (boîte à outils, propriétés, aperçu, code, nouveaux projets)
 ├── tools/PluginHost.Cli/           pluginhost : hôte de plug-ins en ligne de commande (scan, liste, traitement, rendu, mesure, presets)
 ├── tools/PluginHost.Desktop/       Plug-in Host : hôte graphique construit avec PluginUI (liste de plug-ins triable, éditeurs, presets)
@@ -82,8 +83,9 @@ PluginUI/
 ├── tests/PluginUI.Tests/           203 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau, accessibilité, tables, fenêtres natives)
 ├── tests/PluginUI.NPlug.Tests/     29 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
 ├── tests/PluginUI.Design.Tests/    26 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
-├── tests/PluginUI.Host.Tests/      71 tests NUnit (ASIO par un pilote de test en processus, formats d'échantillons, hébergement VST3 de DemoSynth et de plug-ins de test, paramètres, correspondance MIDI, presets, rendu, mesure, WAV, fichiers MIDI, MIDI émis par les plug-ins, liste des plug-ins, recherche hors processus, rack en direct et sources de signal)
-└── tests/PluginUI.Host.TestGain/   Effet VST3 de test avec latence (publiable aussi en .vst3 NativeAOT pour les essais manuels)
+├── tests/PluginUI.Host.Tests/      81 tests NUnit (hébergement VST 2 d'un plug-in de test en processus, .fxp / .fxb, ASIO par un pilote de test en processus, formats d'échantillons, hébergement VST3 de DemoSynth et de plug-ins de test, paramètres, correspondance MIDI, presets, rendu, mesure, WAV, fichiers MIDI, MIDI émis par les plug-ins, liste des plug-ins, recherche hors processus, rack en direct et sources de signal)
+├── tests/PluginUI.Host.TestGain/   Effet VST3 de test avec latence (publiable aussi en .vst3 NativeAOT pour les essais manuels)
+└── tests/PluginUI.Host.TestVst2/   Le plug-in VST 2 de test en module natif (.dll / .so NativeAOT pour les essais manuels)
 ```
 
 Environ 34 000 lignes de C# pour les bibliothèques. Tous les membres publics ont leur documentation XML.
@@ -253,7 +255,7 @@ et la liste des plug-ins avec `pluginhost`.
 
 ![Plug-in Host](docs/images/fr/pluginhost-main.png)
 
-Les plug-ins VST 2 viendront ensuite. Guide : [docs/PLUGIN_HOST_FR.md](docs/PLUGIN_HOST_FR.md).
+Les deux hôtes chargent les plug-ins VST3 et VST 2. Guide : [docs/PLUGIN_HOST_FR.md](docs/PLUGIN_HOST_FR.md).
 
 ## Concepts
 

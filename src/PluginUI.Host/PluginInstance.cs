@@ -214,9 +214,11 @@ public abstract unsafe class PluginInstance : IDisposable
     /// <summary>Buffer of output channel <paramref name="channel"/>.</summary>
     public Span<float> GetOutput(int channel) => new(_outputs[channel], MaxBlockSize);
 
-    internal float* InputPointer(int channel) => _inputs[channel];
+    /// <summary>Native buffer of input channel <paramref name="channel"/> (valid from <see cref="Prepare"/>).</summary>
+    protected internal float* InputPointer(int channel) => _inputs[channel];
 
-    internal float* OutputPointer(int channel) => _outputs[channel];
+    /// <summary>Native buffer of output channel <paramref name="channel"/> (valid from <see cref="Prepare"/>).</summary>
+    protected internal float* OutputPointer(int channel) => _outputs[channel];
 
     /// <summary>Processes <paramref name="frames"/> samples from the input buffers into the output buffers.</summary>
     public void Process(int frames)
@@ -266,6 +268,9 @@ public abstract unsafe class PluginInstance : IDisposable
             ?? (uint.TryParse(name, out uint id) ? Parameters.FirstOrDefault(p => p.Id == id) : null);
     }
 
+    /// <summary>Extension of the preset files <see cref="GetState"/> writes (".vstpreset", ".fxp", ".fxb").</summary>
+    public virtual string PresetExtension => ".preset";
+
     /// <summary>Complete state (processor and controller), as saved by a DAW project.</summary>
     public abstract byte[] GetState();
 
@@ -274,6 +279,9 @@ public abstract unsafe class PluginInstance : IDisposable
 
     /// <summary><c>true</c> if the plug-in has an editor window.</summary>
     public abstract bool HasEditor { get; }
+
+    /// <summary>Creates the plug-in's editor (null when it has none). Dispose it before the plug-in.</summary>
+    public virtual PluginEditor? CreateEditor() => null;
 
     /// <summary>Delivers to the UI the changes the processor made (call regularly on the UI thread).</summary>
     public virtual void Idle()

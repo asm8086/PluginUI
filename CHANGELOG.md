@@ -10,6 +10,16 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **VST 2 hosting** (new package `PluginUI.Host.Vst2`, VST 2.4 interface written from its public description; no part
+  of the VST SDK): `Vst2Hosting.Register` plugs it into the scanner and `PluginLoader`; `Vst2Module` (modules and the
+  plug-ins of shell modules, `FromEntryPoint`), `Vst2Plugin` (parameters with names, units, steps and typed values,
+  programs, 32-bit processing, MIDI in and out, position and tempo, latency, tail, chunks), `Vst2Editor`, `FxPreset`
+  (.fxp / .fxb, parameter values or chunks). Libraries without a VST 2 entry point are left out of scans (`PeExports`),
+  32-bit modules are reported as such. Test plug-in `TestVst2` (in-process, or a NativeAOT module).
+- `PluginEditor` (base of `Vst3Editor` and `Vst2Editor`), `PluginInstance.CreateEditor`, `PluginInstance.PresetExtension`,
+  `PluginException` (base of `Vst3Exception`). `PluginLoader.Vst2Loader` takes the plug-in of a shell.
+- **pluginhost** and **Plug-in Host** load VST 2 plug-ins; `preset show` reads .fxp / .fxb; the plug-in window loads and
+  saves them.
 - **ASIO** in PluginUI.Host.Windows: `AsioDriver` (all the channels of the card or the first n, sample rate and
   buffer chosen among those the driver accepts, `ShowControlPanel`, `ResetRequested` when the control panel changes
   them, 16/24/32-bit integer and 32/64-bit float samples in either byte order, `outputReady`), `Asio.GetDrivers`,
@@ -179,6 +189,9 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Fixed
 
+- Offline renders dropped the MIDI the last plug-in produced in its first samples when it has latency (the messages are
+  now placed at the start).
+- `pluginhost info` read the parameter displays while the plug-in was active.
 - **Shortcuts of the menu bar and of a `CommandSet` no longer take the editing keys of the focused element**: a text
   box keeps Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, Del, Backspace, the arrows… even when an Edit menu has commands with the
   same shortcuts, as in Windows (new `UIElement.ClaimsKey`, overridden by `TextBox`); function keys and the other

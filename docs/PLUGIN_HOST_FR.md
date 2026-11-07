@@ -17,7 +17,7 @@ Ce qui existe et ce qui vient ensuite :
 | Hébergement VST3 (fichiers, bundles, fabrique NPlug dans le même processus) | fait |
 | Dossiers de plug-ins dans un fichier de réglages, liste conservée entre les lancements | fait |
 | Traitement hors temps réel, rendu MIDI, mesure de réponse (`pluginhost`) | fait |
-| Plug-ins VST 2 | prévu (paquet séparé, écrit d'après la documentation publique) |
+| Plug-ins VST 2 (VST 2.4 et antérieurs ; shells comme WaveShell ; presets .fxp / .fxb) | fait (paquet séparé `PluginUI.Host.Vst2`, écrit d'après la description publique de l'interface) |
 | Audio temps réel (sortie et entrée WASAPI), sources de signal, clavier à l'écran, entrée MIDI | fait |
 | Sortie MIDI, messages exclusifs, MIDI émis par les plug-ins (vers un port, un autre plug-in ou un fichier) | fait |
 | ASIO (tous les canaux de la carte, ses fréquences, son panneau de configuration) | fait |
@@ -58,7 +58,9 @@ Les dossiers à parcourir sont conservés dans `settings.json` ; le premier lanc
 (`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST3` ; sous Linux `~/.vst3`, `/usr/lib/vst3`,
 `/usr/local/lib/vst3`) et les dossiers VST 2 présents (`C:\Program Files\VSTPlugins`, `C:\Program Files\Steinberg\VSTPlugins`,
 `C:\Program Files\Common Files\VST2`, le dossier inscrit par Steinberg dans le registre). Les plug-ins VST 3 sont
-cherchés dans tous les dossiers, VST 2 compris ; les plug-ins VST 2 seront listés quand leur hébergement sera disponible.
+cherchés dans tous les dossiers, VST 2 compris. Dans les dossiers VST 2, seules les bibliothèques dotées d'un point
+d'entrée VST 2 sont examinées (celles qu'utilisent les plug-ins sont écartées sans être chargées) ; chaque plug-in d'un
+module shell (le WaveShell de Waves) est listé séparément ; les plug-ins 32 bits apparaissent en échec, avec la raison.
 
 ```
 pluginhost folders                          # liste les dossiers
@@ -186,7 +188,10 @@ pluginhost preset show brillant.vstpreset                     # classe, plug-in,
 pluginhost preset save "Pro-Q 3" --set "Output Level=-3 dB" -o moins-fort.vstpreset
 ```
 
-Les fichiers `.vstpreset` sont ceux du SDK de Steinberg : ils s'ouvrent dans tout hôte VST3.
+Les fichiers `.vstpreset` sont ceux du SDK de Steinberg : ils s'ouvrent dans tout hôte VST3. Les plug-ins VST 2
+utilisent `.fxp` (un programme) et `.fxb` (une banque) : `preset save` écrit un `.fxb` pour les plug-ins qui
+enregistrent leur état en bloc (« chunk »), sinon un `.fxp` du programme courant ; `preset show` et `--preset` lisent
+les deux, en valeurs de paramètres ou en blocs.
 
 ### De Pedalboard à pluginhost
 
@@ -255,7 +260,8 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 Chaque plug-in ouvert a sa fenêtre : l'éditeur du plug-in, à la taille qu'il demande (et redimensionnable quand il le
 permet), ou la **table générique des paramètres** quand il n'en a pas (bouton **Paramètres** sinon). Les valeurs se
 saisissent dans la table comme le plug-in les affiche (`-6 dB`, `Warm`) ou en valeurs normalisées. **Charger un
-preset** / **Enregistrer le preset** lisent et écrivent des fichiers `.vstpreset`. Tant que sa fenêtre est ouverte, le
+preset** / **Enregistrer le preset** lisent et écrivent des fichiers `.vstpreset` (`.fxp` / `.fxb` pour les plug-ins
+VST 2). Tant que sa fenêtre est ouverte, le
 plug-in joue sur le périphérique audio ; tous les plug-ins ouverts s'entendent (leurs sorties s'additionnent). La barre
 du bas de la fenêtre contient :
 
@@ -346,8 +352,28 @@ Utilisation en temps réel, sans le moteur de rendu : `Prepare(sampleRate, maxBl
 chaque bloc remplir `GetInput(canal)`, appeler `Process(frames)` et lire `GetOutput(canal)`. `SetParameter` et
 `AddMidiEvent` peuvent être appelés depuis n'importe quel thread pour le bloc suivant ; `Idle()`, sur le thread de
 l'interface, transmet les valeurs que le plug-in modifie lui-même (`ParameterChanged`) et les modifications faites
-dans l'éditeur. `GetState` / `SetState` lisent et écrivent des images `.vstpreset`. Pour une fenêtre d'éditeur :
-`((Vst3Plugin)plugin).CreateEditor()?.Attach(hwnd, "HWND")`.
+dans l'éditeur, et donne leur temps d'inactivité aux éditeurs VST 2. `GetState` / `SetState` lisent et écrivent des
+images de presets (`PresetExtension` : `.vstpreset`, `.fxp` ou `.fxb`). Pour une fenêtre d'éditeur :
+`plugin.CreateEditor()?.Attach(hwnd, "HWND")` (un `PluginEditor`, `Vst3Editor` ou `Vst2Editor`).
+
+Les plug-ins VST 2 viennent avec le paquet `PluginUI.Host.Vst2` :
+
+```csharp
+using PluginUI.Host.Vst2;
+
+Vst2Hosting.Register();                                     // la recherche et PluginLoader gèrent les modules VST 2
+using var synthe = Vst2Hosting.Load(@"C:\Program Files\VSTPlugins\MonSynthe.dll");
+using var waves = Vst2Hosting.Load(@"C:\Program Files\VSTPlugins\WaveShell1-VST 14.0_x64.dll", "C1 comp Stereo");
+var banque = FxPreset.Read(File.ReadAllBytes("nappes.fxb"));
+synthe.SetPreset(banque);
+```
+
+`Vst2Plugin` ajoute ce que VST 2 a en propre : `UniqueId`, `Category`, `VstVersion`, les programmes (`ProgramCount`,
+`CurrentProgram`, `GetProgramName`), `UsesChunks`, `CanDo`. Le traitement se fait en flottants 32 bits ; les plug-ins
+VST 1 qui ne font qu'ajouter à leurs sorties sont gérés. `Vst2Module.FromEntryPoint` héberge un plug-in VST 2 lié à
+l'application. Les éditeurs VST 2 choisissent leur taille : ils la demandent, l'hôte ne les redimensionne pas. VST est
+une marque de Steinberg Media Technologies GmbH ; aucune partie du SDK VST n'est utilisée (l'interface est écrite
+d'après sa description publique).
 
 Un plug-in NPlug peut être hébergé dans son propre processus, sans fichier `.vst3`, pour des tests ou une application
 autonome :

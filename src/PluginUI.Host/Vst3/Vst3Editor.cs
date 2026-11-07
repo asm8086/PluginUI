@@ -7,7 +7,7 @@ namespace PluginUI.Host.Vst3;
 /// <summary>
 /// Editor window of a VST 3 plug-in (<c>IPlugView</c>), attached to a window of the host. Sizes are in physical pixels.
 /// </summary>
-public sealed unsafe class Vst3Editor : IDisposable
+public sealed unsafe class Vst3Editor : PluginEditor
 {
     private readonly Vst3Plugin _plugin;
     private void* _view;
@@ -20,18 +20,15 @@ public sealed unsafe class Vst3Editor : IDisposable
         ((delegate* unmanaged[MemberFunction]<void*, void*, int>)Com.Slot(_view, 12))(_view, frame.Pointer);
     }
 
-    /// <summary>The plug-in asked for a new size (width, height); return <c>true</c> after resizing the parent window.</summary>
-    public Func<int, int, bool>? ResizeRequested { get; set; }
-
-    /// <summary><c>true</c> if the platform's window type is supported ("HWND" on Windows).</summary>
-    public bool IsPlatformSupported(string platformType)
+    /// <inheritdoc />
+    public override bool IsPlatformSupported(string platformType)
     {
         byte[] type = System.Text.Encoding.ASCII.GetBytes(platformType + "\0");
         fixed (byte* t = type) return ((delegate* unmanaged[MemberFunction]<void*, byte*, int>)Com.Slot(_view, 3))(_view, t) == Vst3Result.Ok;
     }
 
-    /// <summary>Size the editor wants.</summary>
-    public (int Width, int Height) Size
+    /// <inheritdoc />
+    public override (int Width, int Height) Size
     {
         get
         {
@@ -40,13 +37,11 @@ public sealed unsafe class Vst3Editor : IDisposable
         }
     }
 
-    /// <summary><c>true</c> if the user can resize the editor.</summary>
-    public bool CanResize => ((delegate* unmanaged[MemberFunction]<void*, int>)Com.Slot(_view, 13))(_view) == Vst3Result.Ok;
+    /// <inheritdoc />
+    public override bool CanResize => ((delegate* unmanaged[MemberFunction]<void*, int>)Com.Slot(_view, 13))(_view) == Vst3Result.Ok;
 
-    /// <summary>Opens the editor inside <paramref name="parent"/> (an HWND on Windows).</summary>
-    /// <param name="parent">Native parent window.</param>
-    /// <param name="platformType">"HWND" on Windows, "X11EmbedWindowID" on Linux.</param>
-    public bool Attach(nint parent, string platformType = "HWND")
+    /// <inheritdoc />
+    public override bool Attach(nint parent, string platformType = "HWND")
     {
         if (_attached) return true;
         byte[] type = System.Text.Encoding.ASCII.GetBytes(platformType + "\0");
@@ -54,23 +49,23 @@ public sealed unsafe class Vst3Editor : IDisposable
         return _attached;
     }
 
-    /// <summary>Tells the editor its new size (after the parent window was resized).</summary>
-    public void SetSize(int width, int height)
+    /// <inheritdoc />
+    public override void SetSize(int width, int height)
     {
         var r = new ViewRect { Left = 0, Top = 0, Right = width, Bottom = height };
         ((delegate* unmanaged[MemberFunction]<void*, ViewRect*, int>)Com.Slot(_view, 10))(_view, &r);
     }
 
-    /// <summary>Corrects a size the user dragged to one the editor accepts.</summary>
-    public (int Width, int Height) ConstrainSize(int width, int height)
+    /// <inheritdoc />
+    public override (int Width, int Height) ConstrainSize(int width, int height)
     {
         var r = new ViewRect { Left = 0, Top = 0, Right = width, Bottom = height };
         ((delegate* unmanaged[MemberFunction]<void*, ViewRect*, int>)Com.Slot(_view, 14))(_view, &r);
         return (r.Width, r.Height);
     }
 
-    /// <summary>Tells the editor the display scale (1.0 = 96 DPI), when it supports it.</summary>
-    public void SetContentScale(float scale)
+    /// <inheritdoc />
+    public override void SetContentScale(float scale)
     {
         void* support = Com.As(_view, Tuid.IPlugViewContentScaleSupport);
         if (support is null) return;
@@ -86,8 +81,8 @@ public sealed unsafe class Vst3Editor : IDisposable
         return accepted;
     }
 
-    /// <summary>Closes the editor.</summary>
-    public void Dispose()
+    /// <inheritdoc />
+    public override void Dispose()
     {
         if (_view is null) return;
         if (_attached) ((delegate* unmanaged[MemberFunction]<void*, int>)Com.Slot(_view, 5))(_view);

@@ -5,6 +5,7 @@
     <Project Path="src/PluginUI.NPlug/PluginUI.NPlug.csproj" />
     <Project Path="src/PluginUI.Design/PluginUI.Design.csproj" />
     <Project Path="src/PluginUI.Desktop/PluginUI.Desktop.csproj" />
+    <Project Path="src/PluginUI.Host.Vst2/PluginUI.Host.Vst2.csproj" />
     <Project Path="src/PluginUI.Host.Windows/PluginUI.Host.Windows.csproj" />
     <Project Path="src/PluginUI.Host/PluginUI.Host.csproj" />
   </Folder>
@@ -37,6 +38,7 @@
     <Project Path="tests/PluginUI.Design.Tests/PluginUI.Design.Tests.csproj" />
     <Project Path="tests/PluginUI.Host.Tests/PluginUI.Host.Tests.csproj" />
     <Project Path="tests/PluginUI.Host.TestGain/PluginUI.Host.TestGain.csproj" />
+    <Project Path="tests/PluginUI.Host.TestVst2/PluginUI.Host.TestVst2.csproj" />
   </Folder>
   <Folder Name="/docs/">
     <File Path="docs/CONTROLS.md" />

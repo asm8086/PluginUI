@@ -12,7 +12,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
     <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
-    <Description>Audio plug-in host for .NET: loads VST3 plug-ins (files, or an NPlug factory in-process), scans and catalogs the installed plug-ins, renders audio offline (WAV), measures responses. No UI dependency; NativeAOT compatible.</Description>
+    <Description>Audio plug-in host for .NET: loads VST3 plug-ins (files, or an NPlug factory in-process; VST 2 with PluginUI.Host.Vst2), scans and catalogs the installed plug-ins, renders audio offline (WAV), measures responses. No UI dependency; NativeAOT compatible.</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>

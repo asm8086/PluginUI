@@ -565,6 +565,9 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
 
     /// <inheritdoc />
     /// <remarks>A .vstpreset image (component and controller chunks).</remarks>
+    public override string PresetExtension => ".vstpreset";
+
+    /// <inheritdoc />
     public override byte[] GetState() => VstPreset.Write(Info.ClassId, GetComponentState(), GetControllerState());
 
     /// <inheritdoc />
@@ -583,8 +586,8 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
 
     // ---------------------------------------------------------------- editor
 
-    /// <summary>Creates the plug-in's editor (null when it has none). Dispose it before the plug-in.</summary>
-    public Vst3Editor? CreateEditor()
+    /// <inheritdoc />
+    public override Vst3Editor? CreateEditor()
     {
         if (_controller is null) return null;
         _editor?.Dispose();

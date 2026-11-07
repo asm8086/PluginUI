@@ -25,7 +25,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The fake VST 2 plug-in, hosted through its entry point (TestVst2 builds the same code as a native module). -->
+    <Compile Include="..\PluginUI.Host.TestVst2\FakeVst2.cs" Link="FakeVst2.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\PluginUI.Host\PluginUI.Host.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.Host.Vst2\PluginUI.Host.Vst2.csproj" />
     <ProjectReference Include="..\..\src\PluginUI.Host.Windows\PluginUI.Host.Windows.csproj" />
     <ProjectReference Include="..\..\samples\PluginUI.DemoSynth\PluginUI.DemoSynth.csproj" />
     <ProjectReference Include="..\PluginUI.Host.TestGain\PluginUI.Host.TestGain.csproj" />

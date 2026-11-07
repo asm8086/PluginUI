@@ -27,10 +27,10 @@ public static class Program
                  orders: name vendor category format inputs outputs latency installed recent used favorites folder status
           pluginhost favorite <plugin> [--off]
 
-        One plug-in (<plugin>: a name from the list, "Vendor/Name", or a path to a .vst3 file or bundle):
+        One plug-in (<plugin>: a name from the list, "Vendor/Name", or a path to a .vst3 file or bundle or a VST 2 .dll):
           pluginhost info <plugin> [--json]           buses, latency, parameters with their current values
-          pluginhost preset show <file.vstpreset>
-          pluginhost preset save <plugin> -o <file.vstpreset> [--set ...] [--preset ...]
+          pluginhost preset show <file.vstpreset|.fxp|.fxb>
+          pluginhost preset save <plugin> -o <file.vstpreset|.fxp|.fxb> [--set ...] [--preset ...]
 
         Audio:
           pluginhost process -i <in.wav> -o <out.wav> -p <plugin> [plugin options] [-p <plugin> ...] [--midi <file.mid>] [audio options]
@@ -42,7 +42,7 @@ public static class Program
         Plug-in options (apply to the -p before them):
           --set "Name=value"           value as the plug-in displays it ("Gain=-6 dB", "Mode=Warm")
           --set-normalized "Name=0.25" normalized value (0..1)
-          --preset <file.vstpreset>    load a preset first
+          --preset <file>              load a preset first (.vstpreset; .fxp / .fxb for VST 2)
         Audio options:
           --block 512   --tail <seconds>   --no-latency-compensation   --bits 16|24|32|f32|f64 (default f32)
           --midi-out <file.mid>   MIDI the last plug-in produces (the MIDI of the others feeds the next plug-in)
@@ -60,6 +60,7 @@ public static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
         // Child process of an out-of-process scan (arguments after the command name; --config does not matter there).
+        PluginUI.Host.Vst2.Vst2Hosting.Register(); // VST 2 plug-ins, in the host and in its scan processes
         int scanCommand = Array.IndexOf(args, ModuleScanProcess.CommandName);
         if (scanCommand >= 0) return ModuleScanProcess.Run(args[(scanCommand + 1)..]);
         try
@@ -89,7 +90,7 @@ public static class Program
             return 1;
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or FormatException
-            or Vst3Exception or NotSupportedException or UnauthorizedAccessException or TimeoutException)
+            or PluginException or NotSupportedException or UnauthorizedAccessException or TimeoutException)
         {
             Console.Error.WriteLine("Error: " + ex.Message);
             return 2;
@@ -260,11 +261,14 @@ public static class Program
         ApplyPluginOptions(a, plugin);
         a.EnsureEmpty();
         plugin.Prepare(48000, 512);
+        int latency = plugin.LatencySamples, tail = plugin.TailSamples;
+        // Inactive again: VST 2 plug-ins display values other than the current one only then.
+        plugin.Stop();
         if (json)
         {
             var sb = new StringBuilder();
             sb.Append(CultureInfo.InvariantCulture, $"{{\"name\":{Json(plugin.Name)},\"vendor\":{Json(plugin.Vendor)},\"format\":\"{plugin.Format}\",\"instrument\":{(plugin.IsInstrument ? "true" : "false")},");
-            sb.Append(CultureInfo.InvariantCulture, $"\"latencySamples\":{plugin.LatencySamples},\"tailSamples\":{plugin.TailSamples},\"midiInputs\":{plugin.EventInputCount},");
+            sb.Append(CultureInfo.InvariantCulture, $"\"latencySamples\":{latency},\"tailSamples\":{tail},\"midiInputs\":{plugin.EventInputCount},");
             sb.Append("\"inputs\":[").Append(string.Join(",", plugin.InputBuses.Select(BusJson))).Append("],\"outputs\":[").Append(string.Join(",", plugin.OutputBuses.Select(BusJson))).Append("],");
             sb.Append("\"parameters\":[");
             sb.Append(string.Join(",", plugin.Parameters.Select(p =>
@@ -282,7 +286,7 @@ public static class Program
             foreach (var b in plugin.InputBuses) Console.WriteLine($"  input   {b.Name}: {b.ChannelCount} ch{(b.IsAuxiliary ? " (aux)" : "")}");
             foreach (var b in plugin.OutputBuses) Console.WriteLine($"  output  {b.Name}: {b.ChannelCount} ch{(b.IsAuxiliary ? " (aux)" : "")}");
             if (plugin.EventInputCount > 0) Console.WriteLine($"  MIDI inputs: {plugin.EventInputCount}");
-            Console.WriteLine($"  latency {plugin.LatencySamples} samples at 48 kHz, tail {(plugin.TailSamples == int.MaxValue ? "infinite" : plugin.TailSamples + " samples")}");
+            Console.WriteLine($"  latency {latency} samples at 48 kHz, tail {(tail == int.MaxValue ? "infinite" : tail + " samples")}");
             Console.WriteLine();
             var rows = plugin.Parameters.Where(p => (p.Flags & ParameterFlags.IsHidden) == 0).Select(p =>
             {
@@ -303,14 +307,27 @@ public static class Program
 
     private static string Json(string s) => System.Text.Json.JsonSerializer.Serialize(s, CliJsonContext.Default.String);
 
+    private static int ShowFxPreset(PluginUI.Host.Vst2.FxPreset preset)
+    {
+        Console.WriteLine($"VST 2 {(preset.IsBank ? "bank" : "program")} ({preset.Kind}) of plug-in {PluginUI.Host.Vst2.FxPreset.FourCc(preset.PluginId)}, version {preset.PluginVersion}");
+        var owner = PluginCatalog.Load(HostPaths.CatalogFile).Plugins
+            .FirstOrDefault(p => p.Format == PluginFormat.Vst2 && p.ClassId == preset.PluginId.ToString(CultureInfo.InvariantCulture));
+        if (owner is not null) Console.WriteLine($"Plug-in: {owner}");
+        if (preset.Chunk.Length > 0) Console.WriteLine($"Chunk: {preset.Chunk.Length} bytes{(preset.IsBank ? $", {preset.ProgramCount} programs, current {preset.CurrentProgram}" : $", program '{preset.ProgramName}'")}");
+        foreach (var program in preset.Programs) Console.WriteLine($"Program '{program.Name}': {program.Parameters.Length} parameters");
+        return 0;
+    }
+
     private static int Preset(Arguments a)
     {
         string action = a.Next() ?? throw new UsageException("preset show|save");
         if (action == "show")
         {
-            string file = a.Next() ?? throw new UsageException("preset show <file.vstpreset>");
+            string file = a.Next() ?? throw new UsageException("preset show <file.vstpreset|.fxp|.fxb>");
             a.EnsureEmpty();
-            var content = VstPreset.Read(File.ReadAllBytes(file));
+            byte[] bytes = File.ReadAllBytes(file);
+            if (bytes.Length >= 4 && bytes.AsSpan(0, 4).SequenceEqual("CcnK"u8)) return ShowFxPreset(PluginUI.Host.Vst2.FxPreset.Read(bytes));
+            var content = VstPreset.Read(bytes);
             Console.WriteLine($"Class: {Vst3Identifiers.ToFuidString(content.ClassId)}");
             Console.WriteLine($"Processor state: {content.ComponentState.Length} bytes; controller state: {content.ControllerState.Length} bytes");
             var catalog = PluginCatalog.Load(HostPaths.CatalogFile);

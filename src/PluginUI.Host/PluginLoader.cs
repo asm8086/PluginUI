@@ -31,8 +31,11 @@ public sealed class PluginLoader : IDisposable
     /// <summary>Name reported to the plug-ins.</summary>
     public string HostName { get; }
 
-    /// <summary>Opens a VST 2 module (set by the VST 2 package when it is referenced).</summary>
-    public static Func<string, string, PluginInstance>? Vst2Loader { get; set; }
+    /// <summary>
+    /// Opens a VST 2 plug-in (set by the VST 2 package when it is referenced): module path, plug-in identifier or name
+    /// (a plug-in of a shell module; null or empty = the module's plug-in), host name.
+    /// </summary>
+    public static Func<string, string?, string, PluginInstance>? Vst2Loader { get; set; }
 
     /// <summary>
     /// Loads a plug-in from a reference: a module path (".vst3" file or bundle, optionally followed by "|Plugin name"), or a
@@ -54,7 +57,7 @@ public sealed class PluginLoader : IDisposable
             if (!path.EndsWith(".vst3", StringComparison.OrdinalIgnoreCase))
             {
                 if (Vst2Loader is null) throw new ArgumentException($"'{path}' is not a VST 3 module (VST 2 hosting is not available).");
-                return Track(Vst2Loader(Path.GetFullPath(path), HostName));
+                return Track(Vst2Loader(Path.GetFullPath(path), name.Length > 0 ? name : null, HostName));
             }
             var module = Module(Path.GetFullPath(path));
             return Track(module.CreatePlugin(name.Length > 0 ? name : null));
@@ -74,7 +77,7 @@ public sealed class PluginLoader : IDisposable
         if (description.Format == PluginFormat.Vst2)
         {
             if (Vst2Loader is null) throw new NotSupportedException("VST 2 hosting is not available.");
-            instance = Vst2Loader(description.Path, HostName);
+            instance = Vst2Loader(description.Path, description.ClassId, HostName);
         }
         else
         {

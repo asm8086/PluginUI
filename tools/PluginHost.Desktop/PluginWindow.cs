@@ -30,7 +30,7 @@ internal sealed class PluginWindow : ITickable
     private readonly TestSignalGenerator _generator = new();
     private readonly DeviceInputSource _deviceInput = new();
     private FileSource? _file;
-    private readonly Vst3Editor? _editor;
+    private readonly PluginEditor? _editor;
     private readonly NativeWindowHost? _native;
     private readonly DataTable _parameters;
     private readonly ToggleButton? _generic;
@@ -44,7 +44,7 @@ internal sealed class PluginWindow : ITickable
         _plugin = plugin;
         _engine = engine;
 
-        _editor = (plugin as Vst3Plugin)?.CreateEditor();
+        _editor = plugin.CreateEditor();
         if (_editor is not null && !_editor.IsPlatformSupported("HWND"))
         {
             _editor.Dispose();
@@ -81,8 +81,8 @@ internal sealed class PluginWindow : ITickable
         var bar = new DockPanel { Dock = Side.Top, Height = BarHeight, Padding = new Thickness(8f, 7f, 8f, 7f) };
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6f, Dock = Side.Left };
         buttons.Add(
-            new Button(L.T("Load preset…", "Charger un preset…"), LoadPreset) { Height = 26f, ToolTip = L.T("Loads a .vstpreset file", "Charge un fichier .vstpreset") },
-            new Button(L.T("Save preset…", "Enregistrer le preset…"), SavePreset) { Height = 26f, ToolTip = L.T("Saves the state as a .vstpreset file", "Enregistre l'état dans un fichier .vstpreset") });
+            new Button(L.T("Load preset…", "Charger un preset…"), LoadPreset) { Height = 26f, ToolTip = L.T($"Loads a {PresetKinds} file", $"Charge un fichier {PresetKinds}") },
+            new Button(L.T("Save preset…", "Enregistrer le preset…"), SavePreset) { Height = 26f, ToolTip = L.T($"Saves the state as a {plugin.PresetExtension} file", $"Enregistre l'état dans un fichier {plugin.PresetExtension}") });
         if (_editor is not null)
         {
             _generic = new ToggleButton(L.T("Parameters", "Paramètres"))
@@ -387,7 +387,7 @@ internal sealed class PluginWindow : ITickable
     /// fixed aspect ratio may answer <c>checkSizeConstraint</c> with a size larger than the area (they follow the width,
     /// as when the user drags a corner); a maximized window then cuts them. The proposal is scaled down until it fits.
     /// </summary>
-    internal static (int Width, int Height) FitInside(Vst3Editor editor, int width, int height)
+    internal static (int Width, int Height) FitInside(PluginEditor editor, int width, int height)
     {
         int w = width, h = height;
         for (int attempt = 0; attempt < 4; attempt++)
@@ -426,7 +426,11 @@ internal sealed class PluginWindow : ITickable
 
     // ---------------------------------------------------------------- presets
 
-    private static readonly FileFilter[] PresetFilter = [new(L.T("VST3 preset", "Preset VST3"), "*.vstpreset")];
+    private string PresetKinds => _plugin.Format == PluginFormat.Vst2 ? ".fxp / .fxb" : ".vstpreset";
+
+    private FileFilter[] PresetFilter => _plugin.Format == PluginFormat.Vst2
+        ? [new(L.T("VST 2 preset or bank", "Preset ou banque VST 2"), "*.fxp;*.fxb")]
+        : [new(L.T("VST3 preset", "Preset VST3"), "*.vstpreset")];
 
     private void LoadPreset()
     {
@@ -436,7 +440,7 @@ internal sealed class PluginWindow : ITickable
             _plugin.SetState(File.ReadAllBytes(path));
             _parameters.InvalidateVisual();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or Vst3Exception or InvalidDataException or ArgumentException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or PluginException or InvalidDataException or ArgumentException)
         {
             MessageDialog.Show(Window, Window.Title, L.T("The preset could not be loaded:\n", "Le preset n'a pas pu être chargé :\n") + ex.Message);
         }
@@ -444,7 +448,9 @@ internal sealed class PluginWindow : ITickable
 
     private void SavePreset()
     {
-        if (FileDialogs.SaveFile(Host, L.T("Save the preset", "Enregistrer le preset"), PresetFilter, Description.Name + ".vstpreset", "vstpreset") is not { } path) return;
+        string extension = _plugin.PresetExtension;
+        var filter = new FileFilter[] { new(L.T("Preset", "Preset") + $" ({extension})", "*" + extension) };
+        if (FileDialogs.SaveFile(Host, L.T("Save the preset", "Enregistrer le preset"), filter, Description.Name + extension, extension.TrimStart('.')) is not { } path) return;
         try
         {
             File.WriteAllBytes(path, _plugin.GetState());
