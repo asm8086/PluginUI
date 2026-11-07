@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 # PluginUI.Host
 
 Audio plug-in host for .NET 10: loads VST3 plug-ins and runs them from your own code, without any user interface
@@ -16,6 +16,9 @@ dependency. NativeAOT compatible, no reflection, allocation-free on the audio th
 - `OfflineRenderer`: renders a chain of plug-ins on a WAV file or a MIDI file, with latency compensation and tails.
 - `ResponseMeasurer`: magnitude and phase responses (impulse with FFT, or stepped sine), impulse response.
 - `WavFile` (16 / 24 / 32-bit integer, 32 / 64-bit float, more than two channels), `MidiFile` (types 0 and 1, tempo map).
+
+Build the application that loads plug-ins with `<CETCompat>false</CETCompat>`: some plug-ins are not compatible with
+the CET shadow stack .NET enables by default, and Windows ends the process (0xC0000409 in ntdll).
 
 The `pluginhost` command line tool of the repository is built on this package. Guide:
 https://github.com/asm8086/PluginUI/blob/main/docs/PLUGIN_HOST.md

@@ -13,7 +13,8 @@ namespace PluginUI.Host.Catalog;
 /// </summary>
 /// <remarks>
 /// The result goes to a file rather than to the standard output, which plug-ins sometimes write to. Progress lines on the
-/// standard error tell the parent that the scan is alive (a shell module with hundreds of plug-ins takes minutes). On
+/// standard error tell the parent that the scan is alive (a shell module with hundreds of plug-ins takes minutes), and
+/// step lines where a plug-in that crashes stopped (<see cref="Vst3.Vst3Module.Trace"/>). The module is not unloaded. On
 /// Windows the module is loaded on a single-threaded apartment thread, as in a DAW: plug-ins that initialize COM or OLE
 /// for their user interface fail otherwise.
 /// </remarks>
@@ -24,6 +25,7 @@ public static class ModuleScanProcess
 
     internal const string ProgressPrefix = "\u0001pluginhost-progress ";
     internal const string ErrorPrefix = "\u0001pluginhost-error ";
+    internal const string StepPrefix = "\u0001pluginhost-step ";
 
     /// <summary>Runs the command; <paramref name="arguments"/> are those after <see cref="CommandName"/>.</summary>
     /// <returns>Exit code: 0 success, 1 wrong arguments, 2 the module could not be described.</returns>
@@ -54,13 +56,29 @@ public static class ModuleScanProcess
         }
 
         int exitCode = 0;
+        Vst3.Vst3Module.Trace = step => Console.Error.WriteLine(StepPrefix + step);
         RunOnUserInterfaceThread(() =>
         {
             try
             {
-                var found = new InProcessModuleScanner().Scan(module, format == "vst2" ? PluginFormat.Vst2 : PluginFormat.Vst3,
-                    (done, count) => Console.Error.WriteLine(ProgressPrefix + done.ToString(CultureInfo.InvariantCulture) + "/" + count.ToString(CultureInfo.InvariantCulture)));
-                File.WriteAllText(output, PluginCatalog.ToJson(found));
+                void Progress(int done, int count)
+                    => Console.Error.WriteLine(ProgressPrefix + done.ToString(CultureInfo.InvariantCulture) + "/" + count.ToString(CultureInfo.InvariantCulture));
+                IReadOnlyList<PluginDescription> found;
+                if (format == "vst2")
+                {
+                    found = new InProcessModuleScanner().Scan(module, PluginFormat.Vst2, Progress);
+                }
+                else
+                {
+                    // The module is not unloaded: the process ends right after, and some plug-ins crash in ExitDll or when
+                    // their library is freed. The result is written first, completely (temporary file, then renamed).
+                    var loaded = Vst3.Vst3Module.Load(module);
+                    found = InProcessModuleScanner.DescribeVst3(loaded, Progress);
+                }
+                string temporary = output + ".tmp";
+                File.WriteAllText(temporary, PluginCatalog.ToJson(found));
+                File.Move(temporary, output, overwrite: true);
+                Console.Error.WriteLine(StepPrefix + "done");
             }
             catch (Exception ex)
             {

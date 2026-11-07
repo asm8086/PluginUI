@@ -41,6 +41,21 @@ public class ScannerProcessTests
     }
 
     [Test]
+    public void CrashReportsTheLastStep()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => Script("printf '\\001pluginhost-step loading the library\\n\\001pluginhost-step creating the component of '\\''Organ'\\''\\n' >&2; exit 5")
+            .Scan("x.vst3", PluginFormat.Vst3, TimeSpan.FromSeconds(10)));
+        Assert.That(ex!.Message, Does.EndWith("Last step: creating the component of 'Organ'."));
+    }
+
+    [Test]
+    public void ACompleteResultCountsEvenIfTheChildCrashesAfterwards()
+    {
+        var found = Script($"printf '%s' '{Json}' > \"$5\"; exit 9").Scan("x.vst3", PluginFormat.Vst3, TimeSpan.FromSeconds(10));
+        Assert.That(found.Single().Name, Is.EqualTo("Noisy"));
+    }
+
+    [Test]
     public void ProgressKeepsALongScanAlive()
     {
         string script = "for i in 1 2 3 4 5 6 7 8; do printf '\\001pluginhost-progress %s/8\\n' $i >&2; sleep 0.25; done; printf '%s' '" + Json + "' > \"$5\"";

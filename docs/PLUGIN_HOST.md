@@ -65,7 +65,8 @@ pluginhost folders reset                    # back to the standard folders
 `scan` finds the plug-ins and stores them in `plugins.json`. Each module is opened **in a separate process**, on a
 single-threaded apartment thread as in a DAW: a plug-in that crashes, or makes no progress for 30 s (a shell module with
 hundreds of plug-ins may take minutes, as long as it advances), is listed as failed with the reason, and the scan goes
-on. What plug-ins print while loading does not disturb the scan. Later scans only open the
+on. What plug-ins print while loading does not disturb the scan, and a failure names the last step the plug-in reached
+(loading the library, creating the component, initializing…). Later scans only open the
 modules that are new or changed (size or date); `--all` opens everything again. Favorites and usage counts survive
 rescans.
 
@@ -237,3 +238,8 @@ static `[UnmanagedCallersOnly]` functions. No reflection and no generated COM: N
 allocated on the audio thread. The structure layouts and interface identifiers follow the VST 3 SDK (MIT license
 since version 3.8). Tests (`tests/PluginUI.Host.Tests`) load the DemoSynth sample and a test plug-in with latency in
 the same process.
+
+An application that loads plug-ins should be built without the CET shadow stack, which .NET turns on by default since
+version 9: add `<CETCompat>false</CETCompat>` to its project. Some plug-ins (copy protection, `longjmp`, coroutines)
+manipulate the stack in ways CET forbids, and Windows then ends the process with code 0xC0000409 in `ntdll.dll`; DAWs
+do not enable CET either. `pluginhost` is built this way.

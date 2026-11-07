@@ -67,7 +67,8 @@ pluginhost folders reset                    # retour aux dossiers standard
 séparé**, sur un thread à appartement unique (STA) comme dans une STAN : un plug-in qui plante, ou qui ne progresse
 plus pendant 30 s (un module « shell » de centaines de plug-ins peut prendre plusieurs minutes, tant qu'il avance), est
 noté en échec avec la raison, et la recherche continue. Ce que les plug-ins affichent pendant leur chargement ne
-perturbe pas la recherche. Les
+perturbe pas la recherche, et un échec indique la dernière étape atteinte par le plug-in (chargement de la
+bibliothèque, création du composant, initialisation…). Les
 recherches suivantes n'ouvrent que les modules nouveaux ou modifiés (taille ou date) ; `--all` rouvre tout. Les
 favoris et les compteurs d'utilisation survivent aux nouvelles recherches.
 
@@ -244,3 +245,8 @@ pointent vers des fonctions statiques `[UnmanagedCallersOnly]`. Ni réflexion ni
 rien n'est alloué sur le thread audio. Les dispositions des structures et les identifiants d'interface suivent le SDK
 VST 3 (licence MIT depuis la version 3.8). Les tests (`tests/PluginUI.Host.Tests`) chargent l'exemple DemoSynth et un
 plug-in de test avec latence dans le même processus.
+
+Une application qui charge des plug-ins doit être compilée sans la « shadow stack » CET, que .NET active par défaut
+depuis la version 9 : ajoutez `<CETCompat>false</CETCompat>` à son projet. Certains plug-ins (protection anticopie,
+`longjmp`, coroutines) manipulent la pile d'une façon que CET interdit, et Windows arrête alors le processus avec le
+code 0xC0000409 dans `ntdll.dll` ; les STAN n'activent pas CET non plus. `pluginhost` est compilé ainsi.

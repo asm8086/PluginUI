@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -114,6 +114,14 @@ public sealed unsafe class Vst3Module : IDisposable
         return new Vst3Module("in-process", 0, (void*)factory, hostName);
     }
 
+    /// <summary>
+    /// Receives the steps of loading and creating plug-ins ("loading the library", "creating the component"…), to tell
+    /// where a plug-in that crashes stopped (the out-of-process scanner reports the last step).
+    /// </summary>
+    public static Action<string>? Trace { get; set; }
+
+    internal static void Step(string step) => Trace?.Invoke(step);
+
     /// <summary>Loads a <c>.vst3</c> file or bundle.</summary>
     /// <param name="path">Path of the .vst3 file (single DLL) or bundle folder.</param>
     /// <param name="hostName">Name reported to the plug-in.</param>
@@ -124,6 +132,7 @@ public sealed unsafe class Vst3Module : IDisposable
         nint library;
         try
         {
+            Step("loading the library");
             library = NativeLibrary.Load(binary);
         }
         catch (Exception ex) when (ex is DllNotFoundException or BadImageFormatException)
@@ -132,6 +141,7 @@ public sealed unsafe class Vst3Module : IDisposable
         }
         try
         {
+            Step("module entry (InitDll / ModuleEntry)");
             if (OperatingSystem.IsWindows())
             {
                 if (NativeLibrary.TryGetExport(library, "InitDll", out nint init) && ((delegate* unmanaged<byte>)init)() == 0)
@@ -142,6 +152,7 @@ public sealed unsafe class Vst3Module : IDisposable
                 throw new Vst3Exception("ModuleEntry failed.");
             }
             if (!NativeLibrary.TryGetExport(library, "GetPluginFactory", out nint getFactory)) throw new Vst3Exception("The module exports no GetPluginFactory.");
+            Step("GetPluginFactory");
             void* factory = ((delegate* unmanaged<void*>)getFactory)();
             if (factory is null) throw new Vst3Exception("GetPluginFactory returned no factory.");
             return new Vst3Module(System.IO.Path.GetFullPath(path), library, factory, hostName);
@@ -191,6 +202,7 @@ public sealed unsafe class Vst3Module : IDisposable
 
     private void ReadFactory()
     {
+        Step("reading the factory");
         PFactoryInfo info;
         if (((delegate* unmanaged[MemberFunction]<void*, PFactoryInfo*, int>)Com.Slot(_factory, 3))(_factory, &info) == Vst3Result.Ok)
         {
@@ -301,6 +313,7 @@ public sealed unsafe class Vst3Module : IDisposable
         _host.Release();
         if (_library != 0 && !_exitCalled)
         {
+            Step("unloading the module (ExitDll / ModuleExit)");
             _exitCalled = true;
             CallExit(_library);
             NativeLibrary.Free(_library);

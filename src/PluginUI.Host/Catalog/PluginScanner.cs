@@ -303,7 +303,8 @@ public sealed class InProcessModuleScanner : IModuleScanner
 /// <remarks>
 /// The timeout counts the time without progress: a module with many plug-ins (a shell) may take minutes, as long as the
 /// child reports each plug-in. What plug-ins write on the standard output is ignored; the last lines of the standard
-/// error are kept to explain a failure.
+/// error and the last step the child reached are kept to explain a failure. A complete result is used even when the
+/// child crashed afterwards.
 /// </remarks>
 public sealed class OutOfProcessModuleScanner(string executable, params string[] argumentsPrefix) : IModuleScanner
 {
@@ -328,7 +329,7 @@ public sealed class OutOfProcessModuleScanner(string executable, params string[]
 
         var gate = new Lock();
         var noise = new Queue<string>();
-        string? error = null;
+        string? error = null, step = null;
         long lastActivity = Stopwatch.GetTimestamp();
         using var process = new Process { StartInfo = start };
         process.OutputDataReceived += (_, e) => Interlocked.Exchange(ref lastActivity, Stopwatch.GetTimestamp()); // plug-in output: ignored
@@ -339,6 +340,11 @@ public sealed class OutOfProcessModuleScanner(string executable, params string[]
             if (line.StartsWith(ModuleScanProcess.ProgressPrefix, StringComparison.Ordinal)) return;
             lock (gate)
             {
+                if (line.StartsWith(ModuleScanProcess.StepPrefix, StringComparison.Ordinal))
+                {
+                    step = line[ModuleScanProcess.StepPrefix.Length..].Trim();
+                    return;
+                }
                 if (line.StartsWith(ModuleScanProcess.ErrorPrefix, StringComparison.Ordinal))
                 {
                     error = line[ModuleScanProcess.ErrorPrefix.Length..].Trim();
@@ -368,13 +374,15 @@ public sealed class OutOfProcessModuleScanner(string executable, params string[]
                 throw new TimeoutException($"No answer for {timeout.TotalSeconds:0} s.");
             }
             process.WaitForExit(); // lets the output readers finish
-            if (process.ExitCode != 0 || !File.Exists(output))
+            // A complete result counts even if the process crashed afterwards (some plug-ins crash while closing).
+            if (File.Exists(output)) return PluginCatalog.FromJson(File.ReadAllText(output));
+            string message;
+            lock (gate)
             {
-                string? message;
-                lock (gate) message = error ?? Describe(process.ExitCode, noise);
-                throw new InvalidOperationException(message);
+                message = error ?? Describe(process.ExitCode, noise);
+                if (error is null && step is not null && step != "done") message += $" Last step: {step}.";
             }
-            return PluginCatalog.FromJson(File.ReadAllText(output));
+            throw new InvalidOperationException(message);
         }
         finally
         {

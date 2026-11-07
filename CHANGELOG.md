@@ -27,6 +27,9 @@ Before 1.0, minor versions may contain breaking changes.
   standard output), the timeout counts the time without progress (Waves shells), failures give the exit code meaning
   and the last lines the plug-in printed, `.vst3` modules are also looked for in the VST 2 folders, and VST 2 modules
   are not listed until VST 2 hosting is installed. `ModuleScanProcess` is the child side for any host executable.
+  `pluginhost` is built without the CET shadow stack (`<CETCompat>false</CETCompat>`), which some plug-ins are not
+  compatible with (Pianoteq 6, Organteq 1); a failure names the last step the plug-in reached (`Vst3Module.Trace`), and
+  a complete result is kept when a plug-in crashes while closing.
 - **Accessibility (screen readers)**: PluginUI interfaces are exposed to Narrator, NVDA and JAWS through Windows UI
   Automation, in desktop applications and plug-in editors (`WM_GETOBJECT`, source-generated COM, NativeAOT compatible;
   calls from UI Automation threads run on the UI thread). New namespace `PluginUI.Automation`: `AutomationPeer`,

@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -52,8 +52,10 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
         _handler = new ComponentHandler(this);
         try
         {
+            Vst3Module.Step($"creating the component of '{info.Name}'");
             _component = module.CreateInstance(info.ClassId, Tuid.IComponent);
             if (_component is null) throw new Vst3Exception($"Cannot create '{info.Name}'.");
+            Vst3Module.Step("initializing the component");
             if (PluginBaseInitialize(_component) != Vst3Result.Ok) throw new Vst3Exception($"'{info.Name}' failed to initialize.");
 
             _processor = Com.As(_component, Tuid.IAudioProcessor);
@@ -64,6 +66,7 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
                 && controllerId != Guid.Empty;
             if (hasControllerClass)
             {
+                Vst3Module.Step("creating and initializing the edit controller");
                 _controller = module.CreateInstance(controllerId, Tuid.IEditController);
                 if (_controller is not null && PluginBaseInitialize(_controller) != Vst3Result.Ok)
                 {
@@ -78,6 +81,7 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
             }
             if (_controller is not null)
             {
+                Vst3Module.Step("connecting the component and the controller");
                 ((delegate* unmanaged[MemberFunction]<void*, void*, int>)Com.Slot(_controller, 16))(_controller, _handler.Pointer);
                 if (!_singleComponent)
                 {
@@ -90,12 +94,15 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
                     }
                 }
                 // The controller starts from the processor's state.
+                Vst3Module.Step("passing the processor state to the controller");
                 byte[] componentState = ReadState(_component, 13);
                 WriteState(_controller, 5, componentState);
                 _midiMapping = Com.As(_controller, Tuid.IMidiMapping);
             }
 
+            Vst3Module.Step("reading the buses");
             ActivateBuses();
+            Vst3Module.Step("reading the parameters");
             ReadParameters();
         }
         catch
@@ -295,12 +302,14 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
     /// <inheritdoc />
     protected override void OnPrepare(double sampleRate, int maxBlockSize, bool realtime)
     {
+        Vst3Module.Step("setting up the processing");
         var setup = new ProcessSetup { ProcessMode = realtime ? 0 : 2, SymbolicSampleSize = Sample32, MaxSamplesPerBlock = maxBlockSize, SampleRate = sampleRate };
         if (((delegate* unmanaged[MemberFunction]<void*, int, int>)Com.Slot(_processor, 5))(_processor, Sample32) != Vst3Result.Ok)
             throw new Vst3Exception($"'{Name}' does not process 32-bit samples.");
         if (((delegate* unmanaged[MemberFunction]<void*, ProcessSetup*, int>)Com.Slot(_processor, 7))(_processor, &setup) != Vst3Result.Ok)
             throw new Vst3Exception($"'{Name}' refused the processing setup ({sampleRate} Hz, {maxBlockSize} samples).");
         BuildProcessData(realtime);
+        Vst3Module.Step("activating");
         ((delegate* unmanaged[MemberFunction]<void*, byte, int>)Com.Slot(_component, 11))(_component, 1);
         ((delegate* unmanaged[MemberFunction]<void*, byte, int>)Com.Slot(_processor, 8))(_processor, 1);
         _active = true;
@@ -538,6 +547,7 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
     {
         if (_controller is null) return null;
         _editor?.Dispose();
+        Vst3Module.Step("creating the editor view");
         void* view;
         fixed (byte* name = "editor"u8)
         {
@@ -596,6 +606,7 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
+        Vst3Module.Step($"releasing '{Info.Name}'");
         _editor?.Dispose();
         _editor = null;
         if (_componentConnection is not null && _controllerConnection is not null)

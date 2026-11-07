@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -12,6 +12,12 @@
     <IsAotCompatible>true</IsAotCompatible>
     <InvariantGlobalization>true</InvariantGlobalization>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!--
+      No CET shadow stack (on by default since .NET 9): plug-ins are third-party native code, and some (copy protection,
+      longjmp, coroutines) manipulate the stack in ways CET forbids; Windows then ends the process with 0xC0000409 in
+      ntdll. DAWs do not enable CET either.
+    -->
+    <CETCompat>false</CETCompat>
     <!-- dotnet publish -c Release -r win-x64 -p:PublishAot=true : one self-contained pluginhost.exe. -->
   </PropertyGroup>
 
