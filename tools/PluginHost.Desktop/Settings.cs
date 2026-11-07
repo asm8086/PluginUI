@@ -43,6 +43,9 @@ internal sealed class GuiSettings
 
     /// <summary>MIDI input port name (null = none).</summary>
     public string? MidiInput { get; set; }
+
+    /// <summary>MIDI output port name (null = none): where plug-ins can send their MIDI.</summary>
+    public string? MidiOutput { get; set; }
 }
 
 [JsonSerializable(typeof(GuiSettings))]

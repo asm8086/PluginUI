@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -27,6 +27,12 @@ public sealed class RenderOptions
 
     /// <summary>MIDI messages for the first plug-in, at absolute sample positions.</summary>
     public IReadOnlyList<(long Sample, MidiEvent Event)> Midi { get; set; } = [];
+
+    /// <summary>
+    /// Receives the MIDI messages the last plug-in produces, at absolute sample positions of the output (latency
+    /// compensated like the audio). The MIDI output of the other plug-ins feeds the next plug-in's MIDI input.
+    /// </summary>
+    public Action<long, MidiEvent>? MidiOutput { get; set; }
 
     /// <summary>Called after each block with the fraction done (0..1).</summary>
     public Action<double>? Progress { get; set; }
@@ -84,7 +90,19 @@ public static class OfflineRenderer
             for (int i = 0; i < chain.Count; i++)
             {
                 chain[i].Process(frames);
-                if (i + 1 < chain.Count) Connect(chain[i], chain[i + 1], frames);
+                if (i + 1 < chain.Count)
+                {
+                    Connect(chain[i], chain[i + 1], frames);
+                    foreach (var e in chain[i].OutputMidi) chain[i + 1].AddMidiEvent(e); // MIDI effects feed the next plug-in
+                }
+                else if (options.MidiOutput is { } midiOut)
+                {
+                    foreach (var e in chain[i].OutputMidi)
+                    {
+                        long at = position + e.SampleOffset - latency;
+                        if (at >= 0) midiOut(at, e with { SampleOffset = 0 });
+                    }
+                }
                 chain[i].Idle();
             }
             for (int c = 0; c < output.ChannelCount; c++)

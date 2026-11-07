@@ -700,6 +700,22 @@ internal sealed class MainWindow
             Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, Array.IndexOf(sizes, s.BufferFrames)),
         };
 
+        List<MidiOutputPort> outPorts = [];
+        try
+        {
+            outPorts = [.. MidiOutput.Ports];
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
+        {
+            StatusBar.ShowMessage(ex.Message, 8.0);
+        }
+        var midiOutNames = new List<string?> { null };
+        midiOutNames.AddRange(outPorts.Select(p => (string?)p.Name));
+        var midiOut = new DropDown([L.T("None", "Aucune"), .. outPorts.Select(p => p.Name)])
+        {
+            Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, midiOutNames.IndexOf(s.MidiOutput)),
+        };
+
         var midiNames = new List<string?> { null };
         midiNames.AddRange(ports.Select(p => (string?)p.Name));
         var midi = new DropDown([L.T("None", "Aucune"), .. ports.Select(p => p.Name)])
@@ -720,6 +736,7 @@ internal sealed class MainWindow
             Row(L.T("Input", "Entrée"), input),
             Row(L.T("Buffer (samples)", "Tampon (échantillons)"), buffer),
             Row(L.T("MIDI input", "Entrée MIDI"), midi),
+            Row(L.T("MIDI output", "Sortie MIDI"), midiOut),
             new Label(L.T("Now: ", "Actuellement : ") + _audio.Describe()) { Wrap = true, IsDim = true, Height = 34f },
             new Label(L.T("WASAPI shares the device with other applications at the sample rate chosen in the sound settings of Windows. ASIO comes next.",
                 "WASAPI partage le périphérique avec les autres applications, à la fréquence choisie dans les paramètres de son de Windows. ASIO viendra ensuite."))
@@ -733,6 +750,7 @@ internal sealed class MainWindow
             s.AudioInput = inputIds[Math.Max(0, input.SelectedIndex)];
             s.BufferFrames = sizes[Math.Max(0, buffer.SelectedIndex)];
             s.MidiInput = midiNames[Math.Max(0, midi.SelectedIndex)];
+            s.MidiOutput = midiOutNames[Math.Max(0, midiOut.SelectedIndex)];
             SaveSettings();
             Host.Post(() =>
             {

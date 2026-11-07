@@ -10,6 +10,16 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **MIDI produced by plug-ins**: `PluginInstance.EventOutputCount` and `OutputMidi` (VST3 event output buses: notes,
+  polyphonic pressure, controllers, channel pressure, pitch bend and program changes through `LegacyMIDICCOut`);
+  offline chains pass it to the next plug-in and report the last one's through `RenderOptions.MidiOutput`;
+  `IMidiSink` and `RackSlot.MidiOut` route it live; `MidiFile.Write` saves events. `pluginhost` gains `--midi-out`
+  and `process --midi`. Test plug-in "Test MIDI Echo".
+- **MIDI in PluginUI.Host.Windows**: `MidiOutput` (output ports, short and system exclusive messages, all notes off,
+  `IMidiSink` without waiting on the audio thread); `MidiInput` gains message times and system exclusive input.
+  Buffer handling adapted from NAudio (MIT).
+- **Plug-in Host**: MIDI output port in the Audio and MIDI dialog; a "MIDI out" choice in the windows of plug-ins that
+  produce MIDI (nowhere, the output port, the other open plug-ins).
 - **Live audio** in PluginUI.Host: `AudioDriver` (devices), `NullAudioDriver` (clock without a device),
   `IAudioRenderer`, `AudioBuffers`; `PluginRack` / `RackSlot` (plug-ins played live, each with its source, MIDI queue,
   bypass, mute, gain and meter; slots added and removed while the device runs, the audio thread never waits);

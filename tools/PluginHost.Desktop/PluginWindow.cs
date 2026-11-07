@@ -117,6 +117,7 @@ internal sealed class PluginWindow : ITickable
         {
             left.Add(new Label { TextSource = () => _engine.MidiInputName is { } port ? "MIDI : " + port : L.T("On-screen keyboard (or a MIDI input: File > Audio and MIDI)", "Clavier à l'écran (ou une entrée MIDI : Fichier > Audio et MIDI)"), IsDim = true, VerticalAlignment = VerticalAlignment.Center });
         }
+        if (plugin.EventOutputCount > 0) left.Add(BuildMidiOutControls());
         left.Add(bypass, mute);
         transport.Children.Add(left);
         bypass.IsEnabled = mainInputs > 0;
@@ -286,6 +287,39 @@ internal sealed class PluginWindow : ITickable
         return panel;
     }
 
+    private int _midiOutChoice;
+
+    private UIElement BuildMidiOutControls()
+    {
+        var target = new DropDown(L.T("MIDI out: nowhere", "Sortie MIDI : nulle part"), L.T("MIDI out: output port", "Sortie MIDI : port de sortie"),
+            L.T("MIDI out: other plug-ins", "Sortie MIDI : autres plug-ins"))
+        {
+            Label = string.Empty, Width = 210f, Height = 26f,
+            ToolTip = L.T("Where the MIDI this plug-in produces goes (the output port is chosen in File > Audio and MIDI)",
+                "Où va le MIDI produit par ce plug-in (le port de sortie se choisit dans Fichier > Audio et MIDI)"),
+        };
+        target.ValueChanged += (_, _) =>
+        {
+            _midiOutChoice = Math.Max(0, target.SelectedIndex);
+            ApplyMidiOut();
+            if (_midiOutChoice == 1 && _engine.MidiOutputPort is null)
+                Window.Host.Announce(L.T("No MIDI output port is open: choose one in File > Audio and MIDI.", "Aucun port de sortie MIDI n'est ouvert : choisissez-en un dans Fichier > Audio et MIDI."));
+        };
+        _engine.MidiOutputChanged += ApplyMidiOut;
+        return target;
+    }
+
+    private void ApplyMidiOut()
+    {
+        if (_closed) return;
+        _slot.MidiOut = _midiOutChoice switch
+        {
+            1 => _engine.MidiOutputPort,
+            2 => new AudioEngine.OtherPluginsSink(_engine.Rack, _slot),
+            _ => null,
+        };
+    }
+
     private void OnMidi(MidiEvent e)
     {
         // MIDI driver thread: show the notes on the keyboard.
@@ -438,6 +472,8 @@ internal sealed class PluginWindow : ITickable
         if (_closed) return;
         _closed = true;
         _engine.MidiReceived -= OnMidi;
+        _engine.MidiOutputChanged -= ApplyMidiOut;
+        _slot.MidiOut = null;
         _engine.Rack.Remove(_slot);
         _editor?.Dispose();
         _plugin.Dispose();

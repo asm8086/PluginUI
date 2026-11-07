@@ -82,7 +82,7 @@ PluginUI/
 ├── tests/PluginUI.Tests/           203 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau, accessibilité, tables, fenêtres natives)
 ├── tests/PluginUI.NPlug.Tests/     29 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
 ├── tests/PluginUI.Design.Tests/    26 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
-├── tests/PluginUI.Host.Tests/      37 tests NUnit (hébergement VST3 de DemoSynth et d'un plug-in de test, paramètres, correspondance MIDI, presets, rendu, mesure, WAV, MIDI, liste des plug-ins, recherche hors processus, rack en direct et sources de signal)
+├── tests/PluginUI.Host.Tests/      41 tests NUnit (hébergement VST3 de DemoSynth et de plug-ins de test, paramètres, correspondance MIDI, presets, rendu, mesure, WAV, fichiers MIDI, MIDI émis par les plug-ins, liste des plug-ins, recherche hors processus, rack en direct et sources de signal)
 └── tests/PluginUI.Host.TestGain/   Effet VST3 de test avec latence (publiable aussi en .vst3 NativeAOT pour les essais manuels)
 ```
 

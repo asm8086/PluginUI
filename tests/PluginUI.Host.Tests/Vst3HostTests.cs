@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -33,12 +33,12 @@ public class Vst3HostTests
         Assert.Multiple(() =>
         {
             Assert.That(module.Vendor, Is.EqualTo("PluginUI Tests"));
-            Assert.That(module.Plugins.Select(c => c.Name), Is.EqualTo(new[] { "Test Gain" }));
-            var info = module.Plugins.Single();
+            Assert.That(module.Plugins.Select(c => c.Name), Is.EqualTo(new[] { "Test Gain", "Test MIDI Echo" }));
+            var info = module.Plugins.First();
             Assert.That(info.SubCategories, Does.Contain("Fx"));
             Assert.That(info.Version, Does.StartWith("1.2.3"));
             Assert.That(Vst3Identifiers.FromFuidString(info.ClassIdString), Is.EqualTo(info.ClassId));
-            Assert.That(module.Classes.Count(c => !c.IsAudioEffect), Is.EqualTo(1), "the controller class");
+            Assert.That(module.Classes.Count(c => !c.IsAudioEffect), Is.EqualTo(2), "the controller classes");
         });
     }
 
@@ -103,7 +103,7 @@ public class Vst3HostTests
             preset = plugin.GetState();
         }
         var content = VstPreset.Read(preset);
-        Assert.That(content.ClassId, Is.EqualTo(module.Plugins.Single().ClassId));
+        Assert.That(content.ClassId, Is.EqualTo(module.Plugins.First().ClassId));
         Assert.That(content.ComponentState, Is.Not.Empty);
 
         using var restored = module.CreatePlugin();

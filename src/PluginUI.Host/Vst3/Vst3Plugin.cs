@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -32,6 +32,7 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
     private PluginBus[] _inputs = [];
     private PluginBus[] _outputs = [];
     private int _eventInputs;
+    private int _eventOutputs;
     private PluginParameter[] _parameters = [];
     private Dictionary<uint, PluginParameter> _parameterById = new();
 
@@ -138,6 +139,9 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
     public override int EventInputCount => _eventInputs;
 
     /// <inheritdoc />
+    public override int EventOutputCount => _eventOutputs;
+
+    /// <inheritdoc />
     public override IReadOnlyList<PluginParameter> Parameters => _parameters;
 
     /// <inheritdoc />
@@ -168,6 +172,8 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
         _outputs = ReadBuses(Audio, Output);
         _eventInputs = ((delegate* unmanaged[MemberFunction]<void*, int, int, int>)Com.Slot(_component, 7))(_component, EventMedia, Input);
         for (int i = 0; i < _eventInputs; i++) ActivateBus(EventMedia, Input, i, true);
+        _eventOutputs = ((delegate* unmanaged[MemberFunction]<void*, int, int, int>)Com.Slot(_component, 7))(_component, EventMedia, Output);
+        for (int i = 0; i < _eventOutputs; i++) ActivateBus(EventMedia, Output, i, true);
     }
 
     private PluginBus[] ReadBuses(int media, int direction)
@@ -413,6 +419,40 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
         }
     }
 
+    /// <summary>Converts an event the plug-in produced to a MIDI message of <see cref="PluginInstance.OutputMidi"/>.</summary>
+    private void CollectOutputEvent(ref EventNative ev)
+    {
+        int offset = ev.SampleOffset;
+        static byte Seven(float v) => (byte)Math.Clamp((int)MathF.Round(v * 127f), 0, 127);
+        switch (ev.Type)
+        {
+            case EventNative.NoteOnType:
+            {
+                byte velocity = Seven(ev.Float2);
+                AddOutputMidi(new MidiEvent(offset, (byte)(0x90 | (ev.Channel & 15)), (byte)(ev.Pitch & 0x7F), velocity == 0 ? (byte)1 : velocity));
+                break;
+            }
+            case EventNative.NoteOffType:
+                AddOutputMidi(new MidiEvent(offset, (byte)(0x80 | (ev.Channel & 15)), (byte)(ev.Pitch & 0x7F), Seven(ev.Float1)));
+                break;
+            case EventNative.PolyPressureType:
+                AddOutputMidi(new MidiEvent(offset, (byte)(0xA0 | (ev.Channel & 15)), (byte)(ev.Pitch & 0x7F), Seven(ev.Float1)));
+                break;
+            case EventNative.LegacyMidiCcOutType:
+            {
+                // controlNumber: 0..127 controllers, 128 channel pressure, 129 pitch bend, 130 program change, 131 poly pressure.
+                byte channel = (byte)(ev.CcChannel & 15), value = (byte)(ev.CcValue & 0x7F), value2 = (byte)(ev.CcValue2 & 0x7F);
+                int control = ev.CcControlNumber;
+                if (control < 128) AddOutputMidi(new MidiEvent(offset, (byte)(0xB0 | channel), (byte)control, value));
+                else if (control == 128) AddOutputMidi(new MidiEvent(offset, (byte)(0xD0 | channel), value, 0));
+                else if (control == 129) AddOutputMidi(new MidiEvent(offset, (byte)(0xE0 | channel), value, value2));
+                else if (control == 130) AddOutputMidi(new MidiEvent(offset, (byte)(0xC0 | channel), value, 0));
+                else if (control == 131) AddOutputMidi(new MidiEvent(offset, (byte)(0xA0 | channel), value, value2));
+                break;
+            }
+        }
+    }
+
     private void MapController(int offset, int channel, int controller, double value)
     {
         if (_midiMapping is null) return;
@@ -451,6 +491,7 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
             var queue = _outChanges[i];
             if (queue.Count > 0) _toUi.Enqueue(queue.Id, queue.ValueAt(queue.Count - 1));
         }
+        for (int i = 0; i < _outEvents.Count; i++) CollectOutputEvent(ref _outEvents[i]);
         _inChanges.Clear();
         _outChanges.Clear();
         _inEvents.Clear();

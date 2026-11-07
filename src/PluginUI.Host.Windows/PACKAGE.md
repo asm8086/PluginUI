@@ -8,7 +8,12 @@ Windows audio and MIDI devices for [PluginUI.Host](https://www.nuget.org/package
   samples converted from and to 32-bit float; the audio thread is registered with MMCSS ("Pro Audio"); a removed
   device is reported through `AudioDriver.Failed`.
 - `Wasapi.GetEndpoints`: output and input devices with their names, channels and sample rates.
-- `MidiInput`: MIDI input ports (winmm), short messages delivered on the driver's thread.
+- `MidiInput`: MIDI input ports (winmm), short messages with their time delivered on the driver's thread, system
+  exclusive messages on request.
+- `MidiOutput`: MIDI output ports (winmm): `Send`, `SendSysex`, `AllNotesOff`; as an `IMidiSink` it takes the MIDI
+  a plug-in produces on the audio thread without waiting (`RackSlot.MidiOut`).
+
+The handling of system exclusive buffers follows NAudio (MIT, Copyright 2008-2026 Mark Heath).
 
 ```csharp
 var rack = new PluginRack();

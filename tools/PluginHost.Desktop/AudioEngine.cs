@@ -16,6 +16,7 @@ internal sealed class AudioEngine : IDisposable
 {
     private readonly UIHost _host;
     private MidiInput? _midi;
+    private MidiOutput? _midiOut;
 
     public AudioEngine(UIHost host) => _host = host;
 
@@ -25,6 +26,12 @@ internal sealed class AudioEngine : IDisposable
 
     /// <summary>Name of the open MIDI input port (null = none).</summary>
     public string? MidiInputName => _midi?.Name;
+
+    /// <summary>The open MIDI output port (null = none); plug-ins can send their MIDI to it.</summary>
+    public MidiOutput? MidiOutputPort => _midiOut;
+
+    /// <summary>The open MIDI output port changed (UI thread).</summary>
+    public event Action? MidiOutputChanged;
 
     /// <summary>A message for the status bar (device failed, MIDI port busy…), raised on the UI thread.</summary>
     public event Action<string>? Message;
@@ -67,6 +74,7 @@ internal sealed class AudioEngine : IDisposable
         });
         Driver = driver;
         OpenMidi(settings.MidiInput);
+        OpenMidiOutput(settings.MidiOutput);
         Changed?.Invoke();
     }
 
@@ -88,6 +96,43 @@ internal sealed class AudioEngine : IDisposable
         catch (Exception ex) when (ex is InvalidOperationException or DllNotFoundException or EntryPointNotFoundException)
         {
             Message?.Invoke(ex.Message);
+        }
+    }
+
+    private void OpenMidiOutput(string? name)
+    {
+        if (_midiOut?.Name == name && name is not null) return;
+        var previous = _midiOut;
+        _midiOut = null;
+        MidiOutputChanged?.Invoke(); // the windows stop sending to the old port first
+        previous?.Dispose();
+        if (string.IsNullOrEmpty(name)) return;
+        try
+        {
+            var port = MidiOutput.Ports.FirstOrDefault(p => p.Name == name);
+            if (port is null)
+            {
+                Message?.Invoke(L.T($"The MIDI port '{name}' is not connected.", $"Le port MIDI « {name} » n'est pas branché."));
+                return;
+            }
+            _midiOut = MidiOutput.Open(port);
+            MidiOutputChanged?.Invoke();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or DllNotFoundException or EntryPointNotFoundException)
+        {
+            Message?.Invoke(ex.Message);
+        }
+    }
+
+    /// <summary>Sends to every open plug-in with a MIDI input except one (audio thread, no allocation).</summary>
+    public sealed class OtherPluginsSink(PluginRack rack, RackSlot except) : IMidiSink
+    {
+        public void Send(in MidiEvent e)
+        {
+            foreach (var slot in rack.Slots)
+            {
+                if (!ReferenceEquals(slot, except) && slot.Plugin.EventInputCount > 0) slot.SendMidi(e);
+            }
         }
     }
 
@@ -120,6 +165,8 @@ internal sealed class AudioEngine : IDisposable
     {
         _midi?.Dispose();
         _midi = null;
+        _midiOut?.Dispose();
+        _midiOut = null;
         Driver.Dispose();
     }
 }

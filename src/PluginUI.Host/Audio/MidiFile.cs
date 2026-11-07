@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ namespace PluginUI.Host.Audio;
 
 /// <summary>
 /// Reads Standard MIDI Files (types 0 and 1, ticks per quarter note) into short messages at sample positions, following
-/// the tempo changes of the file.
+/// the tempo changes of the file, and writes such messages back as a type 0 file.
 /// </summary>
 public static class MidiFile
 {
@@ -88,6 +88,61 @@ public static class MidiFile
             result.Add(((long)Math.Round(seconds * sampleRate), e.Value));
         }
         return result;
+    }
+
+    /// <summary>Writes messages at sample positions as a Standard MIDI File (type 0, one tempo).</summary>
+    /// <param name="path">File to write.</param>
+    /// <param name="events">Messages and their sample positions (any order; equal positions keep their order).</param>
+    /// <param name="sampleRate">Sample rate of the positions.</param>
+    /// <param name="tempo">Tempo written in the file (quarter notes per minute).</param>
+    /// <param name="ticksPerQuarter">Time resolution.</param>
+    public static void Write(string path, IEnumerable<(long Sample, MidiEvent Event)> events, double sampleRate, double tempo = 120.0, int ticksPerQuarter = 960)
+        => File.WriteAllBytes(path, Write(events, sampleRate, tempo, ticksPerQuarter));
+
+    /// <summary>Image of a Standard MIDI File (type 0) holding <paramref name="events"/>.</summary>
+    public static byte[] Write(IEnumerable<(long Sample, MidiEvent Event)> events, double sampleRate, double tempo = 120.0, int ticksPerQuarter = 960)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sampleRate);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(tempo);
+        if (ticksPerQuarter is <= 0 or > 0x7FFF) throw new ArgumentOutOfRangeException(nameof(ticksPerQuarter));
+        var track = new List<byte>();
+        int microsecondsPerQuarter = (int)Math.Round(60_000_000.0 / tempo);
+        track.AddRange([0x00, 0xFF, 0x51, 0x03, (byte)(microsecondsPerQuarter >> 16), (byte)(microsecondsPerQuarter >> 8), (byte)microsecondsPerQuarter]);
+        double ticksPerSample = tempo / 60.0 * ticksPerQuarter / sampleRate;
+        long lastTick = 0;
+        foreach (var (sample, e) in events.Select((x, i) => (x, i)).OrderBy(x => x.x.Sample).ThenBy(x => x.i).Select(x => x.x))
+        {
+            if (e.Status < 0x80 || e.Status >= 0xF0) continue;
+            long tick = Math.Max(lastTick, (long)Math.Round(Math.Max(0, sample) * ticksPerSample));
+            WriteVarLength(track, tick - lastTick);
+            lastTick = tick;
+            track.Add(e.Status);
+            track.Add((byte)(e.Data1 & 0x7F));
+            if (e.Type is not (0xC0 or 0xD0)) track.Add((byte)(e.Data2 & 0x7F));
+        }
+        track.AddRange([0x00, 0xFF, 0x2F, 0x00]);
+
+        var file = new List<byte>(track.Count + 22);
+        file.AddRange("MThd"u8.ToArray());
+        file.AddRange([0, 0, 0, 6, 0, 0, 0, 1, (byte)(ticksPerQuarter >> 8), (byte)ticksPerQuarter]);
+        file.AddRange("MTrk"u8.ToArray());
+        file.AddRange([(byte)(track.Count >> 24), (byte)(track.Count >> 16), (byte)(track.Count >> 8), (byte)track.Count]);
+        file.AddRange(track);
+        return [.. file];
+    }
+
+    private static void WriteVarLength(List<byte> target, long value)
+    {
+        Span<byte> bytes = stackalloc byte[5];
+        int n = 0;
+        do
+        {
+            bytes[n++] = (byte)(value & 0x7F);
+            value >>= 7;
+        }
+        while (value > 0 && n < 5);
+        for (int i = n - 1; i >= 0; i--) target.Add((byte)(bytes[i] | (i > 0 ? 0x80 : 0)));
     }
 
     private static int BigEndian32(ReadOnlySpan<byte> b) => (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];

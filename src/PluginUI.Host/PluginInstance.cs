@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -162,6 +162,24 @@ public abstract unsafe class PluginInstance : IDisposable
     /// <summary>The plug-in changed its latency, parameters or buses (raised on the UI thread).</summary>
     public event Action<PluginInstance>? Restarted;
 
+    private readonly MidiEvent[] _midiOut = new MidiEvent[1024];
+    private int _midiOutCount;
+
+    /// <summary>Number of MIDI (event) outputs of the plug-in.</summary>
+    public virtual int EventOutputCount => 0;
+
+    /// <summary>
+    /// MIDI messages the plug-in produced during the last <see cref="Process"/> (sample offsets within that block); valid
+    /// until the next block. Read it on the audio thread, right after <see cref="Process"/>.
+    /// </summary>
+    public ReadOnlySpan<MidiEvent> OutputMidi => new(_midiOut, 0, _midiOutCount);
+
+    /// <summary>Adds a message to <see cref="OutputMidi"/> (format implementations, during processing).</summary>
+    protected void AddOutputMidi(in MidiEvent e)
+    {
+        if (_midiOutCount < _midiOut.Length) _midiOut[_midiOutCount++] = e;
+    }
+
     /// <summary>Allocates the buffers and starts processing.</summary>
     /// <param name="sampleRate">Sample rate.</param>
     /// <param name="maxBlockSize">Largest block passed to <see cref="Process"/>.</param>
@@ -205,6 +223,7 @@ public abstract unsafe class PluginInstance : IDisposable
     {
         if (SampleRate <= 0) throw new InvalidOperationException("Call Prepare first.");
         ArgumentOutOfRangeException.ThrowIfGreaterThan(frames, MaxBlockSize);
+        _midiOutCount = 0;
         if (frames <= 0) return;
         OnProcess(frames, _pending);
         SamplePosition += frames;

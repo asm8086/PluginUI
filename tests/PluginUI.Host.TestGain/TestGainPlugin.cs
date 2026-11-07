@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -76,6 +76,70 @@ public sealed class TestGainController : AudioController<TestGainModel>
     public static readonly Guid ClassId = new("7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f");
 }
 
+/// <summary>MIDI effect used to test MIDI output: each note comes out an octave higher, with controller 74 set to the note.</summary>
+public sealed class TestMidiEchoModel : AudioProcessorModel
+{
+    public TestMidiEchoModel() : base("PluginUI.Host.Tests.MidiEcho")
+    {
+    }
+}
+
+public sealed class TestMidiEchoProcessor : AudioProcessor<TestMidiEchoModel>
+{
+    public static readonly Guid ClassId = new("5e4d3c2b-1a09-4f8e-b7d6-c5b4a3928170");
+
+    public TestMidiEchoProcessor() : base(AudioSampleSizeSupport.Float32)
+    {
+    }
+
+    public override Guid ControllerClassId => TestMidiEchoController.ClassId;
+
+    protected override bool Initialize(AudioHostApplication host)
+    {
+        AddEventInput("MIDI In", 16);
+        AddEventOutput("MIDI Out", 16);
+        return true;
+    }
+
+    protected override void ProcessEvents(in AudioProcessData data) => Echo(data);
+
+    protected override void ProcessMain(in AudioProcessData data)
+    {
+    }
+
+    private static void Echo(in AudioProcessData data)
+    {
+        var input = data.Input.Events;
+        var output = data.Output.Events;
+        for (int i = 0; i < input.Count; i++)
+        {
+            if (!input.TryGetEvent(i, out var e)) continue;
+            if (e.Kind == AudioEventKind.NoteOn)
+            {
+                var on = e;
+                on.Value.NoteOn.Pitch = (short)Math.Min(127, e.Value.NoteOn.Pitch + 12);
+                output.TryAddEvent(0, on);
+                var cc = new AudioEvent { SampleOffset = e.SampleOffset, Kind = AudioEventKind.LegacyMIDICCOut };
+                cc.Value.MidiCCOut.ControlNumber = 74;
+                cc.Value.MidiCCOut.Channel = (sbyte)e.Value.NoteOn.Channel;
+                cc.Value.MidiCCOut.Value = (sbyte)e.Value.NoteOn.Pitch;
+                output.TryAddEvent(0, cc);
+            }
+            else if (e.Kind == AudioEventKind.NoteOff)
+            {
+                var off = e;
+                off.Value.NoteOff.Pitch = (short)Math.Min(127, e.Value.NoteOff.Pitch + 12);
+                output.TryAddEvent(0, off);
+            }
+        }
+    }
+}
+
+public sealed class TestMidiEchoController : AudioController<TestMidiEchoModel>
+{
+    public static readonly Guid ClassId = new("0f1e2d3c-4b5a-4697-8877-665544332211");
+}
+
 public static class TestGainPlugin
 {
     public static AudioPluginFactory GetFactory()
@@ -83,6 +147,8 @@ public static class TestGainPlugin
         var factory = new AudioPluginFactory(new AudioPluginFactoryInfo("PluginUI Tests", "https://github.com/asm8086/PluginUI", "tests@example.invalid"));
         factory.RegisterPlugin<TestGainProcessor>(new AudioProcessorClassInfo(TestGainProcessor.ClassId, "Test Gain", AudioProcessorCategory.Effect) { Version = new Version(1, 2, 3) });
         factory.RegisterPlugin<TestGainController>(new AudioControllerClassInfo(TestGainController.ClassId, "Test Gain Controller"));
+        factory.RegisterPlugin<TestMidiEchoProcessor>(new AudioProcessorClassInfo(TestMidiEchoProcessor.ClassId, "Test MIDI Echo", AudioProcessorCategory.Effect) { Version = new Version(1, 0, 0) });
+        factory.RegisterPlugin<TestMidiEchoController>(new AudioControllerClassInfo(TestMidiEchoController.ClassId, "Test MIDI Echo Controller"));
         return factory;
     }
 

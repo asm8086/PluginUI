@@ -6,6 +6,13 @@ using System.Runtime.InteropServices;
 
 namespace PluginUI.Host.Audio;
 
+/// <summary>Receives MIDI messages on the audio thread (must not block): a slot, a MIDI output port, a recorder.</summary>
+public interface IMidiSink
+{
+    /// <summary>Takes a message (audio thread; queue it, do not block).</summary>
+    void Send(in MidiEvent e);
+}
+
 /// <summary>
 /// Plays plug-ins live on an audio device: each <see cref="RackSlot"/> feeds a plug-in from its <see cref="SignalSource"/>,
 /// delivers its MIDI messages, and adds its output to the device output. Give it to <see cref="AudioDriver.Start"/>.
@@ -145,8 +152,8 @@ public sealed class PluginRack : IAudioRenderer
     }
 }
 
-/// <summary>One plug-in of a <see cref="PluginRack"/>: its source, its MIDI input, its gain and its output meter.</summary>
-public sealed unsafe class RackSlot
+/// <summary>One plug-in of a <see cref="PluginRack"/>: its source, its MIDI input and output, its gain and its output meter.</summary>
+public sealed unsafe class RackSlot : IMidiSink
 {
     private readonly MidiEventQueue _midi = new(1024);
     private SignalSource _source;
@@ -200,6 +207,15 @@ public sealed unsafe class RackSlot
     /// <summary>Queues a MIDI message for the next block (any thread: on-screen keyboard, MIDI input).</summary>
     public void SendMidi(in MidiEvent e) => _midi.Enqueue(e with { SampleOffset = 0 });
 
+    /// <inheritdoc />
+    void IMidiSink.Send(in MidiEvent e) => SendMidi(e);
+
+    /// <summary>
+    /// Receives the MIDI messages the plug-in produces (arpeggiators, sequencers, MIDI effects), on the audio thread: another
+    /// slot, a MIDI output port… (null = discarded).
+    /// </summary>
+    public IMidiSink? MidiOut { get; set; }
+
     internal void Prepare(double sampleRate, int maxFrames)
     {
         Plugin.Prepare(sampleRate, maxFrames, realtime: true);
@@ -231,6 +247,10 @@ public sealed unsafe class RackSlot
             return;
         }
         Plugin.Process(frames);
+        if (MidiOut is { } sink)
+        {
+            foreach (var e in Plugin.OutputMidi) sink.Send(e);
+        }
         var outputs = new AudioBuffers(_outputs, _mainOutputs, frames);
         Meter.Update(outputs, gain);
         PluginRack.Mix(outputs, deviceOutputs, gain);

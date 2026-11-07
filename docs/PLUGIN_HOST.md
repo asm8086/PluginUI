@@ -18,7 +18,8 @@ What exists today and what comes next:
 | Offline processing, MIDI rendering, response measurement (`pluginhost`) | done |
 | VST 2 plug-ins | planned (separate package, written from public documentation) |
 | Real-time audio (WASAPI output and input), signal sources, on-screen keyboard, MIDI input | done |
-| ASIO, MIDI output and system exclusive, MIDI from plug-ins | planned |
+| MIDI output, system exclusive, MIDI produced by plug-ins (to a port, another plug-in or a file) | done |
+| ASIO | planned |
 | Graphical host: plug-in list with sort orders and columns, editor windows, presets | done |
 
 ## Contents
@@ -145,6 +146,20 @@ Standard MIDI files of type 0 or 1, with their tempo changes. Notes and polyphon
 controllers, channel pressure and pitch bend go to the parameters the instrument assigns to them (`IMidiMapping`), as
 in a DAW. Effects can follow the instrument: add more `-p`.
 
+### MIDI produced by plug-ins
+
+```
+pluginhost render -p "Arpeggiator" --midi chords.mid --midi-out arp.mid
+pluginhost render -p "Arpeggiator" -p "Diva" --midi chords.mid -o arp.wav
+pluginhost process -i dry.wav -p "Pitch Tracker" --midi-out melody.mid
+```
+
+A plug-in with a MIDI output (VST3 event output bus: arpeggiators, chord generators, pitch trackers) passes its notes
+and controllers to the next plug-in of the chain; `--midi-out` writes what the last plug-in produces to a MIDI file
+(type 0, 960 ticks per quarter note, 120 BPM, times compensated for the latencies). When the last plug-in produces only
+MIDI, `-o` can be left out. `process` also accepts `--midi <file.mid>` (a vocoder or a side-chained gate driven by
+notes).
+
 ### Measuring a response
 
 ```
@@ -210,7 +225,7 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   with its progress in the status bar; the list changes only when it is complete.
 - **Plug-in folders** (Ctrl+Shift+F): VST3 and VST2 folders, standard folders.
 - **Audio and MIDI** (Ctrl+Shift+A): output device (WASAPI, or none), input device, buffer size (the smallest the
-  device allows by default: often under 3 ms at 48 kHz), MIDI input port. The status bar shows the device, its sample
+  device allows by default: often under 3 ms at 48 kHz), MIDI input port, MIDI output port. The status bar shows the device, its sample
   rate and its buffer; the meter at the right of the filter bar shows the output level.
 
 ![Audio and MIDI](images/pluginhost-audio.png)
@@ -228,6 +243,8 @@ heard (their outputs are added). The bar at the bottom of the window holds:
   dBFS), or an **audio file** (WAV, looped, resampled to the device rate, with a pause button);
 - for instruments, an **on-screen keyboard** (mouse, or the computer keyboard when it has the focus); the MIDI input
   port reaches every open plug-in with a MIDI input, and its notes light up the keys;
+- for plug-ins that produce MIDI, where it goes: **nowhere**, the **MIDI output port** (a hardware synthesizer, or
+  another application through a loopback port), or the **other open plug-ins** that have a MIDI input;
 - **Bypass** (the source goes straight to the output), **Mute**, and the meter of the plug-in's output.
 
 The plug-in's main output channels go to the device channels in order (a mono output to the first two): a multichannel
@@ -271,7 +288,19 @@ slot.SendMidi(MidiEvent.NoteOn(0, 0, 60, 100));            // any thread
 ```
 
 `NullAudioDriver` runs the rack on a clock without a device. Sources: `SilenceSource`, `DeviceInputSource`,
-`TestSignalGenerator`, `FileSource`; `RackSlot.Bypass`, `Mute`, `GainDb`, `Meter`; `MidiInput` opens a MIDI port.
+`TestSignalGenerator`, `FileSource`; `RackSlot.Bypass`, `Mute`, `GainDb`, `Meter`; `MidiInput` opens a MIDI input
+port (short messages with their time, system exclusive on request), `MidiOutput` an output port (`Send`, `SendSysex`,
+`AllNotesOff`).
+
+The MIDI a plug-in produces is in `plugin.OutputMidi` after each `Process` (`EventOutputCount` > 0 when it has an event
+output). In a rack, `RackSlot.MidiOut` takes an `IMidiSink`, called on the audio thread: a `MidiOutput` (it queues the
+messages, a thread of the port sends them), another `RackSlot`, or your own. `RenderOptions.MidiOutput` receives it in
+offline renders, and `MidiFile.Write` saves events to a file.
+
+```csharp
+using var port = MidiOutput.Open(MidiOutput.Ports[0]);
+arpSlot.MidiOut = port;                                    // or synthSlot
+```
 
 Real-time use, without the renderer: `Prepare(sampleRate, maxBlock, realtime: true)`, then for each block fill
 `GetInput(channel)`, call `Process(frames)` and read `GetOutput(channel)`. `SetParameter` and `AddMidiEvent` can be

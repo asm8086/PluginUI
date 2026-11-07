@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -33,8 +33,9 @@ public static class Program
           pluginhost preset save <plugin> -o <file.vstpreset> [--set ...] [--preset ...]
 
         Audio:
-          pluginhost process -i <in.wav> -o <out.wav> -p <plugin> [plugin options] [-p <plugin> ...] [audio options]
+          pluginhost process -i <in.wav> -o <out.wav> -p <plugin> [plugin options] [-p <plugin> ...] [--midi <file.mid>] [audio options]
           pluginhost render  -p <instrument> --midi <file.mid> -o <out.wav> [--rate 48000] [plugin options] [audio options]
+                 (a MIDI effect alone: -o is not written, use --midi-out)
           pluginhost measure -p <plugin> -o <response.csv> [plugin options] [--ir <ir.wav>] [--method impulse|sine]
                  [--rate 48000] [--min 20] [--max 20000] [--points 200] [--level -20] [--channel 0] [--db 20log10|6log2]
 
@@ -44,6 +45,7 @@ public static class Program
           --preset <file.vstpreset>    load a preset first
         Audio options:
           --block 512   --tail <seconds>   --no-latency-compensation   --bits 16|24|32|f32|f64 (default f32)
+          --midi-out <file.mid>   MIDI the last plug-in produces (the MIDI of the others feeds the next plug-in)
 
         General: --config <folder> (settings and plug-in list elsewhere), --json, --help
         """;
@@ -400,6 +402,19 @@ public static class Program
         return options;
     }
 
+    /// <summary>--midi-out: collects the MIDI of the last plug-in; the returned action writes the file.</summary>
+    private static Action<double>? MidiOutputFrom(Arguments a, RenderOptions options)
+    {
+        if (a.Option("--midi-out") is not { } path) return null;
+        var collected = new List<(long Sample, MidiEvent Event)>();
+        options.MidiOutput = (at, e) => collected.Add((at, e));
+        return rate =>
+        {
+            MidiFile.Write(path, collected, rate);
+            Console.WriteLine($"{path}: {collected.Count} MIDI messages");
+        };
+    }
+
     private static WavSampleFormat BitsFrom(Arguments a) => (a.Option("--bits") ?? "f32") switch
     {
         "16" => WavSampleFormat.Int16,
@@ -416,13 +431,17 @@ public static class Program
         string output = a.Option("-o") ?? a.Option("--output") ?? throw new UsageException("process needs -o <out.wav>");
         var format = BitsFrom(a);
         var options = RenderOptionsFrom(a);
+        string? midi = a.Option("--midi");
+        var midiOut = MidiOutputFrom(a, options);
         using var loader = new PluginLoader(PluginCatalog.Load(HostPaths.CatalogFile), "pluginhost");
         var chain = LoadChain(a, loader);
         a.EnsureEmpty();
         var audio = WavFile.Read(input);
+        if (midi is not null) options.Midi = MidiFile.Read(midi, audio.SampleRate);
         var result = OfflineRenderer.Render(chain, audio, options: options);
         if (!Console.IsErrorRedirected) Console.Error.WriteLine();
         WavFile.Write(output, result, format);
+        midiOut?.Invoke(audio.SampleRate);
         SaveCatalogUsage(loader.Catalog);
         Console.WriteLine($"{output}: {result.ChannelCount} ch, {result.Duration:0.###} s at {result.SampleRate:0} Hz, peak {20 * Math.Log10(Math.Max(1e-12, result.Peak())):0.0} dBFS");
         return 0;
@@ -436,12 +455,21 @@ public static class Program
         var format = BitsFrom(a);
         var options = RenderOptionsFrom(a);
         options.TailSeconds ??= 2.0;
+        var midiOut = MidiOutputFrom(a, options);
         using var loader = new PluginLoader(PluginCatalog.Load(HostPaths.CatalogFile), "pluginhost");
         var chain = LoadChain(a, loader);
         a.EnsureEmpty();
         options.Midi = MidiFile.Read(midi, rate);
         var result = OfflineRenderer.Render(chain, null, rate, options);
         if (!Console.IsErrorRedirected) Console.Error.WriteLine();
+        midiOut?.Invoke(rate);
+        if (result.ChannelCount == 0)
+        {
+            // A MIDI effect alone has no audio output.
+            SaveCatalogUsage(loader.Catalog);
+            Console.WriteLine($"{chain[^1].Name} has no audio output: {output} was not written.");
+            return 0;
+        }
         WavFile.Write(output, result, format);
         SaveCatalogUsage(loader.Catalog);
         Console.WriteLine($"{output}: {result.ChannelCount} ch, {result.Duration:0.###} s, {options.Midi.Count} MIDI messages, peak {20 * Math.Log10(Math.Max(1e-12, result.Peak())):0.0} dBFS");
@@ -547,7 +575,7 @@ internal sealed class Arguments(string[] args)
     }
 
     private static bool TakesValue(string option) => option is "-i" or "-o" or "-p" or "--input" or "--output" or "--plugin" or "--set" or "--set-normalized"
-        or "--preset" or "--block" or "--tail" or "--bits" or "--sort" or "--config" or "--format" or "--midi" or "--rate" or "--min" or "--max"
+        or "--preset" or "--block" or "--tail" or "--bits" or "--sort" or "--config" or "--format" or "--midi" or "--midi-out" or "--rate" or "--min" or "--max"
         or "--points" or "--level" or "--channel" or "--db" or "--method" or "--ir";
 
     /// <summary>Value of the first occurrence of an option, removed from the list.</summary>
