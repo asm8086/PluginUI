@@ -217,7 +217,7 @@ public class PatternEditorTests
     {
         var pads = Add(new DrumPads(), 260f, 260f);
         var played = new List<string>();
-        pads.PadPressed += (_, pad, velocity) => played.Add($"+{pad}:{velocity:0.00}");
+        pads.PadPressed += (_, pad, velocity) => played.Add(FormattableString.Invariant($"+{pad}:{velocity:0.00}"));
         pads.PadReleased += (_, pad) => played.Add($"-{pad}");
 
         // 4 × 4 pads 59.5 px wide with 6 px gaps from (2, 2); pad 0 at the bottom left.

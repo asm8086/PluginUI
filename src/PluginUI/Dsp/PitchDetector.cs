@@ -25,7 +25,7 @@ public readonly record struct PitchEstimate(double Frequency, double Clarity)
 /// float[] block = new float[yin.WindowSize];
 /// ring.CopyLatest(block);
 /// var pitch = yin.Detect(block);
-/// if (pitch.HasPitch) Console.WriteLine($"{pitch.Frequency:0.0} Hz");
+/// if (pitch.HasPitch) Console.WriteLine(InvariantNumber.Format(pitch.Frequency, "0.0") + " Hz");
 /// </code>
 /// </example>
 public sealed class PitchDetector
