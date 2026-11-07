@@ -19,7 +19,7 @@ What exists today and what comes next:
 | VST 2 plug-ins | planned (separate package, written from public documentation) |
 | Real-time audio (WASAPI output and input), signal sources, on-screen keyboard, MIDI input | done |
 | MIDI output, system exclusive, MIDI produced by plug-ins (to a port, another plug-in or a file) | done |
-| ASIO | planned |
+| ASIO (all the channels of the card, its sample rates, its control panel) | done |
 | Graphical host: plug-in list with sort orders and columns, editor windows, presets | done |
 
 ## Contents
@@ -224,11 +224,22 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 - **Scan** (F5: new and changed modules; Shift+F5: everything again; **Stop the scan** in the File menu or the tool bar): the scan runs in separate processes,
   with its progress in the status bar; the list changes only when it is complete.
 - **Plug-in folders** (Ctrl+Shift+F): VST3 and VST2 folders, standard folders.
-- **Audio and MIDI** (Ctrl+Shift+A): output device (WASAPI, or none), input device, buffer size (the smallest the
-  device allows by default: often under 3 ms at 48 kHz), MIDI input port, MIDI output port. The status bar shows the device, its sample
-  rate and its buffer; the meter at the right of the filter bar shows the output level.
+- **Audio and MIDI** (Ctrl+Shift+A): the driver, **WASAPI**, **ASIO** or none, then
+  - with WASAPI: output device, input device, buffer size (the smallest the device allows by default: often under
+    3 ms at 48 kHz); the device is shared with the other applications at the rate of the sound settings of Windows;
+  - with ASIO: the driver of the sound card and its **Control panel** (buffer, clock, routing; it opens while the
+    driver runs), its inputs (none or all), the sample rate (the driver's, or 44.1 to 192 kHz when the card accepts
+    it), the buffer (the control panel's by default). Every output channel of the card is available: a multichannel
+    plug-in is heard on as many outputs. When the control panel changes the buffer or the rate, the host restarts
+    the driver by itself;
+  - MIDI input port, MIDI output port.
+
+  The status bar shows the device, its sample rate and its buffer; the meter at the right of the filter bar shows the
+  output level.
 
 ![Audio and MIDI](images/pluginhost-audio.png)
+
+![ASIO](images/pluginhost-asio.png)
 
 ![Plug-in folders](images/pluginhost-folders.png)
 
@@ -286,6 +297,22 @@ using var device = new WasapiDriver(outputId: null);       // default device of 
 device.Start(rack);
 slot.SendMidi(MidiEvent.NoteOn(0, 0, 60, 100));            // any thread
 ```
+
+`AsioDriver` plays it through an ASIO driver (`Asio.GetDrivers()` lists them):
+
+```csharp
+using var card = new AsioDriver("My Card ASIO", bufferFrames: 128, sampleRate: 96000, inputChannels: -1);
+card.ResetRequested += _ => ui.Post(() => card.Start(rack));   // buffer or rate changed in its control panel
+card.Start(rack);                                              // on the UI thread (STA, message loop)
+card.ShowControlPanel();
+```
+
+`inputChannels`: 0 none (default), -1 all, n the first n; `outputChannels` likewise (-1, all, by default). After
+`Start`: `InputChannelNames`, `OutputChannelNames`, `BufferSizes`, `SupportedSampleRates`, `SampleFormat`,
+`InputLatencySamples` / `OutputLatencySamples`. Samples in 16, 24 and 32-bit integers (also right-justified in 32
+bits) and 32 or 64-bit floats, little or big-endian, are converted from and to 32-bit float. One ASIO driver at a
+time per process, 64-bit only. ASIO is a trademark of Steinberg Media Technologies GmbH; the binding is written from
+NAudio's (MIT), without the ASIO SDK.
 
 `NullAudioDriver` runs the rack on a clock without a device. Sources: `SilenceSource`, `DeviceInputSource`,
 `TestSignalGenerator`, `FileSource`; `RackSlot.Bypass`, `Mute`, `GainDb`, `Meter`; `MidiInput` opens a MIDI input

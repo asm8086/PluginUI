@@ -10,6 +10,13 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **ASIO** in PluginUI.Host.Windows: `AsioDriver` (all the channels of the card or the first n, sample rate and
+  buffer chosen among those the driver accepts, `ShowControlPanel`, `ResetRequested` when the control panel changes
+  them, 16/24/32-bit integer and 32/64-bit float samples in either byte order, `outputReady`), `Asio.GetDrivers`,
+  `Asio.ChooseBufferSize`. Binding adapted from NAudio (MIT); tests run it against an in-process test driver.
+  `AudioDriver.ResetRequested`.
+- **Plug-in Host**: driver choice (WASAPI, ASIO, none) in the Audio and MIDI dialog; with ASIO the driver, its control
+  panel, its inputs and the sample rate; the driver restarts by itself after a change in its control panel.
 - **MIDI produced by plug-ins**: `PluginInstance.EventOutputCount` and `OutputMidi` (VST3 event output buses: notes,
   polyphonic pressure, controllers, channel pressure, pitch bend and program changes through `LegacyMIDICCOut`);
   offline chains pass it to the next plug-in and report the last one's through `RenderOptions.MidiOutput`;

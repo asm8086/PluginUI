@@ -253,12 +253,12 @@ internal sealed class MainWindow
         Window = new StandaloneWindow(Host, app.Name);
         Window.Closing += (_, _) => CloseAll();
         Window.Closed += _ => SaveAll();
-        _audio = new AudioEngine(Host);
+        _audio = new AudioEngine(Host) { WindowHandle = () => Window.WindowHandle };
         _audio.Message += message => StatusBar.ShowMessage(message, 10.0);
         _audio.Changed += () => StatusBar.InvalidateVisual();
         _audio.Rack.SlotFailed += (slot, ex) => Host.Post(() => StatusBar.ShowMessage(
             L.T($"{slot.Plugin.Name} stopped processing: {ex.Message}", $"{slot.Plugin.Name} a cessé de traiter : {ex.Message}"), 8.0));
-        _audio.Start(saveChanges ? s : new GuiSettings { AudioOutput = "none" });
+        _audio.Start(saveChanges ? s : new GuiSettings { AudioApi = "none" });
         Host.AddTicker(new Ticker(() =>
         {
             _audio.Rack.OutputMeter.Read(_outputLevels);
@@ -656,7 +656,10 @@ internal sealed class MainWindow
     // ---------------------------------------------------------------- audio
 
     /// <summary>Shows the audio and MIDI dialog.</summary>
-    public void ShowAudioDialog()
+    public void ShowAudioDialog() => ShowAudioDialog(null, null);
+
+    /// <summary>Shows the audio and MIDI dialog with another driver chosen, or other ASIO drivers (snapshots).</summary>
+    internal void ShowAudioDialog(string? chosenApi, IReadOnlyList<AsioDriverInfo>? sampleDrivers)
     {
         var s = _settings.Value;
         List<AudioEndpoint> outputs = [], inputs = [];
@@ -678,14 +681,28 @@ internal sealed class MainWindow
         {
             StatusBar.ShowMessage(ex.Message, 8.0);
         }
+        List<AsioDriverInfo> asioDrivers = [];
+        try
+        {
+            asioDrivers = [.. sampleDrivers ?? Asio.GetDrivers()];
+        }
+        catch (Exception ex) when (ex is PlatformNotSupportedException or TypeInitializationException)
+        {
+            StatusBar.ShowMessage(ex.Message, 8.0);
+        }
         static string Describe(AudioEndpoint e) => $"{e.Name} ({e.Channels} ch, {e.SampleRate / 1000.0:0.#} kHz)";
 
-        // Output: Windows default, the devices, or none.
+        // Driver: WASAPI, ASIO or none.
+        string[] apis = ["wasapi", "asio", "none"];
+        var api = new DropDown("WASAPI", "ASIO", L.T("No audio device", "Aucun périphérique audio"))
+        {
+            Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, Array.IndexOf(apis, chosenApi ?? s.Api)),
+        };
+
+        // WASAPI output: Windows default or the devices.
         var outputIds = new List<string?> { null };
         var outputNames = new List<string> { L.T("Default device of Windows", "Périphérique par défaut de Windows") };
         foreach (var e in outputs) { outputIds.Add(e.Id); outputNames.Add(Describe(e)); }
-        outputIds.Add("none");
-        outputNames.Add(L.T("No audio device", "Aucun périphérique audio"));
         var output = new DropDown([.. outputNames]) { Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, outputIds.IndexOf(s.AudioOutput)) };
 
         // Input: none, Windows default, the devices.
@@ -693,6 +710,33 @@ internal sealed class MainWindow
         var inputNames = new List<string> { L.T("No input", "Aucune entrée"), L.T("Default input of Windows", "Entrée par défaut de Windows") };
         foreach (var e in inputs) { inputIds.Add(e.Id); inputNames.Add(Describe(e)); }
         var input = new DropDown([.. inputNames]) { Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, inputIds.IndexOf(s.AudioInput)) };
+
+        // ASIO: the driver (its control panel next to it), the inputs, the sample rate.
+        var asio = new DropDown(asioDrivers.Count > 0 ? [.. asioDrivers.Select(d => d.Name)] : [L.T("No ASIO driver installed", "Aucun pilote ASIO installé")])
+        {
+            Label = string.Empty, Height = 26f,
+            SelectedIndex = Math.Max(0, asioDrivers.FindIndex(d => string.Equals(d.Name, s.AsioDriver, StringComparison.OrdinalIgnoreCase))),
+        };
+        var asioPanel = new Button(L.T("Control panel", "Panneau de configuration"), () =>
+        {
+            string? name = asioDrivers.Count > 0 ? asioDrivers[Math.Max(0, asio.SelectedIndex)].Name : null;
+            if (name is null || !_audio.ShowAsioControlPanel(name))
+                StatusBar.ShowMessage(L.T("Choose this driver and click OK first: its control panel opens while it runs.",
+                    "Choisissez ce pilote et cliquez sur OK d'abord : son panneau s'ouvre pendant qu'il fonctionne."), 8.0);
+        })
+        {
+            Width = 190f, Height = 26f, Dock = Side.Right,
+            ToolTip = L.T("Buffer size, clock and routing of the sound card (the running driver)", "Taille du tampon, horloge et routage de la carte son (le pilote en cours)"),
+        };
+        var asioInputs = new DropDown(L.T("No input", "Aucune entrée"), L.T("All the inputs of the device", "Toutes les entrées du périphérique"))
+        {
+            Label = string.Empty, Height = 26f, SelectedIndex = s.AsioInputs ? 1 : 0,
+        };
+        int[] rates = [0, .. Asio.CommonSampleRates];
+        var rate = new DropDown([L.T("Rate of the driver", "Fréquence du pilote"), .. Asio.CommonSampleRates.Select(r => $"{r} Hz")])
+        {
+            Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, Array.IndexOf(rates, s.SampleRate)),
+        };
 
         int[] sizes = [0, 64, 128, 256, 512, 1024, 2048];
         var buffer = new DropDown([L.T("Smallest the device allows", "La plus petite permise par le périphérique"), "64", "128", "256", "512", "1024", "2048"])
@@ -723,30 +767,65 @@ internal sealed class MainWindow
             Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, midiNames.IndexOf(s.MidiInput)),
         };
 
-        UIElement Row(string caption, UIElement control)
+        DockPanel Row(string caption, UIElement control, UIElement? extra = null)
         {
             var row = new DockPanel { Height = 28f };
             row.Children.Add(new Label(caption) { Width = 170f, Dock = Side.Left, VerticalAlignment = VerticalAlignment.Center });
+            if (extra is not null) row.Children.Add(extra);
             row.Children.Add(control);
             return row;
         }
+        var outputRow = Row(L.T("Output", "Sortie"), output);
+        var inputRow = Row(L.T("Input", "Entrée"), input);
+        var asioRow = Row(L.T("ASIO driver", "Pilote ASIO"), asio, asioPanel);
+        var asioInputsRow = Row(L.T("Inputs", "Entrées"), asioInputs);
+        var rateRow = Row(L.T("Sample rate", "Fréquence d'échantillonnage"), rate);
+        var bufferRow = Row(L.T("Buffer (samples)", "Tampon (échantillons)"), buffer);
+        var note = new Label { Wrap = true, IsDim = true, Height = 50f };
+        void Sync()
+        {
+            int k = Math.Max(0, api.SelectedIndex);
+            outputRow.IsVisible = inputRow.IsVisible = k == 0;
+            asioRow.IsVisible = asioInputsRow.IsVisible = rateRow.IsVisible = k == 1;
+            bufferRow.IsVisible = k != 2;
+            int size = buffer.SelectedIndex;
+            buffer.Items = [k == 1 ? L.T("Size set in the control panel", "Taille choisie dans le panneau de configuration")
+                : L.T("Smallest the device allows", "La plus petite permise par le périphérique"), .. sizes.Skip(1).Select(n => n.ToString(CultureInfo.InvariantCulture))];
+            buffer.SelectedIndex = Math.Max(0, size);
+            note.Text = k switch
+            {
+                0 => L.T("WASAPI shares the device with other applications, at the sample rate chosen in the sound settings of Windows.",
+                    "WASAPI partage le périphérique avec les autres applications, à la fréquence choisie dans les paramètres de son de Windows."),
+                1 => L.T("ASIO talks to the sound card directly, with all its channels and the lowest latency; other applications may not use the card meanwhile. Buffer, clock and routing are in the driver's control panel.",
+                    "ASIO s'adresse directement à la carte son, avec tous ses canaux et la plus faible latence ; les autres applications peuvent ne plus pouvoir l'utiliser. Tampon, horloge et routage se règlent dans le panneau de configuration du pilote."),
+                _ => L.T("The plug-ins run on a clock at 48 kHz, without sound.", "Les plug-ins tournent sur une horloge à 48 kHz, sans son."),
+            };
+        }
+        api.ValueChanged += (_, _) => Sync();
+        Sync();
         var body = new StackPanel { Spacing = 8f };
         body.Add(
-            Row(L.T("Output (WASAPI)", "Sortie (WASAPI)"), output),
-            Row(L.T("Input", "Entrée"), input),
-            Row(L.T("Buffer (samples)", "Tampon (échantillons)"), buffer),
+            Row(L.T("Driver", "Pilote"), api),
+            outputRow,
+            inputRow,
+            asioRow,
+            asioInputsRow,
+            rateRow,
+            bufferRow,
             Row(L.T("MIDI input", "Entrée MIDI"), midi),
             Row(L.T("MIDI output", "Sortie MIDI"), midiOut),
             new Label(L.T("Now: ", "Actuellement : ") + _audio.Describe()) { Wrap = true, IsDim = true, Height = 34f },
-            new Label(L.T("WASAPI shares the device with other applications at the sample rate chosen in the sound settings of Windows. ASIO comes next.",
-                "WASAPI partage le périphérique avec les autres applications, à la fréquence choisie dans les paramètres de son de Windows. ASIO viendra ensuite."))
-            { Wrap = true, IsDim = true, Height = 34f });
+            note);
         var dialog = new Dialog(L.T("Audio and MIDI", "Audio et MIDI"), body) { DialogWidth = 640f };
         dialog.AddButton(L.T("Cancel", "Annuler"), null, isCancel: true).AddButton("OK", "ok", isDefault: true);
         dialog.ResultChosen += (_, result) =>
         {
             if (!Equals(result, "ok")) return;
+            s.AudioApi = apis[Math.Max(0, api.SelectedIndex)];
             s.AudioOutput = outputIds[Math.Max(0, output.SelectedIndex)];
+            if (asioDrivers.Count > 0) s.AsioDriver = asioDrivers[Math.Max(0, asio.SelectedIndex)].Name;
+            s.AsioInputs = asioInputs.SelectedIndex == 1;
+            s.SampleRate = rates[Math.Max(0, rate.SelectedIndex)];
             s.AudioInput = inputIds[Math.Max(0, input.SelectedIndex)];
             s.BufferFrames = sizes[Math.Max(0, buffer.SelectedIndex)];
             s.MidiInput = midiNames[Math.Max(0, midi.SelectedIndex)];

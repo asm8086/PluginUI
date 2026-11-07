@@ -84,6 +84,12 @@ public abstract class AudioDriver : IDisposable
     /// <summary>The device stopped by itself (unplugged, taken by another application); raised on the audio thread.</summary>
     public event Action<AudioDriver, string>? Failed;
 
+    /// <summary>
+    /// The device asks to be started again (its buffer size or sample rate changed in its control panel); raised on any
+    /// thread. Call <see cref="Start"/> again from the thread that started it.
+    /// </summary>
+    public event Action<AudioDriver>? ResetRequested;
+
     /// <summary>Prepares <paramref name="renderer"/> and starts calling it.</summary>
     public abstract void Start(IAudioRenderer renderer);
 
@@ -92,6 +98,9 @@ public abstract class AudioDriver : IDisposable
 
     /// <summary>Reports a failure of the device.</summary>
     protected void RaiseFailed(string message) => Failed?.Invoke(this, message);
+
+    /// <summary>Reports that the device asks to be started again.</summary>
+    protected void RaiseResetRequested() => ResetRequested?.Invoke(this);
 
     /// <summary>Stops and releases the device.</summary>
     public void Dispose()

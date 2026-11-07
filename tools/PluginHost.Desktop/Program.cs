@@ -7,6 +7,7 @@ using PluginUI.Desktop;
 using PluginUI.Host;
 using PluginUI.Host.Catalog;
 using PluginUI.Host.Desktop;
+using PluginUI.Host.Windows;
 
 /// <summary>Entry point.</summary>
 internal static class Program
@@ -129,6 +130,11 @@ internal static class Snapshots
         main.ShowAudioDialog();
         Settle(host);
         host.RenderToPng(Path.Combine(dir, "pluginhost-audio" + suffix + ".png"), 1f);
+        host.CloseAllPopups();
+
+        main.ShowAudioDialog("asio", [new AsioDriverInfo("Example Audio ASIO", Guid.Empty)]);
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-asio" + suffix + ".png"), 1f);
         host.CloseAllPopups();
 
         host.ShowMenu(main.Table.GetColumnMenuItems(), new Point(420f, 130f));

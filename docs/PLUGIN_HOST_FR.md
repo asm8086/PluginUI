@@ -20,7 +20,7 @@ Ce qui existe et ce qui vient ensuite :
 | Plug-ins VST 2 | prévu (paquet séparé, écrit d'après la documentation publique) |
 | Audio temps réel (sortie et entrée WASAPI), sources de signal, clavier à l'écran, entrée MIDI | fait |
 | Sortie MIDI, messages exclusifs, MIDI émis par les plug-ins (vers un port, un autre plug-in ou un fichier) | fait |
-| ASIO | prévu |
+| ASIO (tous les canaux de la carte, ses fréquences, son panneau de configuration) | fait |
 | Hôte graphique : liste de plug-ins avec ordres de tri et colonnes, fenêtres d'éditeur, presets | fait |
 
 ## Sommaire
@@ -232,12 +232,23 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 - **Recherche** (F5 : modules nouveaux ou modifiés ; Maj+F5 : tout à nouveau ; **Arrêter la recherche** dans le menu Fichier ou la barre d'outils) : elle se fait dans des
   processus séparés, avec sa progression dans la barre d'état ; la liste ne change qu'une fois la recherche terminée.
 - **Dossiers de plug-ins** (Ctrl+Maj+F) : dossiers VST3 et VST2, dossiers standard.
-- **Audio et MIDI** (Ctrl+Maj+A) : périphérique de sortie (WASAPI, ou aucun), périphérique d'entrée, taille du tampon
-  (par défaut la plus petite que permet le périphérique : souvent moins de 3 ms à 48 kHz), ports d'entrée et de sortie MIDI. La
-  barre d'état indique le périphérique, sa fréquence d'échantillonnage et son tampon ; l'indicateur à droite de la
+- **Audio et MIDI** (Ctrl+Maj+A) : le pilote, **WASAPI**, **ASIO** ou aucun, puis
+  - avec WASAPI : périphérique de sortie, périphérique d'entrée, taille du tampon (par défaut la plus petite que
+    permet le périphérique : souvent moins de 3 ms à 48 kHz) ; le périphérique est partagé avec les autres
+    applications, à la fréquence des paramètres de son de Windows ;
+  - avec ASIO : le pilote de la carte son et son **Panneau de configuration** (tampon, horloge, routage ; il s'ouvre
+    pendant que le pilote fonctionne), ses entrées (aucune ou toutes), la fréquence d'échantillonnage (celle du
+    pilote, ou de 44,1 à 192 kHz quand la carte l'accepte), le tampon (celui du panneau par défaut). Toutes les
+    sorties de la carte sont disponibles : un plug-in multicanal s'entend sur autant de sorties. Quand le panneau
+    change le tampon ou la fréquence, l'hôte redémarre le pilote de lui-même ;
+  - ports d'entrée et de sortie MIDI.
+
+  La barre d'état indique le périphérique, sa fréquence d'échantillonnage et son tampon ; l'indicateur à droite de la
   barre des filtres montre le niveau de sortie.
 
 ![Audio et MIDI](images/fr/pluginhost-audio.png)
+
+![ASIO](images/fr/pluginhost-asio.png)
 
 ![Dossiers de plug-ins](images/fr/pluginhost-folders.png)
 
@@ -298,6 +309,22 @@ using var device = new WasapiDriver(outputId: null);       // périphérique par
 device.Start(rack);
 slot.SendMidi(MidiEvent.NoteOn(0, 0, 60, 100));            // depuis n'importe quel thread
 ```
+
+`AsioDriver` le joue par un pilote ASIO (`Asio.GetDrivers()` les liste) :
+
+```csharp
+using var carte = new AsioDriver("Ma carte ASIO", bufferFrames: 128, sampleRate: 96000, inputChannels: -1);
+carte.ResetRequested += _ => ui.Post(() => carte.Start(rack));  // tampon ou fréquence changés dans son panneau
+carte.Start(rack);                                              // sur le thread de l'interface (STA, boucle de messages)
+carte.ShowControlPanel();
+```
+
+`inputChannels` : 0 aucune (par défaut), -1 toutes, n les n premières ; `outputChannels` de même (-1, toutes, par
+défaut). Après `Start` : `InputChannelNames`, `OutputChannelNames`, `BufferSizes`, `SupportedSampleRates`,
+`SampleFormat`, `InputLatencySamples` / `OutputLatencySamples`. Les échantillons en entiers 16, 24 et 32 bits (aussi
+cadrés à droite dans 32 bits) et en flottants 32 ou 64 bits, petit ou grand-boutistes, sont convertis depuis et vers le
+flottant 32 bits. Un seul pilote ASIO à la fois par processus, en 64 bits seulement. ASIO est une marque de Steinberg
+Media Technologies GmbH ; la liaison est écrite d'après celle de NAudio (MIT), sans le SDK ASIO.
 
 `NullAudioDriver` fait tourner le rack sur une horloge, sans périphérique. Sources : `SilenceSource`,
 `DeviceInputSource`, `TestSignalGenerator`, `FileSource` ; `RackSlot.Bypass`, `Mute`, `GainDb`, `Meter` ; `MidiInput`

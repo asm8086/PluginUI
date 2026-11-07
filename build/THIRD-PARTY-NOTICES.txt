@@ -126,7 +126,7 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER I
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ===============================================================================================================
-NAudio - https://github.com/naudio/NAudio (MIDI input/output buffer handling, adapted)
+NAudio - https://github.com/naudio/NAudio (ASIO driver binding, MIDI input/output buffer handling, adapted)
 License: MIT
 ---------------------------------------------------------------------------------------------------------------
 Copyright 2008-2026 Mark Heath

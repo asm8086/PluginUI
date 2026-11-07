@@ -12,7 +12,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
     <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
-    <Description>Windows audio and MIDI devices for PluginUI.Host: WASAPI output and input (shared mode, low latency through IAudioClient3), MIDI input (winmm). NativeAOT compatible.</Description>
+    <Description>Windows audio and MIDI devices for PluginUI.Host: ASIO, WASAPI output and input (shared mode, low latency through IAudioClient3), MIDI input and output (winmm). NativeAOT compatible.</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
@@ -20,6 +20,10 @@
 
   <ItemGroup>
     <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PluginUI.Host.Tests" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,20 +9,25 @@ using PluginUI.Host.Windows;
 namespace PluginUI.Host.Desktop;
 
 /// <summary>
-/// The audio of the host: one <see cref="PluginRack"/> played by the chosen device (WASAPI, or a clock without device
-/// when none is available), and the MIDI input port, whose messages go to every open plug-in with a MIDI input.
+/// The audio of the host: one <see cref="PluginRack"/> played by the chosen device (ASIO, WASAPI, or a clock without
+/// device when none is available), the MIDI input port, whose messages go to every open plug-in with a MIDI input, and
+/// the MIDI output port.
 /// </summary>
 internal sealed class AudioEngine : IDisposable
 {
     private readonly UIHost _host;
     private MidiInput? _midi;
     private MidiOutput? _midiOut;
+    private GuiSettings? _settings;
 
     public AudioEngine(UIHost host) => _host = host;
 
     public PluginRack Rack { get; } = new();
 
     public AudioDriver Driver { get; private set; } = new NullAudioDriver();
+
+    /// <summary>The main window, owner of the ASIO driver's dialogs.</summary>
+    public Func<nint>? WindowHandle { get; set; }
 
     /// <summary>Name of the open MIDI input port (null = none).</summary>
     public string? MidiInputName => _midi?.Name;
@@ -42,27 +47,53 @@ internal sealed class AudioEngine : IDisposable
     /// <summary>Opens the devices of the settings, or the clock without device when they cannot be opened.</summary>
     public void Start(GuiSettings settings)
     {
+        _settings = settings;
+        StartDriver(settings);
+        OpenMidi(settings.MidiInput);
+        OpenMidiOutput(settings.MidiOutput);
+        Changed?.Invoke();
+    }
+
+    private void StartDriver(GuiSettings settings)
+    {
         Driver.Dispose();
-        AudioDriver driver;
-        if (settings.AudioOutput == "none")
+        AudioDriver? driver = null;
+        try
         {
+            switch (settings.Api)
+            {
+                case "asio":
+                    string? name = settings.AsioDriver ?? Asio.GetDrivers().FirstOrDefault()?.Name;
+                    if (name is null) throw new InvalidOperationException(L.T("no ASIO driver is installed", "aucun pilote ASIO n'est installé"));
+                    driver = new AsioDriver(name, settings.BufferFrames, settings.SampleRate, settings.AsioInputs ? -1 : 0)
+                    {
+                        WindowHandle = WindowHandle?.Invoke() ?? 0,
+                    };
+                    break;
+                case "wasapi":
+                    driver = new WasapiDriver(settings.AudioOutput == "none" ? null : settings.AudioOutput, settings.AudioInput, settings.BufferFrames);
+                    break;
+                default:
+                    driver = new NullAudioDriver();
+                    break;
+            }
+            driver.Start(Rack);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or System.Runtime.InteropServices.COMException or DllNotFoundException or EntryPointNotFoundException)
+        {
+            driver?.Dispose();
+            Message?.Invoke(L.T("The audio device could not be opened: ", "Le périphérique audio n'a pas pu être ouvert : ") + ex.Message);
             driver = new NullAudioDriver();
             driver.Start(Rack);
         }
-        else
+        driver.ResetRequested += d => _host.Post(() =>
         {
-            try
-            {
-                driver = new WasapiDriver(settings.AudioOutput, settings.AudioInput, settings.BufferFrames);
-                driver.Start(Rack);
-            }
-            catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException or System.Runtime.InteropServices.COMException or DllNotFoundException or EntryPointNotFoundException)
-            {
-                Message?.Invoke(L.T("The audio device could not be opened: ", "Le périphérique audio n'a pas pu être ouvert : ") + ex.Message);
-                driver = new NullAudioDriver();
-                driver.Start(Rack);
-            }
-        }
+            // The ASIO control panel changed the buffer or the sample rate: start again with them.
+            if (!ReferenceEquals(d, Driver) || _settings is null) return;
+            StartDriver(_settings);
+            Message?.Invoke(L.T("The audio device was restarted: ", "Le périphérique audio a été redémarré : ") + Describe());
+            Changed?.Invoke();
+        });
         driver.Failed += (d, message) => _host.Post(() =>
         {
             if (!ReferenceEquals(d, Driver)) return;
@@ -73,9 +104,21 @@ internal sealed class AudioEngine : IDisposable
             Changed?.Invoke();
         });
         Driver = driver;
-        OpenMidi(settings.MidiInput);
-        OpenMidiOutput(settings.MidiOutput);
-        Changed?.Invoke();
+    }
+
+    /// <summary>Opens the control panel of the running ASIO driver; false when ASIO does not run.</summary>
+    public bool ShowAsioControlPanel(string? registeredName)
+    {
+        if (Driver is not AsioDriver asio || (registeredName is not null && !string.Equals(asio.RegisteredName, registeredName, StringComparison.OrdinalIgnoreCase))) return false;
+        try
+        {
+            asio.ShowControlPanel();
+        }
+        catch (InvalidOperationException ex)
+        {
+            Message?.Invoke(ex.Message);
+        }
+        return true;
     }
 
     private void OpenMidi(string? name)
@@ -158,6 +201,7 @@ internal sealed class AudioEngine : IDisposable
         string text = $"{d.Name} · {(d.SampleRate / 1000.0).ToString("0.#", CultureInfo.InvariantCulture)} kHz · "
             + L.T($"{d.BlockSize} samples ({ms.ToString("0.0", CultureInfo.InvariantCulture)} ms)", $"{d.BlockSize} échantillons ({ms.ToString("0.0", CultureInfo.InvariantCulture)} ms)");
         if (d is WasapiDriver { InputName: { } input }) text += L.T(" · input ", " · entrée ") + input;
+        if (d is AsioDriver { InputChannels: > 0 } asio) text += L.T($" · {asio.InputChannels} inputs", $" · {asio.InputChannels} entrées");
         return text;
     }
 

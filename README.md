@@ -82,7 +82,7 @@ PluginUI/
 ├── tests/PluginUI.Tests/           203 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers, accessibility, tables, native windows)
 ├── tests/PluginUI.NPlug.Tests/     29 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
 ├── tests/PluginUI.Design.Tests/    26 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
-├── tests/PluginUI.Host.Tests/      41 NUnit tests (VST3 hosting of DemoSynth and test plug-ins, parameters, MIDI mapping, presets, rendering, measurement, WAV, MIDI files, MIDI produced by plug-ins, plug-in list, out-of-process scanning, live rack and signal sources)
+├── tests/PluginUI.Host.Tests/      71 NUnit tests (ASIO through an in-process test driver, sample formats, VST3 hosting of DemoSynth and test plug-ins, parameters, MIDI mapping, presets, rendering, measurement, WAV, MIDI files, MIDI produced by plug-ins, plug-in list, out-of-process scanning, live rack and signal sources)
 └── tests/PluginUI.Host.TestGain/   Test VST3 effect with latency (also published as a NativeAOT .vst3 for manual tests)
 ```
 
@@ -242,12 +242,12 @@ pluginhost measure -p "Pro-Q 3" -o response.csv --db 6log2
 executable: the plug-in list with a search, filters and sortable, configurable columns (vendor, category, format,
 channels, latency, installation date, recent and frequent use, favorites…), the details of each plug-in, scans with
 their progress, the plug-in folders, and one window per open plug-in with its own editor or a generic parameter table,
-presets, its source (audio input, test signal, audio file) or an on-screen keyboard, played live through WASAPI with a
-MIDI input. It shares the folders and the plug-in list with `pluginhost`.
+presets, its source (audio input, test signal, audio file) or an on-screen keyboard, played live through ASIO or WASAPI
+with MIDI input and output (also the MIDI the plug-ins produce). It shares the folders and the plug-in list with `pluginhost`.
 
 ![Plug-in Host](docs/images/pluginhost-main.png)
 
-MIDI output, ASIO and VST 2 plug-ins come next. Guide: [docs/PLUGIN_HOST.md](docs/PLUGIN_HOST.md).
+VST 2 plug-ins come next. Guide: [docs/PLUGIN_HOST.md](docs/PLUGIN_HOST.md).
 
 ## Concepts
 
