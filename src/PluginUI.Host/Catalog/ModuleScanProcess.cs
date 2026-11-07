@@ -14,7 +14,8 @@ namespace PluginUI.Host.Catalog;
 /// <remarks>
 /// The result goes to a file rather than to the standard output, which plug-ins sometimes write to. Progress lines on the
 /// standard error tell the parent that the scan is alive (a shell module with hundreds of plug-ins takes minutes), and
-/// step lines where a plug-in that crashes stopped (<see cref="Vst3.Vst3Module.Trace"/>). The module is not unloaded. On
+/// step lines where a plug-in that crashes stopped (<see cref="Vst3.Vst3Module.Trace"/>). The result is written before the
+/// module is released; the parent stops a child that does not exit soon after. On
 /// Windows the module is loaded on a single-threaded apartment thread, as in a DAW: plug-ins that initialize COM or OLE
 /// for their user interface fail otherwise.
 /// </remarks>
@@ -26,6 +27,7 @@ public static class ModuleScanProcess
     internal const string ProgressPrefix = "\u0001pluginhost-progress ";
     internal const string ErrorPrefix = "\u0001pluginhost-error ";
     internal const string StepPrefix = "\u0001pluginhost-step ";
+    internal const string DoneStep = "result written";
 
     /// <summary>Runs the command; <paramref name="arguments"/> are those after <see cref="CommandName"/>.</summary>
     /// <returns>Exit code: 0 success, 1 wrong arguments, 2 the module could not be described.</returns>
@@ -64,21 +66,23 @@ public static class ModuleScanProcess
                 void Progress(int done, int count)
                     => Console.Error.WriteLine(ProgressPrefix + done.ToString(CultureInfo.InvariantCulture) + "/" + count.ToString(CultureInfo.InvariantCulture));
                 IReadOnlyList<PluginDescription> found;
+                Vst3.Vst3Module? loaded = null;
                 if (format == "vst2")
                 {
                     found = new InProcessModuleScanner().Scan(module, PluginFormat.Vst2, Progress);
                 }
                 else
                 {
-                    // The module is not unloaded: the process ends right after, and some plug-ins crash in ExitDll or when
-                    // their library is freed. The result is written first, completely (temporary file, then renamed).
-                    var loaded = Vst3.Vst3Module.Load(module);
+                    loaded = Vst3.Vst3Module.Load(module);
                     found = InProcessModuleScanner.DescribeVst3(loaded, Progress);
                 }
+                // The result is written completely (temporary file, then renamed) before the module is released: some
+                // plug-ins crash in ExitDll or keep threads that hang the exit; the parent then stops this process.
                 string temporary = output + ".tmp";
                 File.WriteAllText(temporary, PluginCatalog.ToJson(found));
                 File.Move(temporary, output, overwrite: true);
-                Console.Error.WriteLine(StepPrefix + "done");
+                Console.Error.WriteLine(StepPrefix + DoneStep);
+                loaded?.Dispose();
             }
             catch (Exception ex)
             {

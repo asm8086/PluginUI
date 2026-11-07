@@ -56,6 +56,25 @@ public class ScannerProcessTests
     }
 
     [Test]
+    public void AChildThatHangsAfterItsResultIsStopped()
+    {
+        var grace = OutOfProcessModuleScanner.ClosingGrace;
+        OutOfProcessModuleScanner.ClosingGrace = TimeSpan.FromSeconds(0.5);
+        try
+        {
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            var found = Script($"printf '%s' '{Json}' > \"$5\"; printf '\\001pluginhost-step result written\\n' >&2; sleep 30")
+                .Scan("x.vst3", PluginFormat.Vst3, TimeSpan.FromSeconds(20));
+            Assert.That(found.Single().Name, Is.EqualTo("Noisy"));
+            Assert.That(clock.Elapsed, Is.LessThan(TimeSpan.FromSeconds(10)), "stopped after the grace period, not after the timeout");
+        }
+        finally
+        {
+            OutOfProcessModuleScanner.ClosingGrace = grace;
+        }
+    }
+
+    [Test]
     public void ProgressKeepsALongScanAlive()
     {
         string script = "for i in 1 2 3 4 5 6 7 8; do printf '\\001pluginhost-progress %s/8\\n' $i >&2; sleep 0.25; done; printf '%s' '" + Json + "' > \"$5\"";

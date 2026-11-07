@@ -330,7 +330,7 @@ public sealed class OutOfProcessModuleScanner(string executable, params string[]
         var gate = new Lock();
         var noise = new Queue<string>();
         string? error = null, step = null;
-        long lastActivity = Stopwatch.GetTimestamp();
+        long lastActivity = Stopwatch.GetTimestamp(), doneAt = 0;
         using var process = new Process { StartInfo = start };
         process.OutputDataReceived += (_, e) => Interlocked.Exchange(ref lastActivity, Stopwatch.GetTimestamp()); // plug-in output: ignored
         process.ErrorDataReceived += (_, e) =>
@@ -343,6 +343,7 @@ public sealed class OutOfProcessModuleScanner(string executable, params string[]
                 if (line.StartsWith(ModuleScanProcess.StepPrefix, StringComparison.Ordinal))
                 {
                     step = line[ModuleScanProcess.StepPrefix.Length..].Trim();
+                    if (step == ModuleScanProcess.DoneStep) Interlocked.Exchange(ref doneAt, Stopwatch.GetTimestamp());
                     return;
                 }
                 if (line.StartsWith(ModuleScanProcess.ErrorPrefix, StringComparison.Ordinal))
@@ -362,15 +363,17 @@ public sealed class OutOfProcessModuleScanner(string executable, params string[]
             process.BeginErrorReadLine();
             while (!process.WaitForExit(250))
             {
+                // The result is complete: the child is releasing the module. Some plug-ins keep threads that hang the
+                // exit of the process, or crash while closing; after a grace period the child is stopped.
+                long done = Interlocked.Read(ref doneAt);
+                if (done != 0 && Stopwatch.GetElapsedTime(done) > ClosingGrace)
+                {
+                    Stop(process);
+                    break;
+                }
                 if (Stopwatch.GetElapsedTime(Interlocked.Read(ref lastActivity)) <= timeout) continue;
-                try
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-                catch (InvalidOperationException)
-                {
-                    // Already gone.
-                }
+                Stop(process);
+                if (File.Exists(output)) break;
                 throw new TimeoutException($"No answer for {timeout.TotalSeconds:0} s.");
             }
             process.WaitForExit(); // lets the output readers finish
@@ -380,7 +383,7 @@ public sealed class OutOfProcessModuleScanner(string executable, params string[]
             lock (gate)
             {
                 message = error ?? Describe(process.ExitCode, noise);
-                if (error is null && step is not null && step != "done") message += $" Last step: {step}.";
+                if (error is null && step is not null && step != ModuleScanProcess.DoneStep) message += $" Last step: {step}.";
             }
             throw new InvalidOperationException(message);
         }
@@ -394,6 +397,21 @@ public sealed class OutOfProcessModuleScanner(string executable, params string[]
             {
                 // A temporary file left behind.
             }
+        }
+    }
+
+    /// <summary>Time given to the child to release the module and exit once its result is written.</summary>
+    public static TimeSpan ClosingGrace { get; set; } = TimeSpan.FromSeconds(5);
+
+    private static void Stop(Process process)
+    {
+        try
+        {
+            process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException)
+        {
+            // Already gone.
         }
     }
 
