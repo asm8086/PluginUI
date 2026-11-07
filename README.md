@@ -6,7 +6,7 @@
 
 PluginUI is a user interface toolkit for VST3 plug-in editors written in C# / .NET 10. It draws everything with **Direct2D / DirectWrite** in **a single Win32 window, a child of the DAW's window**, has no dependency on WinForms, WPF or any UI runtime, and stays **NativeAOT-compatible** (the compiled plug-in is a native DLL that needs no installed .NET).
 
-It brings together the element catalogs of **VSTGUI** and **iPlug2**, complemented by elements for instruments and for analysis (equalizer, frequency-response display, EBU R128 loudness, spectrogram, waveform, MSEG, step sequencer, drag-and-drop modulation, MIDI learn, A/B): about eighty elements, each available as stylable vector drawing, as bitmap / film strip and as SVG. It also provides the extension points to create more.
+It brings together the element catalogs of **VSTGUI** and **iPlug2**, complemented by elements for instruments and for analysis (equalizer, multiband crossover, frequency-response display, EBU R128 loudness, spectrogram, waveform, tuner, wavetable, MSEG, step sequencer, piano roll, drum pads, modulation matrix with drag-and-drop sources, preset browser, MIDI learn, A/B): nearly a hundred elements, each available as stylable vector drawing, as bitmap / film strip and as SVG. It also provides the extension points to create more.
 
 ![Gallery — rotary and linear](docs/images/1-rotary-linear.png)
 
@@ -134,7 +134,7 @@ A plug-in is a class library with a Windows runtime identifier; the `PluginUI.NP
   <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Debug builds loaded through the NPlug proxy -->
 </PropertyGroup>
 <ItemGroup>
-  <PackageReference Include="PluginUI.NPlug" Version="0.3.0" />
+  <PackageReference Include="PluginUI.NPlug" Version="0.4.0" />
 </ItemGroup>
 ```
 

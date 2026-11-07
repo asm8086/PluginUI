@@ -9,7 +9,7 @@ _layout: landing
 
 PluginUI draws everything with Direct2D / DirectWrite in a single child window of the host, has no dependency on
 WinForms, WPF or any UI runtime, and stays **NativeAOT-compatible**: a plug-in compiles to a native DLL that needs no
-.NET installation. It brings together the element catalog of VSTGUI and iPlug2 — about eighty elements, each available
+.NET installation. It brings together the element catalog of VSTGUI and iPlug2 — nearly a hundred elements, each available
 as styleable vector drawing, bitmap / film strip and SVG — with instrument and analysis elements, and the extension
 points to create more.
 

@@ -4,7 +4,7 @@ uid: PluginUI
 summary: *content
 ---
 The user interface toolkit: hosting (<xref:PluginUI.UIHost>, <xref:PluginUI.StandaloneWindow>), the element tree
-(<xref:PluginUI.UIElement>, layout panels), about eighty controls, themes and skins, Direct2D drawing
+(<xref:PluginUI.UIElement>, layout panels), nearly a hundred controls, themes and skins, Direct2D drawing
 (<xref:PluginUI.DrawingContext>), parameters (<xref:PluginUI.IParameter>) and services (clipboard, file dialogs, MIDI learn).
 
 Everything is measured in DIPs (1/96 inch). Elements are created and modified on the UI thread; other threads use

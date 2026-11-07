@@ -6,7 +6,7 @@
 
 PluginUI est une boîte à outils d'interface utilisateur pour les éditeurs de plugins VST3 écrits en C# / .NET 10. Elle dessine tout en **Direct2D / DirectWrite** dans **une seule fenêtre Win32 enfant** de celle du DAW, n'a aucune dépendance à WinForms, WPF ou un runtime d'interface, et reste **compatible NativeAOT** (le plugin compilé est une DLL native sans .NET installé).
 
-Elle réunit le catalogue d'éléments de **VSTGUI** et d'**iPlug2**, complété d'éléments pour instruments et pour l'analyse (égaliseur, affichage de réponse en fréquence, sonie EBU R128, spectrogramme, forme d'onde, MSEG, séquenceur, modulation par glisser-déposer, apprentissage MIDI, A/B) : environ quatre-vingts éléments, chacun disponible en dessin vectoriel stylable, en bitmap / film-strip et en SVG. Elle offre aussi les points d'extension pour en créer d'autres.
+Elle réunit le catalogue d'éléments de **VSTGUI** et d'**iPlug2**, complété d'éléments pour instruments et pour l'analyse (égaliseur, séparateur multibande, affichage de réponse en fréquence, sonie EBU R128, spectrogramme, forme d'onde, accordeur, table d'ondes, MSEG, séquenceur, piano roll, pads de batterie, matrice de modulation avec sources par glisser-déposer, navigateur de presets, apprentissage MIDI, A/B) : près d'une centaine d'éléments, chacun disponible en dessin vectoriel stylable, en bitmap / film-strip et en SVG. Elle offre aussi les points d'extension pour en créer d'autres.
 
 ![Galerie — rotatifs et linéaires](docs/images/fr/1-rotary-linear.png)
 
@@ -135,7 +135,7 @@ NativeAOT) :
   <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- versions Debug chargées par le proxy NPlug -->
 </PropertyGroup>
 <ItemGroup>
-  <PackageReference Include="PluginUI.NPlug" Version="0.3.0" />
+  <PackageReference Include="PluginUI.NPlug" Version="0.4.0" />
 </ItemGroup>
 ```
 

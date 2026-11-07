@@ -16,7 +16,7 @@
   <!-- Version, authorship and package metadata (packed: PluginUI, PluginUI.Design, PluginUI.NPlug, PluginUI.Desktop, PluginUI.Host,
        PluginUI.Host.Windows and PluginUI.Host.Vst2). -->
   <PropertyGroup>
-    <VersionPrefix>0.3.0</VersionPrefix>
+    <VersionPrefix>0.4.0</VersionPrefix>
     <Authors>asm8086</Authors>
     <Company>asm8086</Company>
     <Product>PluginUI</Product>

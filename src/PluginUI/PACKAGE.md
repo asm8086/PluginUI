@@ -5,10 +5,12 @@ Win32 + Direct2D user interface toolkit for audio plug-in editors written in C# 
 everything is drawn with Direct2D / DirectWrite in a single child window of the host, with no dependency on WinForms,
 WPF or any UI runtime.
 
-- About eighty elements (knobs, sliders, buttons, menus, text, meters, analyzers, keyboard, MSEG, sequencers, EQ…),
+- Nearly a hundred elements (knobs, sliders, buttons, menus, text, meters, analyzers, keyboard, piano roll, MSEG,
+  sequencers, EQ, crossover, modulation matrix, preset browser, tuner…),
   each available as styleable vector drawing, bitmap / film strip and SVG.
 - Layout panels, themes, skins, popups, tooltips, live layout editing, per-monitor DPI.
-- Lock-free audio → UI helpers (`PluginUI.Dsp`): peak values, ring buffers, FFT, loudness (EBU R128), SIMD.
+- Lock-free audio → UI helpers (`PluginUI.Dsp`): peak values, ring buffers, FFT, loudness (EBU R128), pitch detection
+  (YIN), SIMD.
 - Parameters with the VST3 begin / perform / end gesture protocol; standalone windows for applications.
 
 Windows 10 1809 or later. Plug-in hosting for [NPlug](https://github.com/xoofx/NPlug) (VST3) lives in the
