@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -22,6 +22,11 @@ Before 1.0, minor versions may contain breaking changes.
 - **pluginhost** (`tools/PluginHost.Cli`): command line plug-in host to replace Python and Pedalboard scripts —
   `folders`, `scan`, `list`, `favorite`, `info`, `preset show|save`, `process` (WAV through a chain of plug-ins),
   `render` (MIDI file through an instrument), `measure` (frequency response to CSV, impulse response to WAV).
+  Scanning was checked against a real plug-in collection: modules are loaded on a single-threaded apartment thread
+  (Melodyne, Modartt), the child process writes its result to a file (sforzando and Waves shells print on the
+  standard output), the timeout counts the time without progress (Waves shells), failures give the exit code meaning
+  and the last lines the plug-in printed, `.vst3` modules are also looked for in the VST 2 folders, and VST 2 modules
+  are not listed until VST 2 hosting is installed. `ModuleScanProcess` is the child side for any host executable.
 - **Accessibility (screen readers)**: PluginUI interfaces are exposed to Narrator, NVDA and JAWS through Windows UI
   Automation, in desktop applications and plug-in editors (`WM_GETOBJECT`, source-generated COM, NativeAOT compatible;
   calls from UI Automation threads run on the UI thread). New namespace `PluginUI.Automation`: `AutomationPeer`,

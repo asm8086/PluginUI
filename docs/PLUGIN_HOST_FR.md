@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -52,7 +52,9 @@ dotnet publish tools/PluginHost.Cli -c Release -r win-x64 -p:PublishAot=true   #
 
 Les dossiers à parcourir sont conservés dans `settings.json` ; le premier lancement y place les dossiers standard
 (`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST3` ; sous Linux `~/.vst3`, `/usr/lib/vst3`,
-`/usr/local/lib/vst3`).
+`/usr/local/lib/vst3`) et les dossiers VST 2 présents (`C:\Program Files\VSTPlugins`, `C:\Program Files\Steinberg\VSTPlugins`,
+`C:\Program Files\Common Files\VST2`, le dossier inscrit par Steinberg dans le registre). Les plug-ins VST 3 sont
+cherchés dans tous les dossiers, VST 2 compris ; les plug-ins VST 2 seront listés quand leur hébergement sera disponible.
 
 ```
 pluginhost folders                          # liste les dossiers
@@ -62,7 +64,10 @@ pluginhost folders reset                    # retour aux dossiers standard
 ```
 
 `scan` trouve les plug-ins et les enregistre dans `plugins.json`. Chaque module est ouvert **dans un processus
-séparé** : un plug-in qui plante ou ne répond plus (30 s par défaut) est noté en échec et la recherche continue. Les
+séparé**, sur un thread à appartement unique (STA) comme dans une STAN : un plug-in qui plante, ou qui ne progresse
+plus pendant 30 s (un module « shell » de centaines de plug-ins peut prendre plusieurs minutes, tant qu'il avance), est
+noté en échec avec la raison, et la recherche continue. Ce que les plug-ins affichent pendant leur chargement ne
+perturbe pas la recherche. Les
 recherches suivantes n'ouvrent que les modules nouveaux ou modifiés (taille ou date) ; `--all` rouvre tout. Les
 favoris et les compteurs d'utilisation survivent aux nouvelles recherches.
 

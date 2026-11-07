@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -114,6 +114,27 @@ public class CatalogTests
             Assert.That(second.Removed, Is.EqualTo(1));
             Assert.That(catalog.Plugins.Single(p => p.Name == "Single").IsFavorite, Is.True, "user data survives a rescan");
         });
+    }
+
+    [Test]
+    public void Vst3ModulesAreFoundInVst2FoldersAndVst2OnlyWhenHosted()
+    {
+        string mixed = Path.Combine(_root, "VSTPlugins");
+        Directory.CreateDirectory(mixed);
+        File.WriteAllText(Path.Combine(mixed, "Ours.vst3"), "x");
+        File.WriteAllText(Path.Combine(mixed, OperatingSystem.IsWindows() ? "Old.dll" : "Old.so"), "x");
+        var settings = new HostSettings { Vst2Folders = [mixed] };
+        Assert.Multiple(() =>
+        {
+            Assert.That(PluginScanner.FindModules(settings).Select(m => (Path.GetFileName(m.Path), m.Format)),
+                Is.EquivalentTo(new[] { ("Ours.vst3", PluginFormat.Vst3), (OperatingSystem.IsWindows() ? "Old.dll" : "Old.so", PluginFormat.Vst2) }));
+            Assert.That(PluginScanner.FindModules(settings, includeVst2: false).Single().Format, Is.EqualTo(PluginFormat.Vst3));
+        });
+
+        var catalog = new PluginCatalog();
+        var fake = new FakeScanner();
+        new PluginScanner(fake).Scan(settings, catalog);
+        Assert.That(fake.Scanned, Is.EqualTo(new[] { "Ours.vst3" }), "no VST 2 hosting installed: VST 2 modules are not listed as failures");
     }
 
     [Test]

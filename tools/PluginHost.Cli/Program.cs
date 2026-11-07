@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/06 23:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -49,9 +49,17 @@ public static class Program
         """;
 
     /// <summary>Entry point.</summary>
+    /// <remarks>
+    /// [STAThread]: plug-ins are loaded on a single-threaded apartment thread, as in a DAW (some initialize COM or OLE for
+    /// their user interface and fail in a multithreaded apartment).
+    /// </remarks>
+    [STAThread]
     public static int Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
+        // Child process of an out-of-process scan (arguments after the command name; --config does not matter there).
+        int scanCommand = Array.IndexOf(args, ModuleScanProcess.CommandName);
+        if (scanCommand >= 0) return ModuleScanProcess.Run(args[(scanCommand + 1)..]);
         try
         {
             var a = new Arguments(args);
@@ -68,7 +76,6 @@ public static class Program
                 "process" => Process(a),
                 "render" => Render(a),
                 "measure" => Measure(a),
-                "scan-module" => ScanModule(a),
                 "help" or "--help" or "-h" or "/?" => Help(),
                 _ => throw new UsageException($"Unknown command '{command}'."),
             };
@@ -169,16 +176,6 @@ public static class Program
         if (process.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
             return [Path.Combine(AppContext.BaseDirectory, "pluginhost.dll"), "--config", HostPaths.ConfigFolder];
         return ["--config", HostPaths.ConfigFolder];
-    }
-
-    private static int ScanModule(Arguments a)
-    {
-        string format = a.Option("--format") ?? "vst3";
-        string path = a.Next() ?? throw new UsageException("scan-module --format vst3 <path>");
-        a.EnsureEmpty();
-        var found = new InProcessModuleScanner().Scan(path, format == "vst2" ? PluginFormat.Vst2 : PluginFormat.Vst3, TimeSpan.FromMinutes(1));
-        Console.Out.Write(PluginCatalog.ToJson(found));
-        return 0;
     }
 
     private static int List(Arguments a)

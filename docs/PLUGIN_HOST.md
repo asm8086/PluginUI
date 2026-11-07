@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -51,7 +51,9 @@ dotnet publish tools/PluginHost.Cli -c Release -r win-x64 -p:PublishAot=true   #
 
 The folders to scan are kept in `settings.json`; the first run fills it with the standard folders
 (`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST3`; on Linux `~/.vst3`, `/usr/lib/vst3`,
-`/usr/local/lib/vst3`).
+`/usr/local/lib/vst3`) and the VST 2 folders found (`C:\Program Files\VSTPlugins`, `C:\Program Files\Steinberg\VSTPlugins`,
+`C:\Program Files\Common Files\VST2`, the folder registered by Steinberg in the registry). VST 3 plug-ins are looked
+for in every folder, VST 2 ones too; VST 2 plug-ins are listed once VST 2 hosting is available.
 
 ```
 pluginhost folders                          # list the folders
@@ -60,8 +62,10 @@ pluginhost folders remove "D:\Audio\VST3"
 pluginhost folders reset                    # back to the standard folders
 ```
 
-`scan` finds the plug-ins and stores them in `plugins.json`. Each module is opened **in a separate process**: a
-plug-in that crashes or hangs (30 s by default) is listed as failed and the scan goes on. Later scans only open the
+`scan` finds the plug-ins and stores them in `plugins.json`. Each module is opened **in a separate process**, on a
+single-threaded apartment thread as in a DAW: a plug-in that crashes, or makes no progress for 30 s (a shell module with
+hundreds of plug-ins may take minutes, as long as it advances), is listed as failed with the reason, and the scan goes
+on. What plug-ins print while loading does not disturb the scan. Later scans only open the
 modules that are new or changed (size or date); `--all` opens everything again. Favorites and usage counts survive
 rescans.
 
