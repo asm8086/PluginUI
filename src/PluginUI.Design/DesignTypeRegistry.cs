@@ -399,6 +399,8 @@ public static class BuiltInDesignTypes
         registry.Register<ModulationMatrix>(Instrument);
         registry.Register<RoutingMatrix>(Buttons);
         registry.Register<TimelineRuler>(Instrument);
+        registry.Register<WavetableView>(Instrument);
+        registry.Register<Tuner>(Analysis);
         registry.Register<ModulationSourceButton>(Instrument);
         registry.Register<WaveformView>(Instrument);
 

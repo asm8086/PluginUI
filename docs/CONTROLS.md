@@ -91,9 +91,11 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `CrossoverEditor`, `CrossoverSplit`, `CrossoverBand` | Multiband crossover (2 to 8 bands): Linkwitz-Riley band responses (slopes in multiples of 12 dB per octave, −6 dB at each split), split handles dragged along the frequency axis with a minimum spacing, band gain lines, solo and mute chips, spectrum in the background; every split frequency, gain, solo and mute can be bound to a parameter (edit gestures); keyboard: PageUp / PageDown and Ctrl+arrows select, arrows edit (Shift for fine steps), S, M, Delete | — (bonus) |
 | `CompressorCurve` | Transfer curve (threshold, ratio, soft knee), threshold and ratio adjustable with the mouse, live input level | — (bonus) |
 | `LoudnessMeter` + `Dsp.LoudnessAnalyzer` | EBU R128 / BS.1770-4 loudness: momentary, short-term, integrated (with gating), LRA range, peak; target and tolerance | — (bonus) |
+| `Tuner` + `Dsp.PitchDetector` | Chromatic tuner: YIN pitch detection on an `AudioRingBuffer` (or `FrequencySource` measured by the plug-in), note with sharps or flats, deviation in cents on a needle or a strip of lights (`TunerStyle`), green within `InTuneCents`, frequency and reference (A4, bindable `ReferenceParameter`), note held then released; screen readers hear note changes only | — (bonus) |
 | `Goniometer`, `CorrelationMeter` | Stereo image (M/S Lissajous) and phase correlation −1…+1 | — (bonus) |
 | `Spectrogram` | Scrolling spectrogram, logarithmic frequency axis, color map | — (bonus) |
 | `WaveformView` + `Dsp.WavReader` | Multichannel waveform: zoom and scrolling, start / end / loop markers that can be bound to parameters, selection, playhead, WAV file drop | — (bonus, sampler) |
+| `WavetableView` | Wavetable display and position control (a `ValueControl`): frames stacked in 3D or the current one alone (`WavetableDisplay`), the frame at the position interpolated, drag to scan, `SetFrames`, `CreateMorph` demonstration table | — (bonus) |
 
 ## MIDI
 

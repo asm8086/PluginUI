@@ -56,6 +56,14 @@ Before 1.0, minor versions may contain breaking changes.
 - All three registered in the designer and shown on the new Tools page of the gallery. Texts
   `UIStrings.TimelinePositionFormat`, `TimelineLoopFormat`, `TimelineLoopOff`, `AutomationTimeline`,
   `AutomationNotifications` (English, French).
+- **`Tuner`** (with `TunerStyle`) and **`Dsp.PitchDetector`** (YIN, `PitchEstimate`): chromatic tuner on a needle or a
+  strip of lights, fed by an `AudioRingBuffer` or a frequency measured by the plug-in, reference A4 bindable to a
+  parameter, sharps or flats; screen readers hear the note when it changes.
+- **`WavetableView`** (with `WavetableDisplay`): wavetable frames stacked in 3D or the current frame alone, position as
+  the value of the control (drag, wheel, keys, parameter), `SetFrames` and the `CreateMorph` demonstration table.
+- Both registered in the designer and shown on the new Synth page of the gallery. Texts `UIStrings.TunerFormat`,
+  `TunerInTune`, `TunerNoPitch`, `AutomationTuner` (English, French).
+- Gallery: every screenshot of the documentation renewed (sixteen pages).
 
 ### Changed
 

@@ -91,9 +91,11 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `CrossoverEditor`, `CrossoverSplit`, `CrossoverBand` | Séparateur multibande (2 à 8 bandes) : réponses Linkwitz-Riley des bandes (pentes multiples de 12 dB par octave, −6 dB à chaque séparation), poignées de séparation glissées le long de l'axe des fréquences avec un écart minimal, lignes de gain des bandes, pastilles solo et muet, spectre en fond ; chaque fréquence de séparation, gain, solo et muet peut être lié à un paramètre (gestes d'édition) ; clavier : Page préc. / Page suiv. et Ctrl+flèches sélectionnent, les flèches modifient (Maj pour le pas fin), S, M, Suppr | — (bonus) |
 | `CompressorCurve` | Courbe de transfert (seuil, ratio, genou doux), seuil et ratio réglables à la souris, niveau d'entrée en direct | — (bonus) |
 | `LoudnessMeter` + `Dsp.LoudnessAnalyzer` | Sonie EBU R128 / BS.1770-4 : momentanée, court terme, intégrée (avec seuils), plage LRA, crête ; cible et tolérance | — (bonus) |
+| `Tuner` + `Dsp.PitchDetector` | Accordeur chromatique : détection de hauteur YIN sur un `AudioRingBuffer` (ou `FrequencySource` mesurée par le plug-in), note en dièses ou en bémols, écart en cents sur une aiguille ou une rangée de diodes (`TunerStyle`), vert dans `InTuneCents`, fréquence et référence (la4, `ReferenceParameter` liable), note maintenue puis relâchée ; les lecteurs d'écran n'entendent que les changements de note | — (bonus) |
 | `Goniometer`, `CorrelationMeter` | Image stéréo (Lissajous M/S) et corrélation de phase −1…+1 | — (bonus) |
 | `Spectrogram` | Spectrogramme défilant, axe de fréquence logarithmique, carte de couleurs | — (bonus) |
 | `WaveformView` + `Dsp.WavReader` | Forme d'onde multicanal : zoom et défilement, marqueurs début / fin / boucle liables à des paramètres, sélection, curseur de lecture, dépôt de fichier WAV | — (bonus, échantillonneur) |
+| `WavetableView` | Affichage de table d'ondes et réglage de position (un `ValueControl`) : trames empilées en 3D ou la trame courante seule (`WavetableDisplay`), trame interpolée à la position, glisser pour parcourir, `SetFrames`, table de démonstration `CreateMorph` | — (bonus) |
 
 ## MIDI
 

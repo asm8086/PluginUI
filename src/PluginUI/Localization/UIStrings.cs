@@ -116,6 +116,10 @@ public sealed record UIStrings
         TimelineLoopOff = "boucle désactivée",
         AutomationTimeline = "règle temporelle",
         AutomationNotifications = "zone de notifications",
+        TunerFormat = "{0}, {1} cents",
+        TunerInTune = "juste",
+        TunerNoPitch = "aucune note",
+        AutomationTuner = "accordeur",
         KeyNames = KeyNameTables.French,
         Untitled = "Sans titre",
         SaveChangesQuestion = "Voulez-vous enregistrer les modifications de « {0} » ?",
@@ -378,6 +382,18 @@ public sealed record UIStrings
 
     /// <summary>Role of a <see cref="ToastStack"/> spoken by screen readers.</summary>
     public string AutomationNotifications { get; init; } = "notification area";
+
+    /// <summary>Note of a <see cref="Tuner"/> for screen readers ({0}: note, {1}: signed deviation in cents).</summary>
+    public string TunerFormat { get; init; } = "{0}, {1} cents";
+
+    /// <summary>A <see cref="Tuner"/> note within the in-tune range.</summary>
+    public string TunerInTune { get; init; } = "in tune";
+
+    /// <summary>A <see cref="Tuner"/> with no note.</summary>
+    public string TunerNoPitch { get; init; } = "no note";
+
+    /// <summary>Role of a <see cref="Tuner"/> spoken by screen readers.</summary>
+    public string AutomationTuner { get; init; } = "tuner";
 
     /// <summary>
     /// Names of keys in shortcut texts (modifiers <see cref="Key.Control"/>, <see cref="Key.Shift"/>,

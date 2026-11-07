@@ -70,6 +70,12 @@ internal sealed class DemoAudio : ITickable
     /// <summary>Position in beats of the simulated pattern player (120 BPM, 16 beats).</summary>
     public double PatternBeat { get; private set; }
 
+    /// <summary>A plucked low string slowly drifting around A2 (110 Hz ± 18 cents), for the tuners.</summary>
+    public AudioRingBuffer StringRing { get; } = new(16384);
+
+    private readonly float[] _string = new float[4096];
+    private double _stringPhase;
+
     /// <summary>Drum pads lit by the simulated drum pattern.</summary>
     public DrumPads? Pads { get; set; }
 
@@ -124,6 +130,14 @@ internal sealed class DemoAudio : ITickable
         }
         _time += count / SampleRate;
         Ring.WriteMono(_left.AsSpan(0, count), _right.AsSpan(0, count));
+        double stringHz = 110.0 * Math.Pow(2.0, 0.18 * Math.Sin(_time * 0.7 + 0.6) / 12.0);
+        for (int i = 0; i < count; i++)
+        {
+            _stringPhase += stringHz / SampleRate;
+            double ph = 2.0 * Math.PI * _stringPhase;
+            _string[i] = (float)(0.4 * Math.Sin(ph) + 0.2 * Math.Sin(2.0 * ph) + 0.1 * Math.Sin(3.0 * ph) + 0.05 * Math.Sin(4.0 * ph));
+        }
+        StringRing.Write(_string.AsSpan(0, count));
         Left.Write(_left.AsSpan(0, count));
         Right.Write(_right.AsSpan(0, count));
         Loudness.Process(_left.AsSpan(0, count), _right.AsSpan(0, count));
