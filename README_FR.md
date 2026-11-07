@@ -18,7 +18,7 @@ Elle réunit le catalogue d'éléments de **VSTGUI** et d'**iPlug2**, complété
 | ![Instrument](docs/images/fr/10-instrument.png) | ![Mixage et analyse](docs/images/fr/11-analysis.png) |
 | ![Réponse en fréquence](docs/images/fr/15-response.png) | ![Séparateur multibande](docs/images/fr/16-multiband.png) |
 | ![Éditeur de motif et pads de batterie](docs/images/fr/17-sequencer.png) | ![Navigateur de presets et arborescence](docs/images/fr/18-browser.png) |
-| ![Matrices de modulation et de routage](docs/images/fr/19-matrix.png) | |
+| ![Matrices de modulation et de routage](docs/images/fr/19-matrix.png) | ![Règle temporelle, boîtes numériques et notifications](docs/images/fr/20-tools.png) |
 
 *Captures produites par `PluginUI.Gallery --snapshot` (rendu hors écran). Les cadres barrés des pages « Habillages » et « Conteneurs » sont les SVG, que le moteur de capture (Wine) ne sait pas dessiner ; Windows les affiche nativement.*
 
@@ -82,7 +82,7 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer : application de bureau (IL ou NativeAOT) construite avec PluginUI.Desktop
 ├── samples/Designs/                Designs d'exemple (.pluginui), dont la disposition de DemoSynth
-├── tests/PluginUI.Tests/           223 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau, accessibilité, tables, fenêtres natives, plein écran)
+├── tests/PluginUI.Tests/           226 tests NUnit (mise en page, entrées, gestes, popups, contrôles, DSP et SIMD, cultures et langues, conventions de conception, barre de menus, commandes, outils de bureau, accessibilité, tables, fenêtres natives, plein écran)
 ├── tests/PluginUI.NPlug.Tests/     29 tests NUnit (pont éditeur ↔ processeur, touches de l'hôte, MIDI learn, DSP du synthé, validateur Steinberg)
 ├── tests/PluginUI.Design.Tests/    26 tests NUnit (format .pluginui, chargeur, code généré compilé par Roslyn, lien en direct, projets, commandes de l'éditeur, extensions)
 ├── tests/PluginUI.Host.Tests/      81 tests NUnit (hébergement VST 2 d'un plug-in de test en processus, .fxp / .fxb, ASIO par un pilote de test en processus, formats d'échantillons, hébergement VST3 de DemoSynth et de plug-ins de test, paramètres, correspondance MIDI, presets, rendu, mesure, WAV, fichiers MIDI, MIDI émis par les plug-ins, liste des plug-ins, recherche hors processus, rack en direct et sources de signal)

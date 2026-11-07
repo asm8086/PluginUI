@@ -374,6 +374,7 @@ public static class BuiltInDesignTypes
         registry.Register<Label>(Text);
         registry.Register<ValueDisplay>(Text);
         registry.Register<NumberBox>(Text);
+        registry.Register<NumericUpDown>(Text);
         registry.Register<TextBox>(Text);
         registry.Register<SegmentDisplay>(Text);
         registry.Register<BitmapText>(Text);
@@ -397,6 +398,7 @@ public static class BuiltInDesignTypes
         registry.Register<DrumPads>(Instrument);
         registry.Register<ModulationMatrix>(Instrument);
         registry.Register<RoutingMatrix>(Buttons);
+        registry.Register<TimelineRuler>(Instrument);
         registry.Register<ModulationSourceButton>(Instrument);
         registry.Register<WaveformView>(Instrument);
 
@@ -420,6 +422,7 @@ public static class BuiltInDesignTypes
         registry.Register<DataTable>(Pickers);
 
         registry.Register<ImageView>(Decoration);
+        registry.Register<ToastStack>(Decoration);
         registry.Register<SvgView>(Decoration);
         registry.Register<Separator>(Decoration);
         registry.Register<Spacer>(Decoration);

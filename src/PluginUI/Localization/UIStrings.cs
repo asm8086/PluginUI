@@ -111,6 +111,11 @@ public sealed record UIStrings
         ModulationSlotCountFormat = "{0} emplacements",
         AutomationModulationMatrix = "matrice de modulation",
         AutomationRoutingMatrix = "matrice de routage",
+        TimelinePositionFormat = "Position : {0}",
+        TimelineLoopFormat = "boucle de {0} à {1}",
+        TimelineLoopOff = "boucle désactivée",
+        AutomationTimeline = "règle temporelle",
+        AutomationNotifications = "zone de notifications",
         KeyNames = KeyNameTables.French,
         Untitled = "Sans titre",
         SaveChangesQuestion = "Voulez-vous enregistrer les modifications de « {0} » ?",
@@ -358,6 +363,21 @@ public sealed record UIStrings
 
     /// <summary>Role of a <see cref="RoutingMatrix"/> spoken by screen readers.</summary>
     public string AutomationRoutingMatrix { get; init; } = "routing matrix";
+
+    /// <summary>Play position of a <see cref="TimelineRuler"/> for screen readers ({0}: the position).</summary>
+    public string TimelinePositionFormat { get; init; } = "Position {0}";
+
+    /// <summary>Loop of a <see cref="TimelineRuler"/> for screen readers ({0}: start, {1}: end).</summary>
+    public string TimelineLoopFormat { get; init; } = "loop {0} to {1}";
+
+    /// <summary>Loop of a <see cref="TimelineRuler"/> switched off.</summary>
+    public string TimelineLoopOff { get; init; } = "loop off";
+
+    /// <summary>Role of a <see cref="TimelineRuler"/> spoken by screen readers.</summary>
+    public string AutomationTimeline { get; init; } = "timeline";
+
+    /// <summary>Role of a <see cref="ToastStack"/> spoken by screen readers.</summary>
+    public string AutomationNotifications { get; init; } = "notification area";
 
     /// <summary>
     /// Names of keys in shortcut texts (modifiers <see cref="Key.Control"/>, <see cref="Key.Shift"/>,

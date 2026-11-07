@@ -64,7 +64,8 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 |---|---|---|
 | `Label` | One or more lines, alignments, `TextSource` refreshed every frame (real-time text) | `CTextLabel`, `CMultiLineTextLabel`, `ITextControl`, `IRTTextControl`, `IVLabelControl`, `IMultiLineTextControl` |
 | `ValueDisplay` | Parameter value, entry by double-click or Enter, optional dragging | `CParamDisplay`, `ICaptionControl` |
-| `NumberBox` | Drag, mouse wheel, text entry, −/+ buttons | `IVNumberBoxControl` |
+| `NumberBox` | Drag, mouse wheel, text entry, −/+ buttons that repeat and speed up while held, steps in parameter units (`PlainStep`), `ButtonLayout` sides or stacked | `IVNumberBoxControl` |
+| `NumericUpDown` | Spin box: a `NumberBox` with ▲ / ▼ stacked on the right; one position of a stepped parameter per click, Up / Down and Page Up / Page Down | — (bonus) |
 | `TextBox` | Single-line entry: selection, clipboard, words (Ctrl+arrows), filter, max. length, read-only, search style | `CTextEdit`, `CSearchTextEdit`, `ITextEntryControl` |
 | `UIHost.BeginTextEdit` | In-place text entry over any rectangle | `IEditableTextControl` |
 | `SegmentDisplay` | Vector 7-segment display, unlit segments visible, decimal point, slant, glow | `CSpecialDigit` |
@@ -82,6 +83,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `SpectrumAnalyzer` | FFT (`Dsp.Fft`), log axis 20 Hz–20 kHz, slope compensation, attack/release smoothing, peak hold, fractional-octave bar mode | `IVSpectrumAnalyzerControl`, `IVBarGraphSpectrumAnalyzerControl` |
 | `Plot` | Functions or point lists, logarithmic X, fill, automatic tick marks (equalizer curve) | `IVPlotControl` |
 | `ProgressBar` | Determinate (with percentage) or indeterminate | — |
+| `TimelineRuler`, `TimelineMarker` | Time ruler in bars and beats or minutes and seconds (`Tempo`): zoom (Ctrl+wheel, + / −) and scroll, play cursor polled from the audio side, click to request a position (`PositionRequested`), loop strip (draw, move, resize, double-click on / off; `LoopStartParameter` / `LoopEndParameter` in beats), markers; positions snap to the visible grid (Alt = free) | — (bonus) |
 | `FpsCounter` | Frames per second and frame time (debugging) | `IFPSDisplayControl` |
 | `HistoryGraph` | Scrolling history of a value (gain reduction, envelope, LFO): line, filled or bars, lock-free `PeakValue` source or polled function | `IVDisplayControl` |
 | `ParametricEqEditor`, `EqBand` | Parametric equalizer: exact curve of the RBJ biquads, draggable nodes (frequency and gain in parallel gestures), Q with the mouse wheel, shape menu per band, adding and removing bands, spectrum in the background | — (bonus) |
@@ -140,6 +142,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | Element | Key points | Equivalent |
 |---|---|---|
 | `ImageView` | Fitted image (`ImageFit`) or animated film strip (loop, ping-pong) | `CMovieBitmap`, `CAutoAnimation`, `IBitmapControl` |
+| `ToastStack`, `Toast` | Notification area over the editor: toasts in a corner (`ToastCorner`), kinds Info / Success / Warning / Error, action button ("Undo"), × to close, timer paused under the mouse, fade in and out, oldest closed beyond `MaxVisible`; `Post` from any thread; announced to screen readers | — (bonus) |
 | `SvgView` | Native SVG, fitting, rotation | `ISVGControl` |
 | `NativeWindowHost` | Embeds a third-party Win32 window (video, WebView2 created by the application), or provides an empty container window for content that needs a parent (`ProvidesContainer`: VST3 plug-in editors); hidden under popups on request (`HideUnderPopups`) | `CExternalView`, `IPlatformViewControl`, `CExternalControl` |
 

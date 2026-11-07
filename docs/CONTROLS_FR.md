@@ -64,7 +64,8 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 |---|---|---|
 | `Label` | Une ou plusieurs lignes, alignements, `TextSource` rafraîchi à chaque image (texte temps réel) | `CTextLabel`, `CMultiLineTextLabel`, `ITextControl`, `IRTTextControl`, `IVLabelControl`, `IMultiLineTextControl` |
 | `ValueDisplay` | Valeur du paramètre, saisie par double-clic ou Entrée, glisser optionnel | `CParamDisplay`, `ICaptionControl` |
-| `NumberBox` | Glisser, molette, saisie, boutons −/+ | `IVNumberBoxControl` |
+| `NumberBox` | Glisser, molette, saisie, boutons −/+ qui se répètent et accélèrent quand on les maintient, pas dans les unités du paramètre (`PlainStep`), `ButtonLayout` sur les côtés ou empilés | `IVNumberBoxControl` |
+| `NumericUpDown` | Boîte numérique : un `NumberBox` avec ▲ / ▼ empilés à droite ; une position d'un paramètre à crans par clic, Haut / Bas et Page préc. / suiv. | — (bonus) |
 | `TextBox` | Saisie une ligne : sélection, presse-papiers, mots (Ctrl+flèches), filtre, longueur max., lecture seule, style recherche | `CTextEdit`, `CSearchTextEdit`, `ITextEntryControl` |
 | `UIHost.BeginTextEdit` | Saisie sur place au-dessus de n'importe quel rectangle | `IEditableTextControl` |
 | `SegmentDisplay` | Afficheur 7 segments vectoriel, segments éteints visibles, point décimal, inclinaison, lueur | `CSpecialDigit` |
@@ -82,6 +83,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `SpectrumAnalyzer` | FFT (`Dsp.Fft`), axe log 20 Hz–20 kHz, compensation de pente, lissage attaque/relâchement, maintien de crête, mode barres par fraction d'octave | `IVSpectrumAnalyzerControl`, `IVBarGraphSpectrumAnalyzerControl` |
 | `Plot` | Fonctions ou listes de points, X logarithmique, remplissage, graduations automatiques (courbe d'égaliseur) | `IVPlotControl` |
 | `ProgressBar` | Déterminée (avec pourcentage) ou indéterminée | — |
+| `TimelineRuler`, `TimelineMarker` | Règle temporelle en mesures et temps ou en minutes et secondes (`Tempo`) : zoom (Ctrl+molette, + / −) et défilement, curseur de lecture lu côté audio, clic pour demander une position (`PositionRequested`), bande de boucle (tracer, déplacer, redimensionner, double-clic marche / arrêt ; `LoopStartParameter` / `LoopEndParameter` en temps), marqueurs ; positions calées sur la grille visible (Alt = libre) | — (bonus) |
 | `FpsCounter` | Images par seconde et durée d'image (débogage) | `IFPSDisplayControl` |
 | `HistoryGraph` | Historique défilant d'une valeur (réduction de gain, enveloppe, LFO) : ligne, rempli ou barres, source `PeakValue` sans verrou ou fonction interrogée | `IVDisplayControl` |
 | `ParametricEqEditor`, `EqBand` | Égaliseur paramétrique : courbe exacte des biquads RBJ, nœuds déplaçables (fréquence et gain en gestes parallèles), Q à la molette, menu de forme par bande, ajout et suppression, spectre en fond | — (bonus) |
@@ -140,6 +142,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | Élément | Points clés | Équivalent |
 |---|---|---|
 | `ImageView` | Image ajustée (`ImageFit`) ou film-strip animé (boucle, aller-retour) | `CMovieBitmap`, `CAutoAnimation`, `IBitmapControl` |
+| `ToastStack`, `Toast` | Zone de notifications au-dessus de l'éditeur : notifications dans un coin (`ToastCorner`), types Info / Success / Warning / Error, bouton d'action (« Annuler »), × pour fermer, minuterie suspendue sous la souris, apparition et effacement en fondu, les plus anciennes fermées au-delà de `MaxVisible` ; `Post` depuis n'importe quel thread ; annoncées aux lecteurs d'écran | — (bonus) |
 | `SvgView` | SVG natif, ajustement, rotation | `ISVGControl` |
 | `NativeWindowHost` | Incruste une fenêtre Win32 tierce (vidéo, WebView2 créée par l'application), ou fournit une fenêtre conteneur vide pour un contenu qui a besoin d'un parent (`ProvidesContainer` : éditeurs de plug-ins VST3) ; masquée sous les popups sur demande (`HideUnderPopups`) | `CExternalView`, `IPlatformViewControl`, `CExternalControl` |
 

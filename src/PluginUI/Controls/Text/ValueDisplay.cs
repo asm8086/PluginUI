@@ -220,10 +220,25 @@ public class ValueDisplay : ValueControl
     }
 }
 
+/// <summary>Where a <see cref="NumberBox"/> draws its step buttons.</summary>
+public enum StepButtonLayout
+{
+    /// <summary>− on the left, + on the right.</summary>
+    Sides,
+    /// <summary>▲ above ▼, both on the right (a spin box).</summary>
+    Stacked,
+}
+
 /// <summary>
 /// Numeric box: drag vertically to change (Shift = fine), wheel, arrows, double-click or Enter to type,
-/// optional − / + step buttons with auto-repeat. iPlug2 <c>IVNumberBoxControl</c>.
+/// optional − / + step buttons with auto-repeat that speeds up while held. iPlug2 <c>IVNumberBoxControl</c>.
 /// </summary>
+/// <remarks>
+/// The buttons and the Up / Down keys move by one step: <see cref="PlainStep"/> in the units of the bound parameter
+/// (1 Hz, 0.5 dB…), otherwise <see cref="ButtonStep"/> of the normalized range, or one position of a stepped
+/// parameter. Page Up / Page Down move by ten steps. Held buttons repeat after 0.4 s, and go ten times faster after
+/// twenty repeats (<see cref="AccelerateRepeat"/>).
+/// </remarks>
 public class NumberBox : ValueDisplay
 {
     private const float ButtonWidth = 18f;
@@ -237,20 +252,36 @@ public class NumberBox : ValueDisplay
         Cursor = StandardCursor.SizeNS;
     }
 
-    /// <summary>Shows the − / + buttons.</summary>
+    /// <summary>Shows the step buttons.</summary>
     [Category("Appearance")]
     public bool ShowStepButtons { get; set; } = true;
 
-    /// <summary>Normalized step of the buttons for continuous values (discrete values step by one state).</summary>
+    /// <summary>Where the step buttons are drawn.</summary>
+    [Category("Appearance")]
+    public StepButtonLayout ButtonLayout { get; set; } = StepButtonLayout.Sides;
+
+    /// <summary>Normalized step of the buttons and the Up / Down keys when <see cref="PlainStep"/> is 0 (continuous values).</summary>
     [Category("Value")]
     public double ButtonStep { get; set; } = 0.01;
 
+    /// <summary>Step in the units of the bound parameter (0 = use <see cref="ButtonStep"/>).</summary>
+    [Category("Value")]
+    public double PlainStep { get; set; }
+
+    /// <summary>Held buttons go ten times faster after twenty repeats.</summary>
+    [Category("Behavior")]
+    public bool AccelerateRepeat { get; set; } = true;
+
     /// <inheritdoc />
-    protected override Size DefaultSize => new(ShowStepButtons ? 96f : 64f, Theme.Metrics.ControlHeight);
+    protected override Size DefaultSize => new(ShowStepButtons ? (ButtonLayout == StepButtonLayout.Stacked ? 80f : 96f) : 64f, Theme.Metrics.ControlHeight);
 
-    private static Rect MinusRect(Rect widget) => widget.TakeLeft(ButtonWidth);
+    private Rect MinusRect(Rect widget) => ButtonLayout == StepButtonLayout.Stacked
+        ? Rect.FromEdges(widget.Right - ButtonWidth, widget.Center.Y, widget.Right, widget.Bottom)
+        : widget.TakeLeft(ButtonWidth);
 
-    private static Rect PlusRect(Rect widget) => widget.TakeRight(ButtonWidth);
+    private Rect PlusRect(Rect widget) => ButtonLayout == StepButtonLayout.Stacked
+        ? Rect.FromEdges(widget.Right - ButtonWidth, widget.Y, widget.Right, widget.Center.Y)
+        : widget.TakeRight(ButtonWidth);
 
     private Rect CurrentWidget()
     {
@@ -260,7 +291,12 @@ public class NumberBox : ValueDisplay
 
     /// <inheritdoc />
     protected override Rect ValueArea(Rect widget)
-        => ShowStepButtons ? Rect.FromEdges(widget.X + ButtonWidth, widget.Y, widget.Right - ButtonWidth, widget.Bottom) : base.ValueArea(widget);
+    {
+        if (!ShowStepButtons) return base.ValueArea(widget);
+        return ButtonLayout == StepButtonLayout.Stacked
+            ? Rect.FromEdges(widget.X + 4f, widget.Y, widget.Right - ButtonWidth, widget.Bottom)
+            : Rect.FromEdges(widget.X + ButtonWidth, widget.Y, widget.Right - ButtonWidth, widget.Bottom);
+    }
 
     /// <inheritdoc />
     protected override void RenderVector(DrawingContext dc, Rect widget, VectorStyle style)
@@ -268,6 +304,7 @@ public class NumberBox : ValueDisplay
         base.RenderVector(dc, widget, style);
         if (!ShowStepButtons) return;
         var p = Theme.Palette;
+        bool stacked = ButtonLayout == StepButtonLayout.Stacked;
         foreach (int dir in (ReadOnlySpan<int>)[-1, 1])
         {
             var r = dir < 0 ? MinusRect(widget) : PlusRect(widget);
@@ -275,14 +312,34 @@ public class NumberBox : ValueDisplay
             if (pressed) dc.FillRoundedRect(r.Inflate(-2f), 3f, style.Pressed);
             var c = r.Center;
             var color = IsEffectivelyEnabled ? (pressed ? style.Accent : p.TextDim) : p.TextDisabled;
+            if (stacked)
+            {
+                float h = MathF.Min(3f, r.Height * 0.25f);
+                dc.DrawPolyline([new Point(c.X - 3.5f, c.Y + dir * h * 0.5f), new Point(c.X, c.Y - dir * h * 0.5f), new Point(c.X + 3.5f, c.Y + dir * h * 0.5f)], color, 1.5f, StrokeStyle.Round);
+                continue;
+            }
             dc.DrawLine(new Point(c.X - 3.5f, c.Y), new Point(c.X + 3.5f, c.Y), color, 1.5f, StrokeStyle.Round);
             if (dir > 0) dc.DrawLine(new Point(c.X, c.Y - 3.5f), new Point(c.X, c.Y + 3.5f), color, 1.5f, StrokeStyle.Round);
             float sx = dir < 0 ? r.Right : r.X;
             dc.DrawLine(new Point(sx, widget.Y + 5f), new Point(sx, widget.Bottom - 5f), style.Frame.WithAlpha(0.6f), 1f);
         }
+        if (stacked)
+        {
+            var b = PlusRect(widget);
+            dc.DrawLine(new Point(b.X, widget.Y + 4f), new Point(b.X, widget.Bottom - 4f), style.Frame.WithAlpha(0.6f), 1f);
+            dc.DrawLine(new Point(b.X + 3f, widget.Center.Y), new Point(b.Right - 3f, widget.Center.Y), style.Frame.WithAlpha(0.4f), 1f);
+        }
     }
 
-    private double StepSize => StepCount > 0 ? 1.0 / StepCount : ButtonStep;
+    /// <summary>The value <paramref name="steps"/> steps away from <paramref name="normalized"/> (negative = down).</summary>
+    public double StepFrom(double normalized, int steps)
+    {
+        if (StepCount > 0) return Math.Clamp(normalized + steps / (double)StepCount, 0.0, 1.0);
+        if (PlainStep > 0 && Parameter is { } p) return Math.Clamp(p.ToNormalized(p.ToPlain(normalized) + steps * PlainStep), 0.0, 1.0);
+        return Math.Clamp(normalized + steps * ButtonStep, 0.0, 1.0);
+    }
+
+    private void Step(int steps) => SetValueByUser(StepFrom(Value, steps));
 
     /// <inheritdoc />
     protected internal override void OnMouseDown(MouseEventArgs e)
@@ -295,7 +352,7 @@ public class NumberBox : ValueDisplay
             {
                 e.Handled = true;
                 _pressedButton = dir;
-                SetValueByUser(Value + dir * StepSize);
+                Step(dir);
                 _repeat ??= new RepeatTicker(this);
                 _repeat.Start();
                 Host?.AddTicker(_repeat);
@@ -326,6 +383,22 @@ public class NumberBox : ValueDisplay
     }
 
     /// <inheritdoc />
+    protected internal override void OnKeyDown(KeyEventArgs e)
+    {
+        if (!e.Handled && IsEffectivelyEnabled && !e.Control)
+        {
+            int steps = e.Key switch { Key.Up => 1, Key.Down => -1, Key.PageUp => 10, Key.PageDown => -10, _ => 0 };
+            if (steps != 0)
+            {
+                Step(steps);
+                e.Handled = true;
+                return;
+            }
+        }
+        base.OnKeyDown(e);
+    }
+
+    /// <inheritdoc />
     protected override void OnDetached()
     {
         StopRepeat();
@@ -344,11 +417,13 @@ public class NumberBox : ValueDisplay
     {
         private double _elapsed;
         private double _next;
+        private int _count;
 
         public void Start()
         {
             _elapsed = 0;
             _next = 0.4;
+            _count = 0;
         }
 
         public bool Tick(double elapsedSeconds)
@@ -357,10 +432,31 @@ public class NumberBox : ValueDisplay
             _elapsed += elapsedSeconds;
             while (_elapsed >= _next)
             {
-                owner.SetValueByUser(owner.Value + owner._pressedButton * owner.StepSize);
+                _count++;
+                int steps = owner.AccelerateRepeat && _count > 20 ? 10 : 1;
+                owner.Step(owner._pressedButton * steps);
                 _next += 0.06;
             }
             return true;
         }
+    }
+}
+
+/// <summary>
+/// Spin box: a <see cref="NumberBox"/> with ▲ / ▼ buttons stacked on the right, as in operating system dialogs and
+/// settings pages (sample rate, voices, MIDI channel, delay in milliseconds).
+/// </summary>
+/// <example>
+/// <code>
+/// var voices = new NumericUpDown { Parameter = Parameters[model.Voices] };          // stepped: one voice per click
+/// var delay = new NumericUpDown { Parameter = Parameters[model.DelayMs], PlainStep = 1.0 };
+/// </code>
+/// </example>
+public class NumericUpDown : NumberBox
+{
+    /// <summary>Creates a spin box.</summary>
+    public NumericUpDown()
+    {
+        ButtonLayout = StepButtonLayout.Stacked;
     }
 }

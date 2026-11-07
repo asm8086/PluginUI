@@ -48,9 +48,20 @@ Before 1.0, minor versions may contain breaking changes.
   `UIStrings.ModulationSourceHeader`, `ModulationTargetHeader`, `ModulationAmountHeader`, `AddModulation`,
   `ModulationNone`, `ModulationOn`, `ModulationOff`, `ModulationSlotFormat`, `ModulationSlotCountFormat`,
   `AutomationModulationMatrix`, `AutomationRoutingMatrix` (English, French).
+- **`NumericUpDown`**: spin box with ▲ / ▼ stacked on the right, built on `NumberBox`.
+- **`TimelineRuler`** (with `TimelineMarker`, `TimelineFormat`): time ruler in bars and beats or minutes and seconds,
+  zoom and scroll, play cursor, click to request a position, loop strip bound to parameters, markers, grid snapping.
+- **`ToastStack`** (with `Toast`, `ToastKind`, `ToastCorner`): notification area over the editor with stacked toasts,
+  action buttons, pause under the mouse, fades, `Post` from any thread and screen reader announcements.
+- All three registered in the designer and shown on the new Tools page of the gallery. Texts
+  `UIStrings.TimelinePositionFormat`, `TimelineLoopFormat`, `TimelineLoopOff`, `AutomationTimeline`,
+  `AutomationNotifications` (English, French).
 
 ### Changed
 
+- `NumberBox`: `ButtonLayout` (sides or stacked), `PlainStep` (step in parameter units), `AccelerateRepeat` (held
+  buttons go ten times faster after twenty repeats) and `StepFrom`; Up / Down and Page Up / Page Down now move by the
+  button step instead of the wheel step.
 - `TabView`: tabs on top that do not fit the strip shrink their padding, then their width, instead of running past
   the right edge.
 

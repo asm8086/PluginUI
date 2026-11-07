@@ -40,6 +40,7 @@ internal sealed class GalleryApp
         Tabs.AddPage(L.T("Sequencer", "Séquenceur"), SequencerPage.Build(Audio));
         Tabs.AddPage(L.T("Browser", "Navigateur"), BrowserPage.Build());
         Tabs.AddPage(L.T("Matrix", "Matrices"), MatrixPage.Build());
+        Tabs.AddPage(L.T("Tools", "Outils"), ToolsPage.Build(Audio));
 
         _themeSelector = new SegmentedControl(L.T("Dark", "Sombre"), L.T("Light", "Clair")) { ToolTip = L.T("Theme", "Thème") };
         _accentSelector = new DropDown(_accents.Select(a => a.Name).ToArray()) { ToolTip = L.T("Accent color", "Couleur d'accent") };
