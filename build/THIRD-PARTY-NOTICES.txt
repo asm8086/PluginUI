@@ -2,7 +2,8 @@
 
 THIRD-PARTY NOTICES
 
-The PluginUI binaries (VST3 plug-ins, gallery, PluginUIEditor) include or are built from the following components.
+The PluginUI binaries (VST3 plug-ins, gallery, PluginUIEditor, Biquad Designer, Plug-in Host, pluginhost) and the
+NuGet packages include or are built from the following components.
 PluginUI itself is under the MIT License (LICENSE.txt).
 
 ===============================================================================================================

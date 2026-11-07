@@ -29,7 +29,7 @@ The same code runs as IL (`dotnet run`, debugger) or as one NativeAOT executable
 - Each column sets one section: enable, type (bell, shelves, cuts, notch, band pass), frequency, gain, Q.
 - The panel on the right lists `b0 b1 b2 a1 a2` (a0 = 1) of the enabled sections at the chosen sample rate; *Copy
   coefficients* (Ctrl+Shift+C) puts them on the clipboard.
-- View: phase curve (Ctrl+P), section curves (Ctrl+B), light theme (Ctrl+T), language (applies at the next start).
+- View: phase curve (Ctrl+P), section curves (Ctrl+B), full screen (F11, Esc to leave), light theme (Ctrl+T), language (applies at the next start).
 
 | Shortcut | Action |
 |---|---|

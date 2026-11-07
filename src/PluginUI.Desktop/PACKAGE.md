@@ -6,7 +6,7 @@ user interface (Win32 + Direct2D, C#, .NET 10), compiled as IL (`dotnet run`, de
 `.exe`, set `<PublishAot>true</PublishAot>` and run `dotnet publish`).
 
 - `DesktopApplication`: DPI awareness, data folder under `%APPDATA%`, main window with its saved placement, recent
-  files, application commands, message loop, crash report.
+  files, application commands (`ExitCommand`, `FullScreenCommand` on F11), message loop, crash report.
 - `DocumentSession`: file path, modified state, title bar, New / Open / Save / Save As with their dialogs, the
   "save changes?" question when closing, recent files.
 - `UndoStack`: undo / redo with merging of continuous edits and ready-made Ctrl+Z / Ctrl+Y commands.
@@ -14,7 +14,8 @@ user interface (Win32 + Direct2D, C#, .NET 10), compiled as IL (`dotnet run`, de
 - `MessageDialog`: synchronous message boxes drawn with PluginUI.
 
 The menu bar (`MenuBar`), commands and shortcuts (`Command`, `KeyGesture`), modal windows
-(`StandaloneWindow.ShowDialog`), the dark title bar and the window icon are in the PluginUI package itself.
+(`StandaloneWindow.ShowDialog`), the dark title bar, the window icon and full screen (`StandaloneWindow.IsFullScreen`)
+are in the PluginUI package itself.
 
 Windows 10 1809 or later. Guide: https://asm8086.github.io/PluginUI/ — source and demo application:
 https://github.com/asm8086/PluginUI

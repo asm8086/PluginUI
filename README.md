@@ -110,6 +110,8 @@ Each [release](https://github.com/asm8086/PluginUI/releases) provides:
 | `PluginUIEditor-<version>-win-x64.zip`, `…-win-arm64.zip` | The visual designer (needs the .NET 10 Desktop Runtime) |
 | `PluginUI.Gallery-<version>-win-x64.zip`, `…-win-arm64.zip` | The gallery, compiled with NativeAOT (no runtime needed) |
 | `BiquadDesigner-<version>-win-x64.zip`, `…-win-arm64.zip` | The desktop demo application, compiled with NativeAOT (no runtime needed) |
+| `PluginHost-<version>-win-x64.zip`, `…-win-arm64.zip` | Plug-in Host, the graphical VST3 / VST 2 host (ASIO, WASAPI, MIDI), NativeAOT (from 0.3.0) |
+| `pluginhost-cli-<version>-win-x64.zip`, `…-win-arm64.zip` | `pluginhost`, the command line host (scan, process, render, measure), NativeAOT (from 0.3.0) |
 | `*.nupkg`, `SHA256SUMS.txt` | NuGet packages (also pushed to nuget.org once publishing is enabled) and checksums |
 
 `build/Build-Release.ps1` builds the same files locally; see [CONTRIBUTING.md](CONTRIBUTING.md#releases).
@@ -129,7 +131,7 @@ A plug-in is a class library with a Windows runtime identifier; the `PluginUI.NP
   <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Debug builds loaded through the NPlug proxy -->
 </PropertyGroup>
 <ItemGroup>
-  <PackageReference Include="PluginUI.NPlug" Version="0.1.0-beta.3" />
+  <PackageReference Include="PluginUI.NPlug" Version="0.3.0" />
 </ItemGroup>
 ```
 
@@ -197,8 +199,9 @@ return new StandaloneWindow(host, "My application").Run();
 PluginUI can also be the whole interface of a Windows application, compiled as IL (`dotnet run`, debugging) or
 NativeAOT (`dotnet publish -p:PublishAot=true`, one native `.exe`). The core library has the menu bar (`MenuBar`,
 Alt / F10 / mnemonics), the tool bar and the status bar (`ToolBar`, `StatusBar`), commands and shortcuts (`Command`, `KeyGesture`, `CommandSet`), modal windows
-(`StandaloneWindow.ShowDialog`), the dark title bar, the icon and the saved placement; the **PluginUI.Desktop** package
-adds the application object, documents (New / Open / Save / Save As, "save changes?"), undo / redo, recent files and
+(`StandaloneWindow.ShowDialog`), the dark title bar, the icon, the saved placement and full screen
+(`StandaloneWindow.IsFullScreen`); the **PluginUI.Desktop** package adds the application object (with its F11 full screen
+command), documents (New / Open / Save / Save As, "save changes?"), undo / redo, recent files and
 JSON settings without reflection.
 
 ```csharp

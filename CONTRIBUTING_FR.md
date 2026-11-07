@@ -69,7 +69,8 @@ Autres commandes utiles :
 - **Contrôles** : suivez les conventions de conception d'[EXTENDING_FR.md](docs/EXTENDING_FR.md#13-conventions-de-conception-pluginuieditor)
   pour qu'ils fonctionnent dans le concepteur visuel.
 - **Tests** : ajoutez ou mettez à jour les tests de `tests/` avec la modification. Les tests n'ouvrent aucune fenêtre ;
-  ils pilotent l'hôte par `UIHost.Dispatch…`.
+  ils pilotent l'hôte par `UIHost.Dispatch…`. Les quelques tests qui ont besoin d'une vraie fenêtre (plein écran) ne
+  tournent que sous Windows et sont ignorés ailleurs.
 - **Captures** : quand une modification se voit, régénérez les captures de la galerie (voir le README, section
   *Galerie*).
 
@@ -94,4 +95,5 @@ En contribuant, vous acceptez que vos contributions soient publiées sous [licen
 
 Les mainteneurs publient une version en poussant une étiquette `vX.Y.Z`. Le workflow de publication compile et teste
 tout, crée le bundle VST3 de l'instrument de démonstration pour x64 (x86-64-v3 et x86-64-v2) et ARM64, les paquets de
-PluginUIEditor et de la galerie, pousse les paquets NuGet (quand la variable de dépôt `PUBLISH_NUGET` vaut `true` et que la publication de confiance est configurée sur nuget.org) et publie la version GitHub.
+PluginUIEditor, de la galerie, de Biquad Designer, de Plug-in Host et de pluginhost, pousse les paquets NuGet (PluginUI,
+PluginUI.Design, PluginUI.NPlug, PluginUI.Desktop, PluginUI.Host, PluginUI.Host.Windows, PluginUI.Host.Vst2) (quand la variable de dépôt `PUBLISH_NUGET` vaut `true` et que la publication de confiance est configurée sur nuget.org) et publie la version GitHub.

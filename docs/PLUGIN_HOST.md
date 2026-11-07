@@ -43,6 +43,10 @@ What exists today and what comes next:
 
 ### Building
 
+Ready-made executables are attached to each [release](https://github.com/asm8086/PluginUI/releases) from 0.3.0:
+`pluginhost-cli-<version>-win-x64.zip` (or `win-arm64`) holds `pluginhost.exe`, `PluginHost-<version>-win-x64.zip`
+the graphical host. Both are single native executables, without .NET runtime. To build them:
+
 ```
 dotnet build tools/PluginHost.Cli                                   # IL, run with: dotnet pluginhost.dll
 dotnet publish tools/PluginHost.Cli -c Release -r win-x64 -p:PublishAot=true   # one native pluginhost.exe

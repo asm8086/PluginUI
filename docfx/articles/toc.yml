@@ -11,6 +11,8 @@
   href: ../../docs/EDITOR.md
 - name: Desktop applications (PluginUI.Desktop)
   href: ../../docs/DESKTOP.md
+- name: Plug-in host (PluginUI.Host, pluginhost, Plug-in Host)
+  href: ../../docs/PLUGIN_HOST.md
 - name: Accessibility (screen readers, high contrast)
   href: ../../docs/ACCESSIBILITY.md
 - name: Sample instrument (DemoSynth)

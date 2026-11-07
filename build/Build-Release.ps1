@@ -5,14 +5,15 @@
 <#
 .SYNOPSIS
     Builds the PluginUI release packages: the DemoSynth VST3 bundle for x64 (x86-64-v3 and x86-64-v2) and ARM64,
-    PluginUIEditor, the gallery, the Biquad Designer desktop demo and the NuGet packages.
+    PluginUIEditor, the gallery, the Biquad Designer desktop demo, the plug-in hosts (Plug-in Host and pluginhost) and
+    the NuGet packages.
 
 .DESCRIPTION
     Stages, run in this order (the release workflow runs Build on one machine per architecture, then Package and
     Validate on an x64 machine):
 
       Build     Publishes, for each target, the NativeAOT plug-in and desktop demo (and, for x64-v2 / arm64, the
-                gallery and the editor) into artifacts/stage/<target>/.
+                gallery, the editor and the plug-in hosts) into artifacts/stage/<target>/.
       Package   Builds the x64 VST3 loader (build/vst3shim), assembles the bundles, the zip files, the NuGet packages
                 and SHA256SUMS.txt into artifacts/release/.
       Validate  Runs the Steinberg validator on the bundles for the architecture of this machine (x64: both builds,
@@ -113,6 +114,12 @@ function Invoke-Build([string]$t) {
         Invoke-Native dotnet (@('publish', (Join-Path $Root 'samples/PluginUI.Gallery'), '-p:PublishAot=true') + $common + @('-o', (Join-Path $dir 'gallery')))
         Invoke-Native dotnet @('publish', (Join-Path $Root 'tools/PluginUIEditor'), '-c', $Configuration, '-r', $rid, '--self-contained', 'false',
             "-p:Version=$Version", '-o', (Join-Path $dir 'editor'))
+        # The plug-in hosts, NativeAOT. Two folders: PluginHost.exe and pluginhost.exe differ only by case.
+        Invoke-Native dotnet (@('publish', (Join-Path $Root 'tools/PluginHost.Desktop'), '-p:PublishAot=true') + $common + @('-o', (Join-Path $dir 'pluginhost-gui')))
+        Invoke-Native dotnet (@('publish', (Join-Path $Root 'tools/PluginHost.Cli'), '-p:PublishAot=true') + $common + @('-o', (Join-Path $dir 'pluginhost-cli')))
+        foreach ($exe in 'pluginhost-gui/PluginHost.exe', 'pluginhost-cli/pluginhost.exe') {
+            if (-not (Test-Path (Join-Path $dir $exe))) { throw "NativeAOT output not found: $dir/$exe" }
+        }
     }
 }
 
@@ -172,7 +179,7 @@ function Copy-Notices([string]$folder) {
     Copy-Item (Join-Path $Root 'build/THIRD-PARTY-NOTICES.txt') (Join-Path $folder 'THIRD-PARTY-NOTICES.txt')
 }
 
-function Write-AppNotes([string]$folder, [string]$name, [string]$rid) {
+function Write-AppNotes([string]$folder, [string]$name, [string]$rid, [string]$exe = $name) {
     $requirements = if ($name -eq 'PluginUIEditor') {
         'Windows 10 1809 or later and the .NET 10 Desktop Runtime (https://dotnet.microsoft.com/download/dotnet/10.0).'
     }
@@ -184,7 +191,7 @@ PluginUI $Version - $name ($rid)
 https://github.com/asm8086/PluginUI
 
 Requirements: $requirements
-Start: $name.exe
+Start: $exe.exe$(if ($exe -ceq 'pluginhost') { ' in a terminal (pluginhost --help lists the commands)' })
 "@
     Set-Content -Path (Join-Path $folder 'README.txt') -Value $text -Encoding utf8
 }
@@ -266,20 +273,26 @@ function Invoke-Package {
     # Applications.
     foreach ($t in 'x64-v2', 'arm64') {
         $rid = Get-Rid $t
-        foreach ($app in @(@{ Dir = 'editor'; Name = 'PluginUIEditor' }, @{ Dir = 'gallery'; Name = 'PluginUI.Gallery' }, @{ Dir = 'biquad'; Name = 'BiquadDesigner' })) {
+        $apps = @(
+            @{ Dir = 'editor'; Name = 'PluginUIEditor'; Exe = 'PluginUIEditor' },
+            @{ Dir = 'gallery'; Name = 'PluginUI.Gallery'; Exe = 'PluginUI.Gallery' },
+            @{ Dir = 'biquad'; Name = 'BiquadDesigner'; Exe = 'BiquadDesigner' },
+            @{ Dir = 'pluginhost-gui'; Name = 'PluginHost'; Exe = 'PluginHost' },
+            @{ Dir = 'pluginhost-cli'; Name = 'pluginhost-cli'; Exe = 'pluginhost' })
+        foreach ($app in $apps) {
             $dir = Join-Path $StageDir "$t/$($app.Dir)"
             if (Test-Path $dir) {
                 Get-ChildItem $dir -Filter '*.pdb' -Recurse | Remove-Item -Force
                 Copy-Notices $dir
-                Write-AppNotes $dir $app.Name $rid
+                Write-AppNotes $dir $app.Name $rid $app.Exe
                 New-Zip $dir (Join-Path $ReleaseDir "$($app.Name)-$Version-$rid.zip")
             }
         }
     }
 
-    # NuGet packages (PluginUI, PluginUI.Design, PluginUI.NPlug, PluginUI.Desktop).
+    # NuGet packages.
     if (-not $SkipNuGet) {
-        foreach ($project in 'PluginUI', 'PluginUI.Design', 'PluginUI.NPlug', 'PluginUI.Desktop') {
+        foreach ($project in 'PluginUI', 'PluginUI.Design', 'PluginUI.NPlug', 'PluginUI.Desktop', 'PluginUI.Host', 'PluginUI.Host.Windows', 'PluginUI.Host.Vst2') {
             Invoke-Native dotnet @('pack', (Join-Path $Root "src/$project/$project.csproj"), '-c', $Configuration, "-p:Version=$Version", '-o', (Join-Path $ReleaseDir 'nuget'))
         }
     }

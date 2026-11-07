@@ -20,6 +20,10 @@ points to create more.
 - [Element catalog](../docs/CONTROLS.md) — every element, with its VSTGUI / iPlug2 equivalent.
 - [Extending PluginUI](../docs/EXTENDING.md) — themes, skins, custom controls and containers, popups.
 - [Visual designer](../docs/EDITOR.md) — PluginUIEditor and the `.pluginui` format.
-- [API reference](xref:PluginUI) — `PluginUI`, `PluginUI.Dsp`, `PluginUI.NPlug`, `PluginUI.Design`.
+- [Desktop applications](../docs/DESKTOP.md) — complete Windows applications with `PluginUI.Desktop`.
+- [Plug-in host](../docs/PLUGIN_HOST.md) — load VST3 and VST 2 plug-ins from your code (`PluginUI.Host`), play them
+  live through ASIO or WASAPI, the `pluginhost` command line and the Plug-in Host application.
+- [API reference](xref:PluginUI) — `PluginUI`, `PluginUI.Dsp`, `PluginUI.NPlug`, `PluginUI.Design`, `PluginUI.Desktop`,
+  `PluginUI.Host` (with `.Audio`, `.Catalog`, `.Vst3`), `PluginUI.Host.Windows`, `PluginUI.Host.Vst2`.
 
 The source code, issues and releases are on [GitHub](https://github.com/asm8086/PluginUI). MIT license.

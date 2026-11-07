@@ -66,7 +66,7 @@ Other useful commands:
 - **Controls**: follow the design conventions of [EXTENDING.md](docs/EXTENDING.md#13-design-conventions-pluginuieditor)
   so that they work in the visual designer.
 - **Tests**: add or update tests in `tests/` with the change. Tests open no window; they drive the host through
-  `UIHost.Dispatch…`.
+  `UIHost.Dispatch…`. The few tests that need a real window (full screen) run on Windows only and are skipped elsewhere.
 - **Screenshots**: when a change is visible, regenerate the gallery captures (see the README, section *Gallery*).
 
 ## NPlug changes
@@ -87,5 +87,6 @@ By contributing, you agree that your contributions are licensed under the [MIT L
 ## Releases
 
 Maintainers publish a release by pushing a tag `vX.Y.Z`. The release workflow builds and tests everything, creates the
-VST3 bundle of the demo instrument for x64 (x86-64-v3 and x86-64-v2) and ARM64, the PluginUIEditor and gallery
-packages, pushes the NuGet packages (when the repository variable `PUBLISH_NUGET` is `true` and nuget.org trusted publishing is set up) and publishes the GitHub release.
+VST3 bundle of the demo instrument for x64 (x86-64-v3 and x86-64-v2) and ARM64, the PluginUIEditor, gallery, Biquad
+Designer, Plug-in Host and pluginhost packages, pushes the NuGet packages (PluginUI, PluginUI.Design, PluginUI.NPlug,
+PluginUI.Desktop, PluginUI.Host, PluginUI.Host.Windows, PluginUI.Host.Vst2) (when the repository variable `PUBLISH_NUGET` is `true` and nuget.org trusted publishing is set up) and publishes the GitHub release.

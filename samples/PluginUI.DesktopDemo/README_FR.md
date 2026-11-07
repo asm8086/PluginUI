@@ -31,7 +31,7 @@ coefficients. Le même code fonctionne en IL (`dotnet run`, débogueur) ou en un
   fréquence, gain, Q.
 - Le panneau de droite liste `b0 b1 b2 a1 a2` (a0 = 1) des sections actives à la fréquence d'échantillonnage choisie ;
   *Copier les coefficients* (Ctrl+Maj+C) les place dans le presse-papiers.
-- Affichage : courbe de phase (Ctrl+P), courbes des sections (Ctrl+B), thème clair (Ctrl+T), langue (appliquée au
+- Affichage : courbe de phase (Ctrl+P), courbes des sections (Ctrl+B), plein écran (F11, Échap pour en sortir), thème clair (Ctrl+T), langue (appliquée au
   prochain démarrage).
 
 | Raccourci | Action |

@@ -12,7 +12,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
     <PackageReadmeFile>PACKAGE.md</PackageReadmeFile>
-    <Description>VST 2.4 plug-in hosting for PluginUI.Host: scanning (shell plug-ins included), 32 and 64-bit processing, MIDI in and out, parameters, programs, .fxp / .fxb presets, editors. Written from the public description of the VST 2.4 interface; no part of the Steinberg SDK is used. NativeAOT compatible.</Description>
+    <Description>VST 2.4 plug-in hosting for PluginUI.Host: scanning (shell plug-ins included), 32-bit float processing, MIDI in and out, parameters, programs, .fxp / .fxb presets, editors. Written from the public description of the VST 2.4 interface; no part of the Steinberg SDK is used. NativeAOT compatible.</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>

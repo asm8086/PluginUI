@@ -44,6 +44,11 @@ Ce qui existe et ce qui vient ensuite :
 
 ### Compilation
 
+Des exécutables prêts à l'emploi sont joints à chaque [release](https://github.com/asm8086/PluginUI/releases) à partir
+de la 0.3.0 : `pluginhost-cli-<version>-win-x64.zip` (ou `win-arm64`) contient `pluginhost.exe`,
+`PluginHost-<version>-win-x64.zip` l'hôte graphique. Ce sont des exécutables natifs uniques, sans runtime .NET. Pour
+les compiler :
+
 ```
 dotnet build tools/PluginHost.Cli                                   # IL, lancer avec : dotnet pluginhost.dll
 dotnet publish tools/PluginHost.Cli -c Release -r win-x64 -p:PublishAot=true   # un seul pluginhost.exe natif

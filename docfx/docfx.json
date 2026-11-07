@@ -10,7 +10,10 @@
             "PluginUI/PluginUI.csproj",
             "PluginUI.NPlug/PluginUI.NPlug.csproj",
             "PluginUI.Design/PluginUI.Design.csproj",
-            "PluginUI.Desktop/PluginUI.Desktop.csproj"
+            "PluginUI.Desktop/PluginUI.Desktop.csproj",
+            "PluginUI.Host/PluginUI.Host.csproj",
+            "PluginUI.Host.Windows/PluginUI.Host.Windows.csproj",
+            "PluginUI.Host.Vst2/PluginUI.Host.Vst2.csproj"
           ]
         }
       ],

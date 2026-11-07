@@ -8,8 +8,15 @@ Before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-07
+
 ### Added
 
+- **Release downloads and packages**: Plug-in Host and `pluginhost` as NativeAOT executables for x64 and ARM64
+  (`PluginHost-<version>-<rid>.zip`, `pluginhost-cli-<version>-<rid>.zip`); new NuGet packages PluginUI.Host,
+  PluginUI.Host.Windows (with the third-party notices) and PluginUI.Host.Vst2, first publication of PluginUI.Desktop.
+  The documentation site has the API reference of the host libraries and PluginUI.Desktop, and links to the Desktop
+  and Plug-in Host guides.
 - **Full screen** for `StandaloneWindow`: `IsFullScreen`, `ToggleFullScreen`, `FullScreenChanged`,
   `ExitFullScreenOnEscape` (no title bar or border, the whole monitor, back to the previous bounds and maximized state;
   follows monitor and resolution changes); `WindowPlacement.IsFullScreen`. PluginUI.Desktop:
@@ -324,6 +331,7 @@ First public version.
 - Release packages for x64 (x86-64-v3 and x86-64-v2) and ARM64, with a VST3 bundle that picks the right x64 build
   for the processor.
 
-[Unreleased]: https://github.com/asm8086/PluginUI/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/asm8086/PluginUI/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/asm8086/PluginUI/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/asm8086/PluginUI/compare/v0.1.0-beta.3...v0.2.0
 [0.1.0]: https://github.com/asm8086/PluginUI/releases/tag/v0.1.0

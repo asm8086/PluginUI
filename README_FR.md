@@ -110,6 +110,8 @@ Chaque [version](https://github.com/asm8086/PluginUI/releases) fournit :
 | `PluginUIEditor-<version>-win-x64.zip`, `…-win-arm64.zip` | Le concepteur visuel (nécessite le .NET 10 Desktop Runtime) |
 | `PluginUI.Gallery-<version>-win-x64.zip`, `…-win-arm64.zip` | La galerie, compilée en NativeAOT (aucun runtime nécessaire) |
 | `BiquadDesigner-<version>-win-x64.zip`, `…-win-arm64.zip` | L'application de bureau de démonstration, compilée en NativeAOT (aucun runtime nécessaire) |
+| `PluginHost-<version>-win-x64.zip`, `…-win-arm64.zip` | Plug-in Host, l'hôte graphique VST3 / VST 2 (ASIO, WASAPI, MIDI), NativeAOT (à partir de la 0.3.0) |
+| `pluginhost-cli-<version>-win-x64.zip`, `…-win-arm64.zip` | `pluginhost`, l'hôte en ligne de commande (recherche, traitement, rendu, mesure), NativeAOT (à partir de la 0.3.0) |
 | `*.nupkg`, `SHA256SUMS.txt` | Paquets NuGet (aussi poussés sur nuget.org une fois la publication activée) et sommes de contrôle |
 
 `build/Build-Release.ps1` produit les mêmes fichiers en local ; voir [CONTRIBUTING_FR.md](CONTRIBUTING_FR.md#publication-des-versions).
@@ -130,7 +132,7 @@ NativeAOT) :
   <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- versions Debug chargées par le proxy NPlug -->
 </PropertyGroup>
 <ItemGroup>
-  <PackageReference Include="PluginUI.NPlug" Version="0.1.0-beta.3" />
+  <PackageReference Include="PluginUI.NPlug" Version="0.3.0" />
 </ItemGroup>
 ```
 
@@ -198,8 +200,9 @@ return new StandaloneWindow(host, "Mon application").Run();
 PluginUI peut aussi être l'interface complète d'une application Windows, compilée en IL (`dotnet run`, débogage) ou en
 NativeAOT (`dotnet publish -p:PublishAot=true`, un seul `.exe` natif). La bibliothèque de base fournit la barre de menus
 (`MenuBar`, Alt / F10 / lettres soulignées), les barres d'outils et d'état (`ToolBar`, `StatusBar`), les commandes et raccourcis (`Command`, `KeyGesture`, `CommandSet`), les
-fenêtres modales (`StandaloneWindow.ShowDialog`), la barre de titre sombre, l'icône et la position mémorisée ; le paquet
-**PluginUI.Desktop** ajoute l'objet application, les documents (Nouveau / Ouvrir / Enregistrer / Enregistrer sous,
+fenêtres modales (`StandaloneWindow.ShowDialog`), la barre de titre sombre, l'icône, la position mémorisée et le plein
+écran (`StandaloneWindow.IsFullScreen`) ; le paquet **PluginUI.Desktop** ajoute l'objet application (avec sa commande de
+plein écran, F11), les documents (Nouveau / Ouvrir / Enregistrer / Enregistrer sous,
 « enregistrer les modifications ? »), annuler / rétablir, les fichiers récents et des réglages JSON sans réflexion.
 
 ```csharp

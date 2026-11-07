@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <None Include="PACKAGE.md" Pack="true" PackagePath="\" />
+    <!-- The ASIO and MIDI code adapts NAudio (MIT): its notice travels with the package. -->
+    <None Include="..\..\build\THIRD-PARTY-NOTICES.txt" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>
