@@ -36,6 +36,7 @@ internal sealed class GalleryApp
         Tabs.AddPage("Instrument", InstrumentPage.Build(Audio));
         Tabs.AddPage(L.T("Analysis", "Analyse"), AnalysisPage.Build(Audio));
         Tabs.AddPage(L.T("Response", "Réponse"), ResponsePage.Build(Audio));
+        Tabs.AddPage(L.T("Multiband", "Multibande"), MultibandPage.Build(Audio));
 
         _themeSelector = new SegmentedControl(L.T("Dark", "Sombre"), L.T("Light", "Clair")) { ToolTip = L.T("Theme", "Thème") };
         _accentSelector = new DropDown(_accents.Select(a => a.Name).ToArray()) { ToolTip = L.T("Accent color", "Couleur d'accent") };

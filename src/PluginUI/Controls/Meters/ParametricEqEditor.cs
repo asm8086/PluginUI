@@ -150,9 +150,7 @@ public class ParametricEqEditor : Control
     private int _selected = -1;
     private int _dragging = -1;
     private Point _dragOffset;
-    private Fft? _fft;
-    private float[] _spectrumSamples = [];
-    private float[] _spectrum = [];
+    private readonly SpectrumUnderlay _underlay = new();
     private RefreshTicker? _ticker;
     private double _version;
 
@@ -321,7 +319,7 @@ public class ParametricEqEditor : Control
         float step = GainRangeDb > 12f ? 6f : 3f;
         GraphHelpers.DrawLevelGrid(dc, Theme, area, -GainRangeDb, GainRangeDb, step, true);
         dc.PushClip(area);
-        if (SpectrumSource is not null) RenderSpectrum(dc, area, p);
+        if (SpectrumSource is { } source) _underlay.Render(dc, area, source, SampleRate, MinFrequency, MaxFrequency, p.TextDim.WithAlpha(0.12f));
 
         int n = Math.Max(32, (int)area.Width / 2);
         var total = new double[n + 1];
@@ -381,29 +379,6 @@ public class ParametricEqEditor : Control
                 + "  Q " + InvariantNumber.Format(band.Q, "0.00") + "  " + TypeName(band.Type);
             dc.DrawText(text, new Rect(area.X + 6f, area.Y + 3f, area.Width - 12f, 12f), Theme.Typography.Small with { Size = 10f, Align = HorizontalAlignment.Right }, ColorOf(show));
         }
-    }
-
-    private void RenderSpectrum(DrawingContext dc, Rect area, Palette p)
-    {
-        _fft ??= new Fft(4096);
-        int size = _fft.Size;
-        if (_spectrumSamples.Length != size) { _spectrumSamples = new float[size]; _spectrum = new float[size / 2]; }
-        if (SpectrumSource!.CopyLatest(_spectrumSamples) < size) return;
-        _fft.MagnitudeSpectrum(_spectrumSamples, _spectrum, WindowFunction.Hann, -120f);
-        int columns = Math.Max(16, (int)area.Width / 2);
-        var points = new Point[columns + 2];
-        float binHz = SampleRate / size;
-        for (int c = 0; c < columns; c++)
-        {
-            float f0 = GraphHelpers.XToLog(area.X + area.Width * c / columns, MinFrequency, MaxFrequency, area);
-            float f1 = GraphHelpers.XToLog(area.X + area.Width * (c + 1) / columns, MinFrequency, MaxFrequency, area);
-            int i0 = Math.Clamp((int)(f0 / binHz), 0, _spectrum.Length - 1), i1 = Math.Clamp((int)MathF.Ceiling(f1 / binHz), i0 + 1, _spectrum.Length);
-            float db = VectorOps.Max(_spectrum.AsSpan(i0, i1 - i0)) + 4.5f * MathF.Log2(MathF.Max(20f, (f0 + f1) * 0.5f) / 1000f); // +4.5 dB/oct tilt
-            points[c] = new Point(area.X + area.Width * (c + 0.5f) / columns, GraphHelpers.ValueToY(db, -90f, 0f, area));
-        }
-        points[columns] = new Point(area.Right, area.Bottom);
-        points[columns + 1] = new Point(area.X, area.Bottom);
-        dc.FillPolygon(points, p.TextDim.WithAlpha(0.12f));
     }
 
     private string TypeName(EqBandType type)

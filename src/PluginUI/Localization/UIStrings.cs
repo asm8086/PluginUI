@@ -81,6 +81,11 @@ public sealed record UIStrings
         BandNotch = "Réjection",
         BandBandPass = "Passe-bande",
         Bypass = "Contourner",
+        Solo = "Solo",
+        Mute = "Muet",
+        BandFormat = "Bande {0}",
+        CrossoverFormat = "Séparation {0}",
+        AutomationCrossoverEditor = "séparateur de bandes",
         KeyNames = KeyNameTables.French,
         Untitled = "Sans titre",
         SaveChangesQuestion = "Voulez-vous enregistrer les modifications de « {0} » ?",
@@ -235,6 +240,21 @@ public sealed record UIStrings
 
     /// <summary>Menu entry that bypasses (disables) an element, e.g. an equalizer band.</summary>
     public string Bypass { get; init; } = "Bypass";
+
+    /// <summary>Plays only this band or channel (crossover bands, mixers).</summary>
+    public string Solo { get; init; } = "Solo";
+
+    /// <summary>Silences this band or channel.</summary>
+    public string Mute { get; init; } = "Mute";
+
+    /// <summary>Default name of a band ({0}: its number from 1).</summary>
+    public string BandFormat { get; init; } = "Band {0}";
+
+    /// <summary>Name of a crossover frequency between two bands ({0}: its number from 1).</summary>
+    public string CrossoverFormat { get; init; } = "Crossover {0}";
+
+    /// <summary>Role of a <see cref="CrossoverEditor"/> spoken by screen readers.</summary>
+    public string AutomationCrossoverEditor { get; init; } = "crossover editor";
 
     /// <summary>
     /// Names of keys in shortcut texts (modifiers <see cref="Key.Control"/>, <see cref="Key.Shift"/>,

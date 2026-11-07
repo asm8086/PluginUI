@@ -47,7 +47,7 @@ internal static class Snapshots
         Directory.CreateDirectory(dir);
         var app = new GalleryApp();
         var host = app.Host;
-        string[] names = ["1-rotary-linear", "2-buttons-menus", "3-text-pickers", "4-meters-midi", "5-containers-lists", "6-skins-styles", "10-instrument", "11-analysis", "15-response"];
+        string[] names = ["1-rotary-linear", "2-buttons-menus", "3-text-pickers", "4-meters-midi", "5-containers-lists", "6-skins-styles", "10-instrument", "11-analysis", "15-response", "16-multiband"];
         for (int page = 0; page < names.Length; page++)
         {
             app.Tabs.SelectedIndex = page;

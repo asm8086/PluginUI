@@ -395,6 +395,7 @@ public static class BuiltInDesignTypes
         registry.Register<WaveformView>(Instrument);
 
         registry.Register<ParametricEqEditor>(Analysis);
+        registry.Register<CrossoverEditor>(Analysis);
         registry.Register<FrequencyResponseView>(Analysis);
         registry.Register<CompressorCurve>(Analysis);
         registry.Register<LoudnessMeter>(Analysis);

@@ -8,6 +8,15 @@ Before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
 
+### Added
+
+- **`CrossoverEditor`** (with `CrossoverSplit` and `CrossoverBand`): multiband crossover editor for 2 to 8 bands,
+  Linkwitz-Riley band responses (`SlopeDbPerOctave`: 12, 24, 36, 48… dB per octave), draggable splits with a minimum spacing
+  (`MinSpacingOctaves`), band gain lines, solo and mute chips, input spectrum in the background (`SpectrumSource`);
+  splits, gains, solo and mute bindable to parameters with edit gestures; full keyboard control and a screen reader
+  peer. Registered in the designer (Analysis) and shown on the new Multiband page of the gallery. Texts
+  `UIStrings.Solo`, `Mute`, `BandFormat`, `CrossoverFormat`, `AutomationCrossoverEditor` (English, French).
+
 ## [0.3.0] - 2026-11-07
 
 ### Added
