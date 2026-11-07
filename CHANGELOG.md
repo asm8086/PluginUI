@@ -37,6 +37,17 @@ Before 1.0, minor versions may contain breaking changes.
   `SearchPresets`, `PresetCategories`, `Presets`, `NoPresetFound` (English, French).
 - Both registered in the designer (Pickers; the preset browser is a leaf, not a container) and shown on the new Browser
   page of the gallery.
+- **`ModulationMatrix`** (with `ModulationSlot`, `ModulationTarget`): one row per slot with on / off, source and target
+  menus (targets grouped by `Group`), a bipolar amount and a delete button; sources dragged from a
+  `ModulationSourceButton` add a slot or replace a source; `AmountParameter` and `EnabledParameter` for automatable
+  slots; keyboard editing cell by cell.
+- **`RoutingMatrix`**: inputs × outputs grid of switches with `RoutingMode` (free, one input per output, one output per
+  input), drag painting, turned column labels when narrow, crossings bound to parameters through `ParameterOf`; one
+  check box per crossing for screen readers.
+- Both registered in the designer and shown on the new Matrix page of the gallery. Texts
+  `UIStrings.ModulationSourceHeader`, `ModulationTargetHeader`, `ModulationAmountHeader`, `AddModulation`,
+  `ModulationNone`, `ModulationOn`, `ModulationOff`, `ModulationSlotFormat`, `ModulationSlotCountFormat`,
+  `AutomationModulationMatrix`, `AutomationRoutingMatrix` (English, French).
 
 ### Changed
 

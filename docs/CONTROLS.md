@@ -41,6 +41,8 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `RockerSwitch` | Momentary −1/0/+1, auto-repeat, parameter stepping | `CRockerSwitch` |
 | `MultiToggle` | Row of N toggles (gate sequencer), drawing by dragging, playback position | `IVMultiToggleControl` |
 | `StepSequencer` | Per-step values (interpolated drawing) + gates, active length, beat groups, playing step, binding to one parameter per step (one gesture per parameter touched) | — (bonus) |
+| `ModulationMatrix`, `ModulationSlot`, `ModulationTarget` | Modulation matrix: one row per slot with on / off, source and target menus (targets grouped in sub-menus), bipolar amount dragged with the mouse (Shift fine, double-click 0), delete; sources dropped from a `ModulationSourceButton` add a slot or replace a source; amount and on / off bindable to parameters; keyboard (arrows by cell, Enter / Space, Page Up / Down or + / −, Insert, Delete) | — (bonus) |
+| `RoutingMatrix` | Routing grid of inputs × outputs (channel router, pin connector, patch bay): click or drag across crossings, `RoutingMode` Free / OneInputPerOutput / OneOutputPerInput, column labels turned when narrow, crossings bindable to parameters (`ParameterOf`); arrows and Space; one check box per crossing for screen readers | — (bonus) |
 | `ModulationSourceButton` | Modulation source chip to drag onto a control that accepts modulation (`AcceptsModulation`, `ModulationDropped` event) | — (bonus, Serum / Vital style) |
 
 ## Menus

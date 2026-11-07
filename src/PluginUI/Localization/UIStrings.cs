@@ -100,6 +100,17 @@ public sealed record UIStrings
         PresetCategories = "Catégories de presets",
         Presets = "Presets",
         NoPresetFound = "Aucun preset trouvé",
+        ModulationSourceHeader = "Source",
+        ModulationTargetHeader = "Destination",
+        ModulationAmountHeader = "Intensité",
+        AddModulation = "Ajouter une modulation",
+        ModulationNone = "(aucune)",
+        ModulationOn = "active",
+        ModulationOff = "désactivée",
+        ModulationSlotFormat = "Emplacement {0}",
+        ModulationSlotCountFormat = "{0} emplacements",
+        AutomationModulationMatrix = "matrice de modulation",
+        AutomationRoutingMatrix = "matrice de routage",
         KeyNames = KeyNameTables.French,
         Untitled = "Sans titre",
         SaveChangesQuestion = "Voulez-vous enregistrer les modifications de « {0} » ?",
@@ -314,6 +325,39 @@ public sealed record UIStrings
 
     /// <summary>Shown when no preset matches the search.</summary>
     public string NoPresetFound { get; init; } = "No preset found";
+
+    /// <summary>Column of the sources of a <see cref="ModulationMatrix"/>.</summary>
+    public string ModulationSourceHeader { get; init; } = "Source";
+
+    /// <summary>Column of the targets of a <see cref="ModulationMatrix"/>.</summary>
+    public string ModulationTargetHeader { get; init; } = "Target";
+
+    /// <summary>Column of the amounts of a <see cref="ModulationMatrix"/>.</summary>
+    public string ModulationAmountHeader { get; init; } = "Amount";
+
+    /// <summary>Last row of a <see cref="ModulationMatrix"/>, which adds a slot.</summary>
+    public string AddModulation { get; init; } = "Add modulation";
+
+    /// <summary>Source or target not chosen yet.</summary>
+    public string ModulationNone { get; init; } = "(none)";
+
+    /// <summary>State of a modulation slot that modulates.</summary>
+    public string ModulationOn { get; init; } = "on";
+
+    /// <summary>State of a bypassed modulation slot.</summary>
+    public string ModulationOff { get; init; } = "off";
+
+    /// <summary>A slot of a <see cref="ModulationMatrix"/> ({0}: its number from 1).</summary>
+    public string ModulationSlotFormat { get; init; } = "Slot {0}";
+
+    /// <summary>Number of slots of a <see cref="ModulationMatrix"/> ({0}).</summary>
+    public string ModulationSlotCountFormat { get; init; } = "{0} slots";
+
+    /// <summary>Role of a <see cref="ModulationMatrix"/> spoken by screen readers.</summary>
+    public string AutomationModulationMatrix { get; init; } = "modulation matrix";
+
+    /// <summary>Role of a <see cref="RoutingMatrix"/> spoken by screen readers.</summary>
+    public string AutomationRoutingMatrix { get; init; } = "routing matrix";
 
     /// <summary>
     /// Names of keys in shortcut texts (modifiers <see cref="Key.Control"/>, <see cref="Key.Shift"/>,

@@ -41,6 +41,8 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `RockerSwitch` | Momentané −1/0/+1, répétition, pas d'un paramètre | `CRockerSwitch` |
 | `MultiToggle` | Rangée de N bascules (séquenceur de portes), dessin par glisser, position de lecture | `IVMultiToggleControl` |
 | `StepSequencer` | Valeurs par pas (dessin interpolé) + portes, longueur active, groupes de temps, pas joué, liaison à un paramètre par pas (un geste par paramètre touché) | — (bonus) |
+| `ModulationMatrix`, `ModulationSlot`, `ModulationTarget` | Matrice de modulation : une ligne par emplacement avec marche / arrêt, menus de source et de destination (destinations groupées en sous-menus), intensité bipolaire glissée à la souris (Maj fin, double-clic 0), suppression ; les sources déposées depuis un `ModulationSourceButton` ajoutent un emplacement ou remplacent une source ; intensité et marche / arrêt liables à des paramètres ; clavier (flèches par cellule, Entrée / Espace, Page préc. / suiv. ou + / −, Inser, Suppr) | — (bonus) |
+| `RoutingMatrix` | Grille de routage entrées × sorties (routeur de canaux, connecteur de broches, baie de brassage) : clic ou glisser sur les croisements, `RoutingMode` Free / OneInputPerOutput / OneOutputPerInput, libellés de colonnes tournés quand ils sont étroits, croisements liables à des paramètres (`ParameterOf`) ; flèches et Espace ; une case à cocher par croisement pour les lecteurs d'écran | — (bonus) |
 | `ModulationSourceButton` | Pastille de source de modulation à glisser sur un contrôle qui accepte la modulation (`AcceptsModulation`, événement `ModulationDropped`) | — (bonus, façon Serum / Vital) |
 
 ## Menus
