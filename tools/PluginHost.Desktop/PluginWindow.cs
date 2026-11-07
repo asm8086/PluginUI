@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/07 00:35:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -6,6 +6,8 @@ using System.Globalization;
 using PluginUI.Desktop;
 using PluginUI.Host.Catalog;
 using PluginUI.Host.Vst3;
+using TerraFX.Interop.Windows;
+using static TerraFX.Interop.Windows.Windows;
 
 namespace PluginUI.Host.Desktop;
 
@@ -202,8 +204,39 @@ internal sealed class PluginWindow : ITickable
     private void OnAreaResized(NativeWindowHost native, int width, int height)
     {
         if (_editor is null || _fitting || !_editor.CanResize) return;
-        var (w, h) = _editor.ConstrainSize(width, height);
+        var (w, h) = FitInside(_editor, width, height);
         _editor.SetSize(w, h);
+        CenterEditor(native, w, h);
+    }
+
+    /// <summary>
+    /// The largest size the editor accepts inside <paramref name="width"/> × <paramref name="height"/>. Editors with a
+    /// fixed aspect ratio may answer <c>checkSizeConstraint</c> with a size larger than the area (they follow the width,
+    /// as when the user drags a corner); a maximized window then cuts them. The proposal is scaled down until it fits.
+    /// </summary>
+    internal static (int Width, int Height) FitInside(Vst3Editor editor, int width, int height)
+    {
+        int w = width, h = height;
+        for (int attempt = 0; attempt < 4; attempt++)
+        {
+            var (cw, ch) = editor.ConstrainSize(w, h);
+            if (cw <= width && ch <= height || cw <= 0 || ch <= 0) return (cw, ch);
+            double k = Math.Min((double)width / cw, (double)height / ch);
+            w = Math.Max(1, (int)Math.Floor(cw * k));
+            h = Math.Max(1, (int)Math.Floor(ch * k));
+        }
+        return editor.ConstrainSize(w, h);
+    }
+
+    /// <summary>Centers the editor's window in the area when the editor is smaller (aspect ratio, maximum size).</summary>
+    private static void CenterEditor(NativeWindowHost native, int width, int height)
+    {
+        if (native.ChildWindow == 0) return;
+        var child = GetWindow((HWND)native.ChildWindow, 5 /* GW_CHILD */);
+        if (child == HWND.NULL) return;
+        var (areaWidth, areaHeight) = native.PixelSize;
+        SetWindowPos(child, HWND.NULL, Math.Max(0, (areaWidth - width) / 2), Math.Max(0, (areaHeight - height) / 2), 0, 0,
+            SWP.SWP_NOSIZE | SWP.SWP_NOZORDER | SWP.SWP_NOACTIVATE);
     }
 
     private void ShowGeneric(bool generic)

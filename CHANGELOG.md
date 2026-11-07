@@ -17,6 +17,8 @@ Before 1.0, minor versions may contain breaking changes.
   progress; plug-in folders dialog; favorites, show in Explorer, copy the path, ignore a module; one window per open
   plug-in with its editor or a generic parameter table (typed values), presets, real-time processing with silent input
   until audio devices arrive. Folders and plug-in list shared with `pluginhost`; interface settings in `gui.json`.
+  Resizable editors are fitted inside the window (editors with a fixed aspect ratio answer `checkSizeConstraint` with
+  a size that follows the width; a maximized window cut them) and centered in it.
 - **DataTable**: `DataColumn.IsVisible`, `CanHide`, `Key` and `CellRenderer`; header menu to show or hide columns
   (`ShowColumnMenu`, `GetColumnMenuItems`, `SetColumnVisible`, `VisibleColumns`, `ColumnsChanged`); `SaveLayout` /
   `RestoreLayout` (widths, visibility, sort); `RowContextMenu` (right click, menu key, Shift+F10); screen readers
