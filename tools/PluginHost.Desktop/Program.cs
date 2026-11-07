@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -124,6 +124,11 @@ internal static class Snapshots
         main.ShowFoldersDialog();
         Settle(host);
         host.RenderToPng(Path.Combine(dir, "pluginhost-folders" + suffix + ".png"), 1f);
+        host.CloseAllPopups();
+
+        main.ShowAudioDialog();
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-audio" + suffix + ".png"), 1f);
         host.CloseAllPopups();
 
         host.ShowMenu(main.Table.GetColumnMenuItems(), new Point(420f, 130f));

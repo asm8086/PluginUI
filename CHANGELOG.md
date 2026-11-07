@@ -1,4 +1,4 @@
-<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
+<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -10,6 +10,18 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Added
 
+- **Live audio** in PluginUI.Host: `AudioDriver` (devices), `NullAudioDriver` (clock without a device),
+  `IAudioRenderer`, `AudioBuffers`; `PluginRack` / `RackSlot` (plug-ins played live, each with its source, MIDI queue,
+  bypass, mute, gain and meter; slots added and removed while the device runs, the audio thread never waits);
+  sources `SilenceSource`, `DeviceInputSource`, `TestSignalGenerator` (sine, square, sawtooth, triangle, white and
+  pink noise, sweep, impulses), `FileSource` (looped, resampled); `PeakMeter`, `MidiEventQueue`.
+- **PluginUI.Host.Windows** (new library, not published on NuGet yet): `WasapiDriver` (shared mode, event-driven,
+  IAudioClient3 low-latency periods, optional input at the same rate, MMCSS "Pro Audio", device loss reported),
+  `Wasapi.GetEndpoints`, `MidiInput` (winmm MIDI input ports).
+- **Plug-in Host**: plays the open plug-ins on the audio device. Audio and MIDI dialog (output, input, buffer, MIDI
+  input port), device in the status bar, output meter; in each plug-in window a source (audio input, test signal,
+  audio file), an on-screen keyboard for instruments, bypass, mute and an output meter. Replaces the silent
+  processing thread.
 - **Plug-in Host** (`tools/PluginHost.Desktop`): graphical plug-in host built with PluginUI (IL or NativeAOT). Plug-in
   list with search, filters (format, instruments or effects, favorites, failures), sort orders (name, vendor,
   category, format, input or output channels, latency, installation date, recently used, most used, favorites,

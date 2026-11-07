@@ -1,9 +1,10 @@
-// 2026/11/07 00:35:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.Globalization;
 using PluginUI.Desktop;
+using PluginUI.Host.Audio;
 using PluginUI.Host.Catalog;
 using PluginUI.Host.Vst3;
 using TerraFX.Interop.Windows;
@@ -13,15 +14,22 @@ namespace PluginUI.Host.Desktop;
 
 /// <summary>
 /// Window of one open plug-in: its own editor (embedded with <see cref="NativeWindowHost"/>) or the generic parameter
-/// table, presets, latency. The plug-in is processed in real time by the <see cref="ProcessingPump"/> while the window
-/// is open.
+/// table, presets, its signal source (audio input, test signal, file) or its keyboard, bypass, mute and output meter. The
+/// plug-in plays in the <see cref="AudioEngine"/>'s rack while the window is open.
 /// </summary>
 internal sealed class PluginWindow : ITickable
 {
-    private const float BarHeight = 40f;
+    private const float BarHeight = 40f, TransportHeight = 40f, KeyboardHeight = 76f;
 
     private readonly PluginInstance _plugin;
-    private readonly ProcessingPump _pump;
+    private readonly AudioEngine _engine;
+    private readonly RackSlot _slot;
+    private readonly LevelMeter _meter;
+    private readonly float[] _levels;
+    private readonly PianoKeyboard? _keyboard;
+    private readonly TestSignalGenerator _generator = new();
+    private readonly DeviceInputSource _deviceInput = new();
+    private FileSource? _file;
     private readonly Vst3Editor? _editor;
     private readonly NativeWindowHost? _native;
     private readonly DataTable _parameters;
@@ -30,11 +38,11 @@ internal sealed class PluginWindow : ITickable
     private bool _closed;
     private bool _fitting;
 
-    public PluginWindow(PluginDescription description, PluginInstance plugin, ProcessingPump pump, StandaloneWindow owner, bool lightTheme)
+    public PluginWindow(PluginDescription description, PluginInstance plugin, AudioEngine engine, StandaloneWindow owner, bool lightTheme)
     {
         Description = description;
         _plugin = plugin;
-        _pump = pump;
+        _engine = engine;
 
         _editor = (plugin as Vst3Plugin)?.CreateEditor();
         if (_editor is not null && !_editor.IsPlatformSupported("HWND"))
@@ -87,8 +95,44 @@ internal sealed class PluginWindow : ITickable
         bar.Children.Add(buttons);
         bar.Children.Add(_info);
 
+        // ---------------------------------------------------------------- transport: source or keyboard, bypass, mute, meter
+        int mainInputs = plugin.InputBuses.Where(b => !b.IsAuxiliary).Sum(b => b.ChannelCount);
+        int mainOutputs = plugin.OutputBuses.Where(b => !b.IsAuxiliary).Sum(b => b.ChannelCount);
+        _levels = new float[Math.Clamp(mainOutputs, 1, 16)];
+        _meter = new LevelMeter
+        {
+            Orientation = Orientation.Horizontal, ChannelCount = _levels.Length, Width = 170f, Height = Math.Min(26f, 6f * _levels.Length + 4f),
+            ShowScale = false, Dock = Side.Right, VerticalAlignment = VerticalAlignment.Center, MinDb = -60f,
+        };
+        var transport = new DockPanel { Dock = Side.Bottom, Height = TransportHeight, Padding = new Thickness(8f, 7f, 8f, 7f) };
+        transport.Children.Add(_meter);
+        var left = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6f };
+        var bypass = new ToggleButton(L.T("Bypass", "Contourner")) { Height = 26f, Width = 90f, ToolTip = L.T("The source goes straight to the output", "La source va directement à la sortie") };
+        var mute = new ToggleButton(L.T("Mute", "Muet")) { Height = 26f, Width = 70f, ToolTip = L.T("Silences the output of this plug-in", "Coupe la sortie de ce plug-in") };
+        if (mainInputs > 0)
+        {
+            left.Add(BuildSourceControls());
+        }
+        else if (plugin.EventInputCount > 0)
+        {
+            left.Add(new Label { TextSource = () => _engine.MidiInputName is { } port ? "MIDI : " + port : L.T("On-screen keyboard (or a MIDI input: File > Audio and MIDI)", "Clavier à l'écran (ou une entrée MIDI : Fichier > Audio et MIDI)"), IsDim = true, VerticalAlignment = VerticalAlignment.Center });
+        }
+        left.Add(bypass, mute);
+        transport.Children.Add(left);
+        bypass.IsEnabled = mainInputs > 0;
+        bypass.ValueChanged += (_, _) => _slot!.Bypass = bypass.IsOn;
+        mute.ValueChanged += (_, _) => _slot!.Mute = mute.IsOn;
+        if (mainInputs == 0 && plugin.EventInputCount > 0)
+        {
+            _keyboard = new PianoKeyboard { Dock = Side.Bottom, Height = KeyboardHeight, LowestNote = 36, HighestNote = 96, Margin = new Thickness(8f, 0f, 8f, 0f) };
+            _keyboard.NoteOn += (_, note, velocity) => _slot!.SendMidi(MidiEvent.NoteOn(0, 0, note, Math.Clamp((int)MathF.Round(velocity * 127f), 1, 127)));
+            _keyboard.NoteOff += (_, note) => _slot!.SendMidi(MidiEvent.NoteOff(0, 0, note));
+        }
+
         var root = new DockPanel();
         root.Children.Add(bar);
+        root.Children.Add(transport);
+        if (_keyboard is not null) root.Children.Add(_keyboard);
         var content = new Grid("*", "*");
         if (_editor is not null)
         {
@@ -111,7 +155,7 @@ internal sealed class PluginWindow : ITickable
         root.Children.Add(content);
 
         var (w0, h0) = _editor?.Size ?? (0, 0);
-        var design = w0 > 0 && h0 > 0 ? new Size(w0, h0 + BarHeight) : new Size(640f, 520f);
+        var design = w0 > 0 && h0 > 0 ? new Size(Math.Max(w0, 560f), h0 + ChromeHeight) : new Size(640f, 520f + ChromeHeight - BarHeight);
         Host = new UIHost(root, design, SizingMode.Relayout) { MinSize = new Size(Math.Min(design.Width, 420f), Math.Min(design.Height, 200f)) };
         if (lightTheme) Host.Theme = Theme.Light;
         Window = new StandaloneWindow(Host, $"{description.Name} — {description.Vendor}")
@@ -129,8 +173,8 @@ internal sealed class PluginWindow : ITickable
             ReadParameters();
             _info.InvalidateVisual();
         };
-        plugin.Prepare(ProcessingPump.SampleRate, ProcessingPump.BlockSize, realtime: true);
-        pump.Add(plugin);
+        _slot = engine.Rack.Add(plugin);
+        engine.MidiReceived += OnMidi;
         Host.AddTicker(this);
     }
 
@@ -149,12 +193,107 @@ internal sealed class PluginWindow : ITickable
         _native?.Sync();
     }
 
+    private float ChromeHeight => BarHeight + TransportHeight + (_keyboard is null ? 0f : KeyboardHeight);
+
     private string InfoText()
     {
         string latency = _plugin.LatencySamples == 0 ? string.Empty
             : L.T($"latency {_plugin.LatencySamples} samples · ", $"latence {_plugin.LatencySamples} échantillons · ");
-        return latency + L.T($"{_plugin.InputChannelCount} in, {_plugin.OutputChannelCount} out · 48 kHz, no audio device",
-            $"{_plugin.InputChannelCount} entrée(s), {_plugin.OutputChannelCount} sortie(s) · 48 kHz, sans périphérique audio");
+        string rate = (_engine.Rack.SampleRate / 1000.0).ToString("0.#", CultureInfo.InvariantCulture) + " kHz";
+        string device = _engine.Driver is NullAudioDriver ? L.T(", no audio device", ", sans périphérique audio") : string.Empty;
+        return latency + L.T($"{_plugin.InputChannelCount} in, {_plugin.OutputChannelCount} out · {rate}{device}",
+            $"{_plugin.InputChannelCount} entrée(s), {_plugin.OutputChannelCount} sortie(s) · {rate}{device}");
+    }
+
+    // ---------------------------------------------------------------- source
+
+    private UIElement BuildSourceControls()
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6f };
+        string[] sources = [L.T("Silence", "Silence"), L.T("Audio input", "Entrée audio"), L.T("Test signal", "Signal de test"), L.T("Audio file…", "Fichier audio…")];
+        var source = new DropDown(sources) { Label = string.Empty, Width = 150f, Height = 26f, ToolTip = L.T("What feeds the plug-in's input", "Ce qui alimente l'entrée du plug-in") };
+
+        var kinds = new DropDown(L.T("Sine", "Sinus"), L.T("Square", "Carré"), L.T("Sawtooth", "Dent de scie"), L.T("Triangle", "Triangle"),
+            L.T("White noise", "Bruit blanc"), L.T("Pink noise", "Bruit rose"), L.T("Sweep 20 Hz–20 kHz", "Balayage 20 Hz–20 kHz"), L.T("Impulses (1 s)", "Impulsions (1 s)"))
+        { Label = string.Empty, Width = 170f, Height = 26f };
+        var frequency = new LocalParameter(L.T("Frequency", "Fréquence"), 20, 20000, 1000, "Hz", ParameterScale.Logarithmic(20, 20000), decimals: 0);
+        var level = new LocalParameter(L.T("Level", "Niveau"), -60, 0, -20, "dBFS", decimals: 1);
+        var frequencyBox = new NumberBox { Parameter = frequency, Width = 96f, Height = 26f, ToolTip = L.T("Frequency of tones", "Fréquence des sons") };
+        var levelBox = new NumberBox { Parameter = level, Width = 96f, Height = 26f, ToolTip = L.T("Level (peak, or RMS for noises)", "Niveau (crête, ou efficace pour les bruits)") };
+        frequency.Changed += _ => _generator.Frequency = frequency.Value;
+        level.Changed += _ =>
+        {
+            _generator.LevelDb = level.Value;
+            _deviceInput.GainDb = 0;
+        };
+        kinds.ValueChanged += (_, _) =>
+        {
+            _generator.Signal = (TestSignal)Math.Max(0, kinds.SelectedIndex);
+            _generator.Frequency = _generator.Signal == TestSignal.Sweep ? 20 : frequency.Value;
+            _generator.EndFrequency = 20000;
+            frequencyBox.IsEnabled = _generator.Signal is TestSignal.Sine or TestSignal.Square or TestSignal.Sawtooth or TestSignal.Triangle;
+        };
+        _generator.LevelDb = level.Value;
+        var generator = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6f, IsVisible = false };
+        generator.Add(kinds, frequencyBox, levelBox);
+
+        var fileName = new Label { IsDim = true, VerticalAlignment = VerticalAlignment.Center, Width = 180f };
+        var pause = new ToggleButton(L.T("Pause", "Pause")) { Height = 26f, Width = 70f };
+        pause.ValueChanged += (_, _) => { if (_file is not null) _file.IsPaused = pause.IsOn; };
+        var file = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6f, IsVisible = false };
+        file.Add(fileName, pause);
+
+        int previous = 0;
+        source.ValueChanged += (_, _) =>
+        {
+            int choice = source.SelectedIndex;
+            if (choice == previous) return;
+            if (choice == 3)
+            {
+                // Choose the file after the drop-down closed.
+                Host.Post(() =>
+                {
+                    if (FileDialogs.OpenFile(Host, L.T("Play an audio file", "Lire un fichier audio"), [new(L.T("WAV files", "Fichiers WAV"), "*.wav")]) is { } path)
+                    {
+                        try
+                        {
+                            _file = FileSource.Load(path);
+                            _file.IsPaused = pause.IsOn;
+                            fileName.Text = _file.FileName;
+                            _slot.Source = _file;
+                            previous = 3;
+                            generator.IsVisible = false;
+                            file.IsVisible = true;
+                            Host.InvalidateLayout();
+                            return;
+                        }
+                        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or InvalidDataException or NotSupportedException)
+                        {
+                            MessageDialog.Show(Window, Window.Title, L.T("The file could not be read:\n", "Le fichier n'a pas pu être lu :\n") + ex.Message);
+                        }
+                    }
+                    source.SelectedIndex = previous;
+                });
+                return;
+            }
+            previous = choice;
+            _slot.Source = choice switch { 1 => _deviceInput, 2 => _generator, _ => SilenceSource.Instance };
+            generator.IsVisible = choice == 2;
+            file.IsVisible = false;
+            Host.InvalidateLayout();
+        };
+        panel.Add(source, generator, file);
+        return panel;
+    }
+
+    private void OnMidi(MidiEvent e)
+    {
+        // MIDI driver thread: show the notes on the keyboard.
+        if (_keyboard is null || _closed) return;
+        int type = e.Status & 0xF0;
+        if (type is not (0x80 or 0x90)) return;
+        bool on = type == 0x90 && e.Data2 > 0;
+        Host.Post(() => _keyboard.SetNoteState(e.Data1, on));
     }
 
     private void ReadParameters()
@@ -191,9 +330,9 @@ internal sealed class PluginWindow : ITickable
         {
             _native.PreferredPixelSize = (width, height);
             float scale = Host.Scale;
-            if (_editor is { CanResize: false }) Host.MinSize = new Size(width / scale, height / scale + BarHeight);
+            if (_editor is { CanResize: false }) Host.MinSize = new Size(width / scale, height / scale + ChromeHeight);
             if (_parameters.IsVisible) return true; // the table is shown: the editor gets its size when it comes back
-            return Host.RequestResize(width, (int)MathF.Round(height + BarHeight * scale));
+            return Host.RequestResize(width, (int)MathF.Round(height + ChromeHeight * scale));
         }
         finally
         {
@@ -289,6 +428,8 @@ internal sealed class PluginWindow : ITickable
     {
         if (_closed) return false;
         _plugin.Idle();
+        _slot.Meter.Read(_levels);
+        _meter.SetLevels(_levels);
         return true;
     }
 
@@ -296,7 +437,8 @@ internal sealed class PluginWindow : ITickable
     {
         if (_closed) return;
         _closed = true;
-        _pump.Remove(_plugin);
+        _engine.MidiReceived -= OnMidi;
+        _engine.Rack.Remove(_slot);
         _editor?.Dispose();
         _plugin.Dispose();
     }

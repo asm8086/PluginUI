@@ -1,4 +1,4 @@
-<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
+<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -18,7 +18,8 @@ Ce qui existe et ce qui vient ensuite :
 | Dossiers de plug-ins dans un fichier de réglages, liste conservée entre les lancements | fait |
 | Traitement hors temps réel, rendu MIDI, mesure de réponse (`pluginhost`) | fait |
 | Plug-ins VST 2 | prévu (paquet séparé, écrit d'après la documentation publique) |
-| Périphériques audio et MIDI temps réel (WASAPI, puis ASIO), sources de signal | prévu |
+| Audio temps réel (sortie et entrée WASAPI), sources de signal, clavier à l'écran, entrée MIDI | fait |
+| ASIO, sortie MIDI et messages exclusifs, MIDI émis par les plug-ins | prévu |
 | Hôte graphique : liste de plug-ins avec ordres de tri et colonnes, fenêtres d'éditeur, presets | fait |
 
 ## Sommaire
@@ -216,6 +217,12 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 - **Recherche** (F5 : modules nouveaux ou modifiés ; Maj+F5 : tout à nouveau ; **Arrêter la recherche** dans le menu Fichier ou la barre d'outils) : elle se fait dans des
   processus séparés, avec sa progression dans la barre d'état ; la liste ne change qu'une fois la recherche terminée.
 - **Dossiers de plug-ins** (Ctrl+Maj+F) : dossiers VST3 et VST2, dossiers standard.
+- **Audio et MIDI** (Ctrl+Maj+A) : périphérique de sortie (WASAPI, ou aucun), périphérique d'entrée, taille du tampon
+  (par défaut la plus petite que permet le périphérique : souvent moins de 3 ms à 48 kHz), port d'entrée MIDI. La
+  barre d'état indique le périphérique, sa fréquence d'échantillonnage et son tampon ; l'indicateur à droite de la
+  barre des filtres montre le niveau de sortie.
+
+![Audio et MIDI](images/fr/pluginhost-audio.png)
 
 ![Dossiers de plug-ins](images/fr/pluginhost-folders.png)
 
@@ -223,9 +230,20 @@ Chaque plug-in ouvert a sa fenêtre : l'éditeur du plug-in, à la taille qu'il 
 permet), ou la **table générique des paramètres** quand il n'en a pas (bouton **Paramètres** sinon). Les valeurs se
 saisissent dans la table comme le plug-in les affiche (`-6 dB`, `Warm`) ou en valeurs normalisées. **Charger un
 preset** / **Enregistrer le preset** lisent et écrivent des fichiers `.vstpreset`. Tant que sa fenêtre est ouverte, le
-plug-in est traité en temps réel à 48 kHz avec une entrée silencieuse, comme dans une STAN : ses paramètres arrivent
-au processeur et les indicateurs de l'éditeur bougent. Les périphériques audio (WASAPI, ASIO), les sources de signal et
-un clavier à l'écran pour les instruments viendront ensuite.
+plug-in joue sur le périphérique audio ; tous les plug-ins ouverts s'entendent (leurs sorties s'additionnent). La barre
+du bas de la fenêtre contient :
+
+- pour les effets, la **source** de l'entrée : silence, l'**entrée audio** du périphérique, un **signal de test**
+  (sinus, carré, dent de scie, triangle, bruit blanc ou rose, balayage 20 Hz – 20 kHz, impulsions chaque seconde ;
+  fréquence et niveau en dBFS), ou un **fichier audio** (WAV, en boucle, rééchantillonné à la fréquence du
+  périphérique, avec un bouton pause) ;
+- pour les instruments, un **clavier à l'écran** (souris, ou clavier de l'ordinateur quand il a le focus) ; le port
+  d'entrée MIDI atteint tous les plug-ins ouverts qui ont une entrée MIDI, et ses notes allument les touches ;
+- **Contourner** (la source va directement à la sortie), **Muet**, et l'indicateur de niveau de la sortie du plug-in.
+
+Les canaux de sortie principaux du plug-in vont aux canaux du périphérique dans l'ordre (une sortie mono sur les deux
+premiers) : un plug-in multicanal s'entend sur un périphérique multicanal. Sans périphérique, le plug-in tourne sur une
+horloge à 48 kHz avec une sortie muette, pour que son éditeur et ses paramètres se comportent comme dans une STAN.
 
 `PluginHost.exe` sert aussi de processus enfant de la recherche (`PluginHost.exe scan-module …`), comme `pluginhost`.
 `PluginHost.exe --config <dossier>` utilise un autre dossier de réglages ; les réglages de l'interface sont dans
@@ -249,6 +267,23 @@ var output = OfflineRenderer.Render([eq], input, input.SampleRate);
 WavFile.Write("traite.wav", output, WavSampleFormat.Int24);
 catalog.Save(HostPaths.CatalogFile);                        // garde la « dernière utilisation »
 ```
+
+En direct, sur un périphérique audio (`PluginUI.Host.Windows`) : un `PluginRack` contient les plug-ins, chacun avec
+sa source, et un pilote le joue.
+
+```csharp
+using PluginUI.Host.Windows;
+
+var rack = new PluginRack();
+var slot = rack.Add(eq, new TestSignalGenerator { Signal = TestSignal.PinkNoise, LevelDb = -18 });
+using var device = new WasapiDriver(outputId: null);       // périphérique par défaut ; Wasapi.GetEndpoints les liste
+device.Start(rack);
+slot.SendMidi(MidiEvent.NoteOn(0, 0, 60, 100));            // depuis n'importe quel thread
+```
+
+`NullAudioDriver` fait tourner le rack sur une horloge, sans périphérique. Sources : `SilenceSource`,
+`DeviceInputSource`, `TestSignalGenerator`, `FileSource` ; `RackSlot.Bypass`, `Mute`, `GainDb`, `Meter` ; `MidiInput`
+ouvre un port MIDI.
 
 Utilisation en temps réel, sans le moteur de rendu : `Prepare(sampleRate, maxBlock, realtime: true)`, puis pour
 chaque bloc remplir `GetInput(canal)`, appeler `Process(frames)` et lire `GetOutput(canal)`. `SetParameter` et

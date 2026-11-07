@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -31,6 +31,18 @@ internal sealed class GuiSettings
     public bool ShowDetails { get; set; } = true;
 
     public float DetailsRatio { get; set; } = 0.72f;
+
+    /// <summary>Audio output endpoint (null = default device of Windows; "none" = no audio device).</summary>
+    public string? AudioOutput { get; set; }
+
+    /// <summary>Audio input endpoint (null = no input; "" = default input device of Windows).</summary>
+    public string? AudioInput { get; set; }
+
+    /// <summary>Requested buffer in samples (0 = the smallest the device allows).</summary>
+    public int BufferFrames { get; set; }
+
+    /// <summary>MIDI input port name (null = none).</summary>
+    public string? MidiInput { get; set; }
 }
 
 [JsonSerializable(typeof(GuiSettings))]

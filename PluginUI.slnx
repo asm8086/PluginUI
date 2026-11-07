@@ -1,10 +1,11 @@
-<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
+<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/PluginUI/PluginUI.csproj" />
     <Project Path="src/PluginUI.NPlug/PluginUI.NPlug.csproj" />
     <Project Path="src/PluginUI.Design/PluginUI.Design.csproj" />
     <Project Path="src/PluginUI.Desktop/PluginUI.Desktop.csproj" />
+    <Project Path="src/PluginUI.Host.Windows/PluginUI.Host.Windows.csproj" />
     <Project Path="src/PluginUI.Host/PluginUI.Host.csproj" />
   </Folder>
   <Folder Name="/samples/">

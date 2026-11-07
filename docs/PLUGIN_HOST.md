@@ -1,4 +1,4 @@
-<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
+<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -17,7 +17,8 @@ What exists today and what comes next:
 | Plug-in folders in a settings file, scanned list kept between runs | done |
 | Offline processing, MIDI rendering, response measurement (`pluginhost`) | done |
 | VST 2 plug-ins | planned (separate package, written from public documentation) |
-| Real-time audio and MIDI devices (WASAPI, then ASIO), signal sources | planned |
+| Real-time audio (WASAPI output and input), signal sources, on-screen keyboard, MIDI input | done |
+| ASIO, MIDI output and system exclusive, MIDI from plug-ins | planned |
 | Graphical host: plug-in list with sort orders and columns, editor windows, presets | done |
 
 ## Contents
@@ -208,15 +209,30 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 - **Scan** (F5: new and changed modules; Shift+F5: everything again; **Stop the scan** in the File menu or the tool bar): the scan runs in separate processes,
   with its progress in the status bar; the list changes only when it is complete.
 - **Plug-in folders** (Ctrl+Shift+F): VST3 and VST2 folders, standard folders.
+- **Audio and MIDI** (Ctrl+Shift+A): output device (WASAPI, or none), input device, buffer size (the smallest the
+  device allows by default: often under 3 ms at 48 kHz), MIDI input port. The status bar shows the device, its sample
+  rate and its buffer; the meter at the right of the filter bar shows the output level.
+
+![Audio and MIDI](images/pluginhost-audio.png)
 
 ![Plug-in folders](images/pluginhost-folders.png)
 
 Each open plug-in has its own window: the plug-in's editor, sized as the plug-in asks (and resizable when the plug-in
 allows it), or the **generic parameter table** when it has none (**Parameters** button otherwise). Values can be typed
 in the table as the plug-in displays them (`-6 dB`, `Warm`) or as normalized values. **Load preset** / **Save preset**
-read and write `.vstpreset` files. While its window is open the plug-in is processed in real time at 48 kHz with silent
-input, as in a DAW: its parameters reach the processor and the editor's meters move. Audio devices (WASAPI, ASIO), the
-signal sources and an on-screen keyboard for instruments come next.
+read and write `.vstpreset` files. While its window is open the plug-in plays on the audio device; every open plug-in is
+heard (their outputs are added). The bar at the bottom of the window holds:
+
+- for effects, the **source** of the input: silence, the **audio input** of the device, a **test signal** (sine,
+  square, sawtooth, triangle, white or pink noise, 20 Hz – 20 kHz sweep, impulses every second; frequency and level in
+  dBFS), or an **audio file** (WAV, looped, resampled to the device rate, with a pause button);
+- for instruments, an **on-screen keyboard** (mouse, or the computer keyboard when it has the focus); the MIDI input
+  port reaches every open plug-in with a MIDI input, and its notes light up the keys;
+- **Bypass** (the source goes straight to the output), **Mute**, and the meter of the plug-in's output.
+
+The plug-in's main output channels go to the device channels in order (a mono output to the first two): a multichannel
+plug-in is heard on a multichannel device. Without a device, the plug-in runs on a clock at 48 kHz with silent output,
+so that its editor and parameters still behave as in a DAW.
 
 `PluginHost.exe` also serves as the scanner's child process (`PluginHost.exe scan-module …`), like `pluginhost`.
 `PluginHost.exe --config <folder>` uses another settings folder; the interface settings are in `gui.json` next to
@@ -240,6 +256,22 @@ var output = OfflineRenderer.Render([eq], input, input.SampleRate);
 WavFile.Write("wet.wav", output, WavSampleFormat.Int24);
 catalog.Save(HostPaths.CatalogFile);                        // keeps "last used"
 ```
+
+Live, on an audio device (`PluginUI.Host.Windows`): a `PluginRack` holds the plug-ins, each with its source, and a
+driver plays it.
+
+```csharp
+using PluginUI.Host.Windows;
+
+var rack = new PluginRack();
+var slot = rack.Add(eq, new TestSignalGenerator { Signal = TestSignal.PinkNoise, LevelDb = -18 });
+using var device = new WasapiDriver(outputId: null);       // default device of Windows; Wasapi.GetEndpoints lists them
+device.Start(rack);
+slot.SendMidi(MidiEvent.NoteOn(0, 0, 60, 100));            // any thread
+```
+
+`NullAudioDriver` runs the rack on a clock without a device. Sources: `SilenceSource`, `DeviceInputSource`,
+`TestSignalGenerator`, `FileSource`; `RackSlot.Bypass`, `Mute`, `GainDb`, `Meter`; `MidiInput` opens a MIDI port.
 
 Real-time use, without the renderer: `Prepare(sampleRate, maxBlock, realtime: true)`, then for each block fill
 `GetInput(channel)`, call `Process(frames)` and read `GetOutput(channel)`. `SetParameter` and `AddMidiEvent` can be

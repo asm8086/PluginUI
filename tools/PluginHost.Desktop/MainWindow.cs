@@ -1,10 +1,12 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/07 00:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.Globalization;
 using System.Text;
 using PluginUI.Desktop;
+using PluginUI.Host.Audio;
+using PluginUI.Host.Windows;
 using PluginUI.Host.Catalog;
 
 namespace PluginUI.Host.Desktop;
@@ -25,7 +27,9 @@ internal sealed class MainWindow
     private readonly SplitView _split;
     private readonly ProgressBar _progress;
     private readonly PluginLoader _loader;
-    private readonly ProcessingPump _pump = new();
+    private readonly AudioEngine _audio;
+    private readonly LevelMeter _outputMeter;
+    private readonly float[] _outputLevels = new float[2];
     private readonly List<PluginWindow> _open = new();
     private readonly List<(string Text, string Key, bool Descending)> _sortChoices;
     private PluginCatalog _catalog;
@@ -88,7 +92,12 @@ internal sealed class MainWindow
         {
             Orientation = Orientation.Horizontal, Spacing = 8f, Dock = Side.Top, Height = 40f, Padding = new Thickness(10f, 7f, 10f, 7f),
         };
-        filters.Add(_search, _format, _kind, _sort, _favorites, _failed, _progress);
+        _outputMeter = new LevelMeter
+        {
+            Orientation = Orientation.Horizontal, ChannelCount = 2, Width = 150f, Height = 14f, ShowScale = false, MinDb = -60f,
+            VerticalAlignment = VerticalAlignment.Center, ToolTip = L.T("Output level of the audio device", "Niveau de sortie du périphérique audio"),
+        };
+        filters.Add(_search, _format, _kind, _sort, _favorites, _failed, _progress, _outputMeter);
 
         // ---------------------------------------------------------------- details
         _details = new Label
@@ -122,6 +131,10 @@ internal sealed class MainWindow
         var folders = new Command(L.T("Plug-in &folders…", "&Dossiers de plug-ins…"), ShowFoldersDialog, KeyGesture.Parse("Ctrl+Shift+F"))
         {
             Description = L.T("Folders searched for VST3 and VST2 plug-ins", "Dossiers où chercher les plug-ins VST3 et VST2"),
+        };
+        var audio = new Command(L.T("&Audio and MIDI…", "&Audio et MIDI…"), ShowAudioDialog, KeyGesture.Parse("Ctrl+Shift+A"))
+        {
+            Description = L.T("Audio device, input, buffer size and MIDI input", "Périphérique audio, entrée, taille de tampon et entrée MIDI"),
         };
         var open = new Command(L.T("&Open", "&Ouvrir"), () => { foreach (var p in Selected) Open(p); }, KeyGesture.Parse("Ctrl+O"))
         {
@@ -172,6 +185,7 @@ internal sealed class MainWindow
         fileMenu.Items.Add(new MenuItem(stop));
         fileMenu.Items.Add(MenuItem.Separator());
         fileMenu.Items.Add(new MenuItem(folders));
+        fileMenu.Items.Add(new MenuItem(audio));
         fileMenu.Items.Add(MenuItem.Separator());
         fileMenu.Items.Add(new MenuItem(app.ExitCommand));
         var pluginMenu = new MenuItem(L.T("&Plug-in", "&Plug-in"));
@@ -211,6 +225,7 @@ internal sealed class MainWindow
         ToolBar.Add(scan, ToolGlyph.Play).ShowText = true;
         ToolBar.Add(stop, ToolGlyph.Stop);
         ToolBar.Add(folders, ToolGlyph.Settings);
+        ToolBar.Add(audio, ToolGlyph.Wave);
         ToolBar.AddSeparator();
         ToolBar.Add(open, ToolGlyph.Open);
         ToolBar.Add(copyPath, ToolGlyph.Copy);
@@ -221,6 +236,7 @@ internal sealed class MainWindow
         StatusBar = new StatusBar { Dock = Side.Bottom };
         StatusBar.Segments.Add(new StatusBarSegment(() => _scanText.Length > 0 ? _scanText : Host!.Strings.StatusReady, float.PositiveInfinity));
         StatusBar.Segments.Add(new StatusBarSegment(CountText, 260f) { Align = HorizontalAlignment.Right });
+        StatusBar.Segments.Add(new StatusBarSegment(() => _audio?.Describe() ?? string.Empty, 360f) { Align = HorizontalAlignment.Right });
         StatusBar.Segments.Add(new StatusBarSegment(LastScanText, 220f) { Align = HorizontalAlignment.Right });
         StatusBar.Follow(MenuBar);
         StatusBar.Follow(ToolBar);
@@ -237,7 +253,18 @@ internal sealed class MainWindow
         Window = new StandaloneWindow(Host, app.Name);
         Window.Closing += (_, _) => CloseAll();
         Window.Closed += _ => SaveAll();
-        _pump.Failed += (plugin, ex) => Host.Post(() => StatusBar.ShowMessage(L.T($"{plugin.Name} stopped processing: {ex.Message}", $"{plugin.Name} a cessé de traiter : {ex.Message}"), 8.0));
+        _audio = new AudioEngine(Host);
+        _audio.Message += message => StatusBar.ShowMessage(message, 10.0);
+        _audio.Changed += () => StatusBar.InvalidateVisual();
+        _audio.Rack.SlotFailed += (slot, ex) => Host.Post(() => StatusBar.ShowMessage(
+            L.T($"{slot.Plugin.Name} stopped processing: {ex.Message}", $"{slot.Plugin.Name} a cessé de traiter : {ex.Message}"), 8.0));
+        _audio.Start(saveChanges ? s : new GuiSettings { AudioOutput = "none" });
+        Host.AddTicker(new Ticker(() =>
+        {
+            _audio.Rack.OutputMeter.Read(_outputLevels);
+            _outputMeter.SetLevels(_outputLevels);
+            return true;
+        }));
 
         _ready = true;
         SyncSortChoice();
@@ -467,7 +494,7 @@ internal sealed class MainWindow
         PluginWindow window;
         try
         {
-            window = new PluginWindow(description, instance, _pump, Window, _settings.Value.LightTheme);
+            window = new PluginWindow(description, instance, _audio, Window, _settings.Value.LightTheme);
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
@@ -620,6 +647,102 @@ internal sealed class MainWindow
 
     // ---------------------------------------------------------------- folders
 
+    /// <summary>Calls a function on every frame.</summary>
+    private sealed class Ticker(Func<bool> tick) : ITickable
+    {
+        public bool Tick(double elapsedSeconds) => tick();
+    }
+
+    // ---------------------------------------------------------------- audio
+
+    /// <summary>Shows the audio and MIDI dialog.</summary>
+    public void ShowAudioDialog()
+    {
+        var s = _settings.Value;
+        List<AudioEndpoint> outputs = [], inputs = [];
+        List<MidiInputPort> ports = [];
+        try
+        {
+            outputs = [.. Wasapi.GetEndpoints(input: false)];
+            inputs = [.. Wasapi.GetEndpoints(input: true)];
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or DllNotFoundException or EntryPointNotFoundException)
+        {
+            StatusBar.ShowMessage(ex.Message, 8.0);
+        }
+        try
+        {
+            ports = [.. MidiInput.Ports];
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
+        {
+            StatusBar.ShowMessage(ex.Message, 8.0);
+        }
+        static string Describe(AudioEndpoint e) => $"{e.Name} ({e.Channels} ch, {e.SampleRate / 1000.0:0.#} kHz)";
+
+        // Output: Windows default, the devices, or none.
+        var outputIds = new List<string?> { null };
+        var outputNames = new List<string> { L.T("Default device of Windows", "Périphérique par défaut de Windows") };
+        foreach (var e in outputs) { outputIds.Add(e.Id); outputNames.Add(Describe(e)); }
+        outputIds.Add("none");
+        outputNames.Add(L.T("No audio device", "Aucun périphérique audio"));
+        var output = new DropDown([.. outputNames]) { Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, outputIds.IndexOf(s.AudioOutput)) };
+
+        // Input: none, Windows default, the devices.
+        var inputIds = new List<string?> { null, "" };
+        var inputNames = new List<string> { L.T("No input", "Aucune entrée"), L.T("Default input of Windows", "Entrée par défaut de Windows") };
+        foreach (var e in inputs) { inputIds.Add(e.Id); inputNames.Add(Describe(e)); }
+        var input = new DropDown([.. inputNames]) { Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, inputIds.IndexOf(s.AudioInput)) };
+
+        int[] sizes = [0, 64, 128, 256, 512, 1024, 2048];
+        var buffer = new DropDown([L.T("Smallest the device allows", "La plus petite permise par le périphérique"), "64", "128", "256", "512", "1024", "2048"])
+        {
+            Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, Array.IndexOf(sizes, s.BufferFrames)),
+        };
+
+        var midiNames = new List<string?> { null };
+        midiNames.AddRange(ports.Select(p => (string?)p.Name));
+        var midi = new DropDown([L.T("None", "Aucune"), .. ports.Select(p => p.Name)])
+        {
+            Label = string.Empty, Height = 26f, SelectedIndex = Math.Max(0, midiNames.IndexOf(s.MidiInput)),
+        };
+
+        UIElement Row(string caption, UIElement control)
+        {
+            var row = new DockPanel { Height = 28f };
+            row.Children.Add(new Label(caption) { Width = 170f, Dock = Side.Left, VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(control);
+            return row;
+        }
+        var body = new StackPanel { Spacing = 8f };
+        body.Add(
+            Row(L.T("Output (WASAPI)", "Sortie (WASAPI)"), output),
+            Row(L.T("Input", "Entrée"), input),
+            Row(L.T("Buffer (samples)", "Tampon (échantillons)"), buffer),
+            Row(L.T("MIDI input", "Entrée MIDI"), midi),
+            new Label(L.T("Now: ", "Actuellement : ") + _audio.Describe()) { Wrap = true, IsDim = true, Height = 34f },
+            new Label(L.T("WASAPI shares the device with other applications at the sample rate chosen in the sound settings of Windows. ASIO comes next.",
+                "WASAPI partage le périphérique avec les autres applications, à la fréquence choisie dans les paramètres de son de Windows. ASIO viendra ensuite."))
+            { Wrap = true, IsDim = true, Height = 34f });
+        var dialog = new Dialog(L.T("Audio and MIDI", "Audio et MIDI"), body) { DialogWidth = 640f };
+        dialog.AddButton(L.T("Cancel", "Annuler"), null, isCancel: true).AddButton("OK", "ok", isDefault: true);
+        dialog.ResultChosen += (_, result) =>
+        {
+            if (!Equals(result, "ok")) return;
+            s.AudioOutput = outputIds[Math.Max(0, output.SelectedIndex)];
+            s.AudioInput = inputIds[Math.Max(0, input.SelectedIndex)];
+            s.BufferFrames = sizes[Math.Max(0, buffer.SelectedIndex)];
+            s.MidiInput = midiNames[Math.Max(0, midi.SelectedIndex)];
+            SaveSettings();
+            Host.Post(() =>
+            {
+                _audio.Start(s);
+                StatusBar.ShowMessage(_audio.Describe(), 6.0);
+            });
+        };
+        Host.ShowPopup(dialog);
+    }
+
     /// <summary>Shows the plug-in folders dialog.</summary>
     public void ShowFoldersDialog()
     {
@@ -720,7 +843,7 @@ internal sealed class MainWindow
         SaveLayout();
         SaveSettings();
         SaveCatalog();
-        _pump.Dispose();
+        _audio.Dispose();
         _loader.Dispose();
     }
 
