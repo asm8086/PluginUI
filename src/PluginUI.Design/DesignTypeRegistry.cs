@@ -261,6 +261,8 @@ public sealed class DesignTypeRegistry
 
     private static DesignContainerKind ContainerKindOf(Type type)
     {
+        // Composite controls build their own children: they are leaves for the designer.
+        if (typeof(PresetBrowser).IsAssignableFrom(type)) return DesignContainerKind.None;
         if (typeof(SplitView).IsAssignableFrom(type)) return DesignContainerKind.Split;
         if (typeof(TabView).IsAssignableFrom(type)) return DesignContainerKind.Tabs;
         if (typeof(ScrollViewer).IsAssignableFrom(type) || typeof(ContentPanel).IsAssignableFrom(type)) return DesignContainerKind.Content;
@@ -411,6 +413,8 @@ public static class BuiltInDesignTypes
         registry.Register<PresetBar>(Pickers);
         registry.Register<ABCompareBar>(Pickers);
         registry.Register<ListBox>(Pickers);
+        registry.Register<TreeView>(Pickers);
+        registry.Register<PresetBrowser>(Pickers);
         registry.Register<DataTable>(Pickers);
 
         registry.Register<ImageView>(Decoration);

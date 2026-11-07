@@ -224,6 +224,8 @@ internal static partial class Uia
         AutomationControlType.Window => 50032,
         AutomationControlType.Pane => 50033,
         AutomationControlType.Separator => 50038,
+        AutomationControlType.Tree => 50023,
+        AutomationControlType.TreeItem => 50024,
         _ => 50025, // Custom
     };
 

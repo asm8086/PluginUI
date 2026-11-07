@@ -114,6 +114,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `ScrollViewer` | Vertical and horizontal scrolling, thin overlay scroll bars, mouse wheel (Shift: horizontal), `ScrollIntoView` | `CScrollView` |
 | `SplitView` | Two panes and a movable splitter | `CSplitView` |
 | `ListBox` | Virtualized list, single or extended selection, keyboard, type-ahead search, reordering by dragging | `CListControl`, `CStringList` |
+| `TreeView`, `TreeNode` | Virtualized tree: expanders, indentation, detail text and color dot per node, one selected node, keyboard (arrows, Left / Right collapse and expand, Enter, type-ahead), text filter that keeps the ancestors of matching nodes, `Expanding` for children loaded on demand; a tree of tree items for screen readers | — (bonus) |
 | `DataTable` | Fixed or star columns, sorting, resizing, auto-fit, virtualized rows, cell editing, columns shown or hidden from the header menu, saved layout (`SaveLayout` / `RestoreLayout`), row context menu (`RowContextMenu`, menu key), drawn cells (`CellRenderer`), screen readers | `CDataBrowser` |
 | `CornerResizer` | Editor resize grip (double-click: 100 %) | `ICornerResizerControl` |
 | `Separator`, `Spacer` | Separator line, fixed or stretchable space | — |
@@ -128,6 +129,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `FileDialogs` | `IFileOpenDialog` / `IFileSaveDialog` | — |
 | `ABCompareBar`, `ParameterSnapshot` | A/B comparison of complete settings, copy to the other slot, restore through gestures | — (bonus) |
 | `PresetBar`, `IPresetProvider`, `PresetList` | Previous/next, menu by bank, Save / Save as / Delete, Ctrl+S | `IVBakedPresetManagerControl`, `IVDiskPresetManagerControl` |
+| `PresetBrowser` | Preset browser over an `IPresetProvider`: search box (every word in the name or the bank), category tree (all presets, favorites, banks nested with "/", counts), list with bank, favorite star (click or Ctrl+D) and the loaded preset highlighted; double-click or Enter loads, `LoadOnSelect` loads on selection; Ctrl+F goes to the search, Down to the list | — (bonus) |
 | `Dialog` | Modal dialog, default and cancel buttons, `Dialog.ShowMessage` | — |
 | `AboutBox`, `SplashScreen` | "About" window, splash screen that fades out | `CSplashScreen`, `IAboutBoxControl`, `CAnimationSplashScreen` |
 

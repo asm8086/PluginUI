@@ -114,6 +114,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `ScrollViewer` | Défilement vertical et horizontal, barres fines superposées, molette (Maj : horizontal), `ScrollIntoView` | `CScrollView` |
 | `SplitView` | Deux volets et séparateur déplaçable | `CSplitView` |
 | `ListBox` | Liste virtualisée, sélection simple ou étendue, clavier, recherche par frappe, réordonnancement par glisser | `CListControl`, `CStringList` |
+| `TreeView`, `TreeNode` | Arborescence virtualisée : flèches de dépliage, retrait, texte de détail et pastille de couleur par nœud, un nœud sélectionné, clavier (flèches, Gauche / Droite pour replier et déplier, Entrée, saisie rapide), filtre de texte qui garde les ancêtres des nœuds trouvés, `Expanding` pour des enfants chargés à la demande ; un arbre d'éléments pour les lecteurs d'écran | — (bonus) |
 | `DataTable` | Colonnes fixes ou étoiles, tri, redimensionnement, ajustement automatique, lignes virtualisées, édition de cellules, colonnes affichées ou masquées depuis le menu de l'en-tête, disposition enregistrée (`SaveLayout` / `RestoreLayout`), menu contextuel des lignes (`RowContextMenu`, touche Menu), cellules dessinées (`CellRenderer`), lecteurs d'écran | `CDataBrowser` |
 | `CornerResizer` | Poignée de redimensionnement de l'éditeur (double-clic : 100 %) | `ICornerResizerControl` |
 | `Separator`, `Spacer` | Ligne de séparation, espace fixe ou extensible | — |
@@ -128,6 +129,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `FileDialogs` | `IFileOpenDialog` / `IFileSaveDialog` | — |
 | `ABCompareBar`, `ParameterSnapshot` | Comparaison A/B de réglages complets, copie vers l'autre emplacement, restauration par gestes | — (bonus) |
 | `PresetBar`, `IPresetProvider`, `PresetList` | Précédent/suivant, menu par banque, Enregistrer / Enregistrer sous / Supprimer, Ctrl+S | `IVBakedPresetManagerControl`, `IVDiskPresetManagerControl` |
+| `PresetBrowser` | Navigateur de presets sur un `IPresetProvider` : zone de recherche (chaque mot dans le nom ou la banque), arbre des catégories (tous les presets, favoris, banques imbriquées par « / », nombres), liste avec banque, étoile des favoris (clic ou Ctrl+D) et preset chargé mis en évidence ; double-clic ou Entrée charge, `LoadOnSelect` charge à la sélection ; Ctrl+F va à la recherche, Bas à la liste | — (bonus) |
 | `Dialog` | Dialogue modal, boutons par défaut et d'annulation, `Dialog.ShowMessage` | — |
 | `AboutBox`, `SplashScreen` | Fenêtre « À propos », écran d'accueil qui s'efface en fondu | `CSplashScreen`, `IAboutBoxControl`, `CAnimationSplashScreen` |
 

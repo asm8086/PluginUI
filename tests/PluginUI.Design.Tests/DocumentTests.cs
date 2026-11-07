@@ -27,6 +27,7 @@ public class DocumentTests
             Assert.That(registry.Find("Border")!.Container, Is.EqualTo(DesignContainerKind.Content));
             Assert.That(registry.Find("ScrollViewer")!.Container, Is.EqualTo(DesignContainerKind.Content));
             Assert.That(registry.Find("SplitView")!.Container, Is.EqualTo(DesignContainerKind.Split));
+            Assert.That(registry.Find("PresetBrowser")!.Container, Is.EqualTo(DesignContainerKind.None), "a composite control is a leaf");
             Assert.That(registry.Find("TabView")!.Container, Is.EqualTo(DesignContainerKind.Tabs));
             Assert.That(registry.Find("Knob")!.Bindings.Select(b => b.Name), Is.EquivalentTo(new[] { "Parameter" }));
             Assert.That(registry.Find("XYPad")!.Bindings.Select(b => b.Name), Is.EquivalentTo(new[] { "XParameter", "YParameter" }));

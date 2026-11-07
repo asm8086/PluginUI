@@ -27,6 +27,16 @@ Before 1.0, minor versions may contain breaking changes.
 - Both registered in the designer (Instrument) and shown on the new Sequencer page of the gallery. Texts
   `UIStrings.AutomationPatternEditor`, `PatternNoteFormat`, `NotesSelectedFormat`, `NoteCountFormat`,
   `AutomationDrumPads`, `PadFormat` (English, French).
+- **`TreeView`** (with `TreeNode`, `TreeNodeCollection`): virtualized tree with expanders, detail texts and color
+  dots, keyboard navigation and type-ahead, a text `Filter` that keeps the ancestors of matching nodes, `Expanding` for
+  children loaded on demand; screen readers see a tree of tree items (new `AutomationControlType.Tree` and
+  `TreeItem`, mapped to UI Automation).
+- **`PresetBrowser`**: search, category tree built from the banks of an `IPresetProvider` (nested with "/"), favorites
+  (`Favorites`, `FavoritesChanged`, star or Ctrl+D), list with the loaded preset highlighted, loading on double-click,
+  Enter or selection (`LoadOnSelect`). Texts `UIStrings.AllPresets`, `Favorites`, `Favorite`, `CurrentPreset`,
+  `SearchPresets`, `PresetCategories`, `Presets`, `NoPresetFound` (English, French).
+- Both registered in the designer (Pickers; the preset browser is a leaf, not a container) and shown on the new Browser
+  page of the gallery.
 
 ### Changed
 

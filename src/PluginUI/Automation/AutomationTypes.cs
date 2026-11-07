@@ -64,6 +64,10 @@ public enum AutomationControlType
     Pane,
     /// <summary>Separator.</summary>
     Separator,
+    /// <summary>Tree of items that expand and collapse.</summary>
+    Tree,
+    /// <summary>Item of a tree.</summary>
+    TreeItem,
 }
 
 /// <summary>Control patterns: the ways assistive technologies can act on an element.</summary>

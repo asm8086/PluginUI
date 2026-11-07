@@ -92,6 +92,14 @@ public sealed record UIStrings
         NoteCountFormat = "{0} notes, aucune sélectionnée",
         AutomationDrumPads = "pads de batterie",
         PadFormat = "Pad {0}",
+        AllPresets = "Tous les presets",
+        Favorites = "Favoris",
+        Favorite = "favori",
+        CurrentPreset = "chargé",
+        SearchPresets = "Rechercher un preset",
+        PresetCategories = "Catégories de presets",
+        Presets = "Presets",
+        NoPresetFound = "Aucun preset trouvé",
         KeyNames = KeyNameTables.French,
         Untitled = "Sans titre",
         SaveChangesQuestion = "Voulez-vous enregistrer les modifications de « {0} » ?",
@@ -282,6 +290,30 @@ public sealed record UIStrings
 
     /// <summary>Default name of a drum pad ({0}: its number from 1).</summary>
     public string PadFormat { get; init; } = "Pad {0}";
+
+    /// <summary>Category of a <see cref="PresetBrowser"/> with every preset.</summary>
+    public string AllPresets { get; init; } = "All presets";
+
+    /// <summary>Category of a <see cref="PresetBrowser"/> with the favorite presets.</summary>
+    public string Favorites { get; init; } = "Favorites";
+
+    /// <summary>State of a favorite preset, spoken by screen readers.</summary>
+    public string Favorite { get; init; } = "favorite";
+
+    /// <summary>State of the loaded preset, spoken by screen readers.</summary>
+    public string CurrentPreset { get; init; } = "loaded";
+
+    /// <summary>Placeholder of the search box of a <see cref="PresetBrowser"/>.</summary>
+    public string SearchPresets { get; init; } = "Search presets";
+
+    /// <summary>Name of the category tree of a <see cref="PresetBrowser"/>.</summary>
+    public string PresetCategories { get; init; } = "Preset categories";
+
+    /// <summary>Name of the preset list of a <see cref="PresetBrowser"/>.</summary>
+    public string Presets { get; init; } = "Presets";
+
+    /// <summary>Shown when no preset matches the search.</summary>
+    public string NoPresetFound { get; init; } = "No preset found";
 
     /// <summary>
     /// Names of keys in shortcut texts (modifiers <see cref="Key.Control"/>, <see cref="Key.Shift"/>,
