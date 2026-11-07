@@ -86,7 +86,7 @@ public class CatalogTests
         File.WriteAllText(Path.Combine(vst3, "Single.vst3"), "x");
         File.WriteAllText(Path.Combine(vst3, "Crash.vst3"), "x");
         File.WriteAllText(Path.Combine(vst3, "readme.txt"), "x");
-        var settings = new HostSettings { Vst3Folders = [vst3] };
+        var settings = new HostSettings { Folders = [vst3] };
         var catalog = new PluginCatalog();
         var fake = new FakeScanner();
         var scanner = new PluginScanner(fake);
@@ -117,24 +117,30 @@ public class CatalogTests
     }
 
     [Test]
-    public void Vst3ModulesAreFoundInVst2FoldersAndVst2OnlyWhenHosted()
+    public void EveryFolderHoldsBothFormatsAndVst2OnlyWhenHosted()
     {
+        string library = OperatingSystem.IsWindows() ? "Old.dll" : "Old.so";
         string mixed = Path.Combine(_root, "VSTPlugins");
-        Directory.CreateDirectory(mixed);
+        Directory.CreateDirectory(Path.Combine(mixed, "Vendor"));
         File.WriteAllText(Path.Combine(mixed, "Ours.vst3"), "x");
-        File.WriteAllText(Path.Combine(mixed, OperatingSystem.IsWindows() ? "Old.dll" : "Old.so"), "x");
-        var settings = new HostSettings { Vst2Folders = [mixed] };
+        File.WriteAllText(Path.Combine(mixed, "Vendor", library), "x");
+        // The binary of a bundle (a .so on Linux) and the libraries beside it are not VST 2 modules.
+        string binaries = Path.Combine(mixed, "Bundle.vst3", "Contents", Vst3Module.BundleArchitectureFolder);
+        Directory.CreateDirectory(binaries);
+        File.WriteAllText(Path.Combine(binaries, OperatingSystem.IsWindows() ? "Bundle.vst3" : "Bundle.so"), "x");
+        File.WriteAllText(Path.Combine(binaries, OperatingSystem.IsWindows() ? "helper.dll" : "helper.so"), "x");
+        var settings = new HostSettings { Folders = [mixed] };
         Assert.Multiple(() =>
         {
             Assert.That(PluginScanner.FindModules(settings).Select(m => (Path.GetFileName(m.Path), m.Format)),
-                Is.EquivalentTo(new[] { ("Ours.vst3", PluginFormat.Vst3), (OperatingSystem.IsWindows() ? "Old.dll" : "Old.so", PluginFormat.Vst2) }));
-            Assert.That(PluginScanner.FindModules(settings, includeVst2: false).Single().Format, Is.EqualTo(PluginFormat.Vst3));
+                Is.EquivalentTo(new[] { ("Ours.vst3", PluginFormat.Vst3), ("Bundle.vst3", PluginFormat.Vst3), (library, PluginFormat.Vst2) }));
+            Assert.That(PluginScanner.FindModules(settings, includeVst2: false).All(m => m.Format == PluginFormat.Vst3), Is.True);
         });
 
         var catalog = new PluginCatalog();
         var fake = new FakeScanner();
         new PluginScanner(fake).Scan(settings, catalog);
-        Assert.That(fake.Scanned, Is.EqualTo(new[] { "Ours.vst3" }), "no VST 2 hosting installed: VST 2 modules are not listed as failures");
+        Assert.That(fake.Scanned, Is.EquivalentTo(new[] { "Ours.vst3", "Bundle.vst3" }), "no VST 2 hosting installed: VST 2 modules are not listed as failures");
     }
 
     [Test]
@@ -169,11 +175,19 @@ public class CatalogTests
     public void SettingsRoundTrip()
     {
         string file = Path.Combine(_root, "settings.json");
-        new HostSettings { Vst3Folders = ["a", "b"], Vst2Folders = ["c"], ScanTimeoutSeconds = 12 }.Save(file);
+        new HostSettings { Folders = ["a", "b", "c"], ScanTimeoutSeconds = 12 }.Save(file);
         var settings = HostSettings.Load(file);
-        Assert.That(settings.Vst3Folders, Is.EqualTo(new[] { "a", "b" }));
-        Assert.That(settings.Vst2Folders, Is.EqualTo(new[] { "c" }));
+        Assert.That(settings.Folders, Is.EqualTo(new[] { "a", "b", "c" }));
         Assert.That(settings.ScanTimeoutSeconds, Is.EqualTo(12));
+        Assert.That(File.ReadAllText(file), Does.Not.Contain("Vst3Folders").And.Not.Contain("Vst2Folders"));
+
+        // Settings of earlier versions: the two lists become one, without duplicates, and are written as one.
+        string separator = Path.DirectorySeparatorChar == '\\' ? "\\\\" : "/";
+        File.WriteAllText(file, $$"""{ "Vst3Folders": ["a", "b"], "Vst2Folders": ["c", "b{{separator}}"], "ScanTimeoutSeconds": 20 }""");
+        var old = HostSettings.Load(file);
+        Assert.That(old.Folders, Is.EqualTo(new[] { "a", "b", "c" }));
+        old.Save(file);
+        Assert.That(File.ReadAllText(file), Does.Contain("\"Folders\"").And.Not.Contain("Vst2Folders"));
     }
 
     [Test]

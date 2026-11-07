@@ -182,6 +182,10 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Changed
 
+- **One list of plug-in folders**: `HostSettings.Folders` replaces `Vst3Folders` and `Vst2Folders`; every folder is
+  searched for VST3 and VST 2 plug-ins (not inside `.vst3` bundles for VST 2). Settings of earlier versions are merged
+  into the single list when read. `HostSettings.AddFolders`, `SameFolder`, `DefaultFolders`. The Plug-in folders dialog
+  has one list; `pluginhost folders add` no longer needs `--vst2` (still accepted).
 - `UIElement.Theme` returns the host's `EffectiveTheme` (its high contrast replacement while Windows is in high
   contrast). Code reading `UIHost.Theme` to draw should read `EffectiveTheme`.
 - **Project creation**: the standalone application template has an `[STAThread]` `Main` and an `app.manifest`

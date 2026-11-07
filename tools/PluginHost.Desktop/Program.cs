@@ -42,8 +42,11 @@ internal static class Program
             settings.Value = new GuiSettings();
             var folders = new HostSettings
             {
-                Vst3Folders = [@"C:\Program Files\Common Files\VST3", @"C:\Users\me\AppData\Local\Programs\Common\VST3"],
-                Vst2Folders = [@"C:\Program Files\VSTPlugins", @"C:\Program Files\Steinberg\VSTPlugins", @"C:\Program Files\Common Files\VST2"],
+                Folders =
+                [
+                    @"C:\Program Files\Common Files\VST3", @"C:\Users\me\AppData\Local\Programs\Common\VST3",
+                    @"C:\Program Files\VSTPlugins", @"C:\Program Files\Steinberg\VSTPlugins", @"C:\Program Files\Common Files\VST2",
+                ],
             };
             var demo = new MainWindow(app, settings, Snapshots.SampleCatalog(), folders, saveChanges: false);
             return Snapshots.Run(demo, snapshot);

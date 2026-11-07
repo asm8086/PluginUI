@@ -841,50 +841,45 @@ internal sealed class MainWindow
         Host.ShowPopup(dialog);
     }
 
-    /// <summary>Shows the plug-in folders dialog.</summary>
+    /// <summary>Shows the plug-in folders dialog: one list, each folder holds VST3 and VST 2 plug-ins alike.</summary>
     public void ShowFoldersDialog()
     {
-        var vst3 = new ListBox(_hostSettings.Vst3Folders) { Height = 120f, EmptyText = L.T("No folder", "Aucun dossier") };
-        var vst2 = new ListBox(_hostSettings.Vst2Folders) { Height = 120f, EmptyText = L.T("No folder", "Aucun dossier") };
-        UIElement Section(string title, ListBox list, List<string> folders)
+        var folders = _hostSettings.Folders;
+        var list = new ListBox(folders) { EmptyText = L.T("No folder", "Aucun dossier") };
+        string title = L.T("Plug-in folders", "Dossiers de plug-ins");
+        var add = new Button(L.T("Add…", "Ajouter…"), () =>
         {
-            var add = new Button(L.T("Add…", "Ajouter…"), () =>
-            {
-                if (FileDialogs.PickFolder(Host, title) is not { } folder) return;
-                if (!folders.Contains(folder, StringComparer.OrdinalIgnoreCase)) folders.Add(folder);
-                list.Refresh();
-                SaveHostSettings();
-            }) { Width = 110f, Height = 26f };
-            var remove = new Button(L.T("Remove", "Retirer"), () =>
-            {
-                foreach (int i in list.SelectedIndices.OrderDescending()) folders.RemoveAt(i);
-                list.Refresh();
-                SaveHostSettings();
-            }) { Width = 110f, Height = 26f };
-            var buttons = new StackPanel { Orientation = Orientation.Vertical, Spacing = 6f, Dock = Side.Right, Margin = new Thickness(8f, 0f, 0f, 0f) };
-            buttons.Add(add, remove);
-            var row = new DockPanel { Height = 120f };
-            row.Children.Add(buttons);
-            row.Children.Add(list);
-            var section = new StackPanel { Spacing = 4f };
-            section.Add(new Label(title) { TextStyle = new TextStyle(Weight: FontWeight.SemiBold) }, row);
-            return section;
-        }
+            if (FileDialogs.PickFolder(Host, title) is not { } folder) return;
+            _hostSettings.AddFolders([folder]);
+            list.Refresh();
+            SaveHostSettings();
+        }) { Width = 110f, Height = 26f };
+        var remove = new Button(L.T("Remove", "Retirer"), () =>
+        {
+            foreach (int i in list.SelectedIndices.OrderDescending()) folders.RemoveAt(i);
+            list.Refresh();
+            SaveHostSettings();
+        }) { Width = 110f, Height = 26f };
+        var buttons = new StackPanel { Orientation = Orientation.Vertical, Spacing = 6f, Dock = Side.Right, Margin = new Thickness(8f, 0f, 0f, 0f) };
+        buttons.Add(add, remove);
+        var row = new DockPanel { Height = 252f };
+        row.Children.Add(buttons);
+        row.Children.Add(list);
         var body = new StackPanel { Spacing = 12f };
         body.Add(
-            Section(L.T("VST3 folders", "Dossiers VST3"), vst3, _hostSettings.Vst3Folders),
-            Section(L.T("VST2 folders (VST3 modules are also looked for there)", "Dossiers VST2 (on y cherche aussi les modules VST3)"), vst2, _hostSettings.Vst2Folders),
+            new Label(L.T("VST3 and VST 2 plug-ins are looked for in every folder and its subfolders.",
+                "Les plug-ins VST3 et VST 2 sont cherchés dans chaque dossier et ses sous-dossiers."))
+            { Wrap = true, Height = 20f },
+            row,
             new Label(L.T($"Saved in {CompactPath(HostPaths.SettingsFile)}, shared with pluginhost. Scan (F5) after a change.",
                 $"Enregistré dans {CompactPath(HostPaths.SettingsFile)}, partagé avec pluginhost. Lancez une recherche (F5) après un changement."))
             { Wrap = true, IsDim = true, Height = 34f });
-        var dialog = new Dialog(L.T("Plug-in folders", "Dossiers de plug-ins"), body) { DialogWidth = 620f };
+        var dialog = new Dialog(title, body) { DialogWidth = 620f };
         dialog.AddButton(L.T("Standard folders", "Dossiers standard"), "reset").AddButton(L.T("Close", "Fermer"), null, isDefault: true, isCancel: true);
         dialog.ResultChosen += (_, result) =>
         {
             if (!Equals(result, "reset")) return;
-            var defaults = HostSettings.CreateDefault();
-            _hostSettings.Vst3Folders = defaults.Vst3Folders;
-            _hostSettings.Vst2Folders = defaults.Vst2Folders;
+            _hostSettings.Folders = HostSettings.CreateDefault().Folders;
             SaveHostSettings();
             Host.Post(ShowFoldersDialog);
         };

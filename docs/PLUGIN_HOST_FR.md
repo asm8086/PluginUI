@@ -54,13 +54,15 @@ dotnet publish tools/PluginHost.Cli -c Release -r win-x64 -p:PublishAot=true   #
 
 ### Dossiers de plug-ins et liste des plug-ins
 
-Les dossiers à parcourir sont conservés dans `settings.json` ; le premier lancement y place les dossiers standard
-(`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST3` ; sous Linux `~/.vst3`, `/usr/lib/vst3`,
-`/usr/local/lib/vst3`) et les dossiers VST 2 présents (`C:\Program Files\VSTPlugins`, `C:\Program Files\Steinberg\VSTPlugins`,
-`C:\Program Files\Common Files\VST2`, le dossier inscrit par Steinberg dans le registre). Les plug-ins VST 3 sont
-cherchés dans tous les dossiers, VST 2 compris. Dans les dossiers VST 2, seules les bibliothèques dotées d'un point
-d'entrée VST 2 sont examinées (celles qu'utilisent les plug-ins sont écartées sans être chargées) ; chaque plug-in d'un
-module shell (le WaveShell de Waves) est listé séparément ; les plug-ins 32 bits apparaissent en échec, avec la raison.
+Les dossiers à parcourir sont conservés dans une seule liste de `settings.json` ; le premier lancement y place les
+dossiers standard présents (`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST3`,
+`C:\Program Files\VSTPlugins`, `C:\Program Files\Steinberg\VSTPlugins`, `C:\Program Files\Common Files\VST2`, le
+dossier inscrit par Steinberg dans le registre ; sous Linux `~/.vst3`, `/usr/lib/vst3`, `/usr/local/lib/vst3`, `~/.vst`,
+`/usr/lib/vst`, `/usr/local/lib/vst`). Chaque dossier et ses sous-dossiers sont parcourus pour les deux formats : les
+modules `.vst3`, et les bibliothèques dotées d'un point d'entrée VST 2 (celles qu'utilisent les plug-ins sont écartées
+sans être chargées, de même que celles des paquets `.vst3`). Chaque plug-in d'un module shell (le WaveShell de Waves)
+est listé séparément ; les plug-ins 32 bits apparaissent en échec, avec la raison. Les réglages des versions
+précédentes, avec des listes VST3 et VST2 séparées, sont fusionnés en une seule liste.
 
 ```
 pluginhost folders                          # liste les dossiers
@@ -239,7 +241,8 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   suivantes).
 - **Recherche** (F5 : modules nouveaux ou modifiés ; Maj+F5 : tout à nouveau ; **Arrêter la recherche** dans le menu Fichier ou la barre d'outils) : elle se fait dans des
   processus séparés, avec sa progression dans la barre d'état ; la liste ne change qu'une fois la recherche terminée.
-- **Dossiers de plug-ins** (Ctrl+Maj+F) : dossiers VST3 et VST2, dossiers standard.
+- **Dossiers de plug-ins** (Ctrl+Maj+F) : une seule liste de dossiers, chacun parcouru pour les plug-ins VST3 et VST 2 ;
+  dossiers standard.
 - **Audio et MIDI** (Ctrl+Maj+A) : le pilote, **WASAPI**, **ASIO** ou aucun, puis
   - avec WASAPI : périphérique de sortie, périphérique d'entrée, taille du tampon (par défaut la plus petite que
     permet le périphérique : souvent moins de 3 ms à 48 kHz) ; le périphérique est partagé avec les autres
@@ -400,7 +403,7 @@ processus appelant.
 
 | Fichier | Contenu |
 |---|---|
-| `%APPDATA%\PluginUI\PluginHost\settings.json` (`~/.config/PluginUI/PluginHost` sous Linux) | dossiers VST3 et VST 2, modules ignorés, délai maximal de recherche |
+| `%APPDATA%\PluginUI\PluginHost\settings.json` (`~/.config/PluginUI/PluginHost` sous Linux) | dossiers de plug-ins, modules ignorés, délai maximal de recherche |
 | `…\plugins.json` | la liste des plug-ins : identité, bus, canaux, latence, nombre de paramètres, éditeur, taille et date du module, état, favori, dernière utilisation, nombre d'utilisations |
 
 `--config <dossier>` fait utiliser un autre dossier à `pluginhost` (un par projet, tests). Les deux fichiers sont du

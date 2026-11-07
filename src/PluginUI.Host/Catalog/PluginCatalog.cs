@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
+using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -275,11 +276,45 @@ public sealed class PluginCatalog
 /// <summary>Host settings: plug-in folders and scan options, shared by the graphical and command-line hosts.</summary>
 public sealed class HostSettings
 {
-    /// <summary>Folders searched for VST 3 plug-ins.</summary>
-    public List<string> Vst3Folders { get; set; } = [];
+    /// <summary>Folders searched for plug-ins, VST 3 and VST 2 alike (subfolders included).</summary>
+    public List<string> Folders { get; set; } = [];
 
-    /// <summary>Folders searched for VST 2 plug-ins.</summary>
-    public List<string> Vst2Folders { get; set; } = [];
+    /// <summary>Settings of earlier versions: these folders are added to <see cref="Folders"/> (never written).</summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Vst3Folders
+    {
+        get => null;
+        set => AddFolders(value);
+    }
+
+    /// <summary>Settings of earlier versions: these folders are added to <see cref="Folders"/> (never written).</summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Vst2Folders
+    {
+        get => null;
+        set => AddFolders(value);
+    }
+
+    /// <summary>Adds folders that are not in <see cref="Folders"/> yet (same folder: case and final separator ignored on Windows).</summary>
+    /// <returns>The number of folders added.</returns>
+    public int AddFolders(IEnumerable<string>? folders)
+    {
+        int added = 0;
+        foreach (string folder in folders ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(folder) || Folders.Any(f => SameFolder(f, folder))) continue;
+            Folders.Add(folder);
+            added++;
+        }
+        return added;
+    }
+
+    /// <summary><c>true</c> when two paths name the same folder (case-insensitive on Windows, final separator ignored).</summary>
+    public static bool SameFolder(string a, string b) => string.Equals(
+        System.IO.Path.TrimEndingDirectorySeparator(a.Trim()), System.IO.Path.TrimEndingDirectorySeparator(b.Trim()),
+        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
     /// <summary>Modules never scanned (paths).</summary>
     public List<string> IgnoredModules { get; set; } = [];
@@ -313,11 +348,15 @@ public sealed class HostSettings
     }
 
     /// <summary>Settings with the standard plug-in folders of the platform that exist.</summary>
-    public static HostSettings CreateDefault() => new()
+    public static HostSettings CreateDefault()
     {
-        Vst3Folders = DefaultVst3Folders().Where(Directory.Exists).ToList(),
-        Vst2Folders = DefaultVst2Folders().Where(Directory.Exists).ToList(),
-    };
+        var settings = new HostSettings();
+        settings.AddFolders(DefaultFolders().Where(Directory.Exists));
+        return settings;
+    }
+
+    /// <summary>Standard folders of both formats (whether they exist or not): VST 3 first, then the usual VST 2 ones.</summary>
+    public static IEnumerable<string> DefaultFolders() => DefaultVst3Folders().Concat(DefaultVst2Folders());
 
     /// <summary>Standard VST 3 folders (whether they exist or not).</summary>
     public static IEnumerable<string> DefaultVst3Folders()

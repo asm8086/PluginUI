@@ -52,13 +52,14 @@ dotnet publish tools/PluginHost.Cli -c Release -r win-x64 -p:PublishAot=true   #
 
 ### Plug-in folders and the plug-in list
 
-The folders to scan are kept in `settings.json`; the first run fills it with the standard folders
-(`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST3`; on Linux `~/.vst3`, `/usr/lib/vst3`,
-`/usr/local/lib/vst3`) and the VST 2 folders found (`C:\Program Files\VSTPlugins`, `C:\Program Files\Steinberg\VSTPlugins`,
-`C:\Program Files\Common Files\VST2`, the folder registered by Steinberg in the registry). VST 3 plug-ins are looked
-for in every folder, VST 2 ones too. In the VST 2 folders, only the libraries with a VST 2 entry point are scanned (the
-libraries the plug-ins use are left out without being loaded); each plug-in of a shell module (Waves' WaveShell) is
-listed on its own; 32-bit plug-ins are listed as failed, with the reason.
+The folders to scan are kept in one list in `settings.json`; the first run fills it with the standard folders that
+exist (`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST3`, `C:\Program Files\VSTPlugins`,
+`C:\Program Files\Steinberg\VSTPlugins`, `C:\Program Files\Common Files\VST2`, the folder registered by Steinberg in
+the registry; on Linux `~/.vst3`, `/usr/lib/vst3`, `/usr/local/lib/vst3`, `~/.vst`, `/usr/lib/vst`, `/usr/local/lib/vst`).
+Every folder and its subfolders are searched for both formats: `.vst3` modules, and the libraries with a VST 2 entry
+point (the libraries the plug-ins use are left out without being loaded, and so are those inside `.vst3` bundles).
+Each plug-in of a shell module (Waves' WaveShell) is listed on its own; 32-bit plug-ins are listed as failed, with the
+reason. Settings of earlier versions, with separate VST3 and VST2 lists, are merged into the single list.
 
 ```
 pluginhost folders                          # list the folders
@@ -230,7 +231,8 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   show in Explorer, copy the path, ignore the module (it is left out of later scans).
 - **Scan** (F5: new and changed modules; Shift+F5: everything again; **Stop the scan** in the File menu or the tool bar): the scan runs in separate processes,
   with its progress in the status bar; the list changes only when it is complete.
-- **Plug-in folders** (Ctrl+Shift+F): VST3 and VST2 folders, standard folders.
+- **Plug-in folders** (Ctrl+Shift+F): one list of folders, each searched for VST3 and VST 2 plug-ins; standard
+  folders.
 - **Audio and MIDI** (Ctrl+Shift+A): the driver, **WASAPI**, **ASIO** or none, then
   - with WASAPI: output device, input device, buffer size (the smallest the device allows by default: often under
     3 ms at 48 kHz); the device is shared with the other applications at the rate of the sound settings of Windows;
@@ -381,7 +383,7 @@ Scanning from your own application: `PluginScanner.OutOfProcess(exe, args)` runs
 
 | File | Contents |
 |---|---|
-| `%APPDATA%\PluginUI\PluginHost\settings.json` (`~/.config/PluginUI/PluginHost` on Linux) | VST3 and VST 2 folders, ignored modules, scan timeout |
+| `%APPDATA%\PluginUI\PluginHost\settings.json` (`~/.config/PluginUI/PluginHost` on Linux) | plug-in folders, ignored modules, scan timeout |
 | `…\plugins.json` | the plug-in list: identity, buses, channels, latency, parameter count, editor, module size and date, status, favorite, last use, use count |
 
 `--config <folder>` makes `pluginhost` use another folder (one per project, tests). Both files are plain indented

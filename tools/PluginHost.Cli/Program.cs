@@ -19,7 +19,7 @@ public static class Program
 
         Plug-in list (kept between runs):
           pluginhost folders                          list the plug-in folders
-          pluginhost folders add <folder> [--vst2]    add a folder
+          pluginhost folders add <folder>             add a folder (VST3 and VST 2 plug-ins are looked for in all)
           pluginhost folders remove <folder>          remove a folder
           pluginhost folders reset                    back to the standard folders
           pluginhost scan [--all] [--in-process]      find new and changed plug-ins (--all: everything again)
@@ -109,7 +109,7 @@ public static class Program
     {
         var settings = HostSettings.Load(HostPaths.SettingsFile);
         string? action = a.Next();
-        bool vst2 = a.Flag("--vst2");
+        a.Flag("--vst2"); // accepted for scripts written before the single list: every folder holds both formats
         switch (action)
         {
             case null:
@@ -118,8 +118,7 @@ public static class Program
             {
                 string folder = Path.GetFullPath(a.Next() ?? throw new UsageException("folders add <folder>"));
                 if (!Directory.Exists(folder)) throw new ArgumentException($"'{folder}' does not exist.");
-                var list = vst2 ? settings.Vst2Folders : settings.Vst3Folders;
-                if (!list.Contains(folder, StringComparer.OrdinalIgnoreCase)) list.Add(folder);
+                settings.AddFolders([folder]);
                 settings.Save(HostPaths.SettingsFile);
                 break;
             }
@@ -127,7 +126,7 @@ public static class Program
             {
                 string folder = a.Next() ?? throw new UsageException("folders remove <folder>");
                 string full = Path.GetFullPath(folder);
-                int removed = settings.Vst3Folders.RemoveAll(f => Same(f, folder) || Same(f, full)) + settings.Vst2Folders.RemoveAll(f => Same(f, folder) || Same(f, full));
+                int removed = settings.Folders.RemoveAll(f => HostSettings.SameFolder(f, folder) || HostSettings.SameFolder(f, full));
                 if (removed == 0) throw new ArgumentException($"'{folder}' is not in the list.");
                 settings.Save(HostPaths.SettingsFile);
                 break;
@@ -140,14 +139,10 @@ public static class Program
                 throw new UsageException($"Unknown folders action '{action}'.");
         }
         Console.WriteLine($"Settings: {HostPaths.SettingsFile}");
-        Console.WriteLine("VST3 folders:");
-        foreach (string f in settings.Vst3Folders) Console.WriteLine($"  {f}{(Directory.Exists(f) ? "" : "   (missing)")}");
-        Console.WriteLine("VST2 folders:");
-        foreach (string f in settings.Vst2Folders) Console.WriteLine($"  {f}{(Directory.Exists(f) ? "" : "   (missing)")}");
+        Console.WriteLine("Plug-in folders (VST3 and VST 2):");
+        foreach (string f in settings.Folders) Console.WriteLine($"  {f}{(Directory.Exists(f) ? "" : "   (missing)")}");
         return 0;
     }
-
-    private static bool Same(string a, string b) => string.Equals(a.TrimEnd('\\', '/'), b.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase);
 
     private static int Scan(Arguments a)
     {

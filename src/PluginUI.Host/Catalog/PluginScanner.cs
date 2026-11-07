@@ -50,18 +50,17 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
     private bool ScansVst2 => IncludeVst2 ?? InProcessModuleScanner.Vst2Scanner is not null;
 
     /// <summary>
-    /// Module files of the folders: .vst3 files and bundles (VST 3) in every folder, .dll / .so files (VST 2) in the VST 2
-    /// folders.
+    /// Module files of the folders: .vst3 files and bundles (VST 3), and the libraries with a VST 2 entry point (.dll on
+    /// Windows, .so on Linux), in every folder and its subfolders. Libraries inside .vst3 bundles are not VST 2 modules.
     /// </summary>
     /// <param name="settings">Folders.</param>
-    /// <param name="includeVst2"><c>false</c> to leave out the VST 2 folders.</param>
+    /// <param name="includeVst2"><c>false</c> to look for VST 3 modules only.</param>
     public static IEnumerable<(string Path, PluginFormat Format)> FindModules(HostSettings settings, bool includeVst2 = true)
     {
         ArgumentNullException.ThrowIfNull(settings);
         var seen = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         var ignored = new HashSet<string>(settings.IgnoredModules, seen.Comparer);
-        // VST 3 modules are looked for in the VST 2 folders too: many users keep both formats in one folder.
-        foreach (string folder in settings.Vst3Folders.Concat(settings.Vst2Folders))
+        foreach (string folder in settings.Folders)
         {
             foreach (string module in FindVst3(folder))
             {
@@ -70,7 +69,7 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
         }
         if (!includeVst2) yield break;
         string vst2Extension = OperatingSystem.IsWindows() ? ".dll" : OperatingSystem.IsMacOS() ? ".vst" : ".so";
-        foreach (string folder in settings.Vst2Folders)
+        foreach (string folder in settings.Folders)
         {
             if (!Directory.Exists(folder)) continue;
             IEnumerable<string> files;
@@ -84,12 +83,24 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
             }
             foreach (string module in files)
             {
-                if (ignored.Contains(module) || !seen.Add(module)) continue;
+                if (ignored.Contains(module) || InsideVst3Bundle(folder, module) || !seen.Add(module)) continue;
                 // Plug-in folders also hold the libraries the plug-ins use: only modules with a VST 2 entry point count.
                 if (vst2Extension == ".dll" && !PeExports.MayExport(module, "VSTPluginMain", "main")) continue;
                 yield return (module, PluginFormat.Vst2);
             }
         }
+    }
+
+    /// <summary><c>true</c> when <paramref name="file"/> lies inside a .vst3 bundle under <paramref name="folder"/>.</summary>
+    private static bool InsideVst3Bundle(string folder, string file)
+    {
+        string? directory = Path.GetDirectoryName(Path.GetRelativePath(folder, file));
+        while (!string.IsNullOrEmpty(directory))
+        {
+            if (Path.GetFileName(directory).EndsWith(".vst3", StringComparison.OrdinalIgnoreCase)) return true;
+            directory = Path.GetDirectoryName(directory);
+        }
+        return false;
     }
 
     private static IEnumerable<string> FindVst3(string folder)
