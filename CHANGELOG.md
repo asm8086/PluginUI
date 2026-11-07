@@ -196,6 +196,8 @@ Before 1.0, minor versions may contain breaking changes.
 
 ### Fixed
 
+- The PluginUI tests failed on a Windows in another language than English (three tests compared texts with the
+  English ones while PluginUI followed the display language): the test run now uses English.
 - A window could not be created again after the last PluginUI window of the process was closed (the window class
   stayed registered while PluginUI believed it gone: `RegisterClassExW` error 1410).
 - Offline renders dropped the MIDI the last plug-in produced in its first samples when it has latency (the messages are
