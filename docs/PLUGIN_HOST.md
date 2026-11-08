@@ -1,4 +1,4 @@
-<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
+<!-- 2026/11/08 12:00:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -21,6 +21,8 @@ What exists today and what comes next:
 | MIDI output, system exclusive, MIDI produced by plug-ins (to a port, another plug-in or a file) | done |
 | ASIO (all the channels of the card, its sample rates, its control panel) | done |
 | Graphical host: plug-in list with sort orders and columns, editor windows, presets | done |
+| Modular graph engine: modules and cables, loops, latency compensation, graph files (`PluginGraph`, `pluginhost graph`) | done |
+| Graph view in the graphical host | in progress |
 
 ## Contents
 
@@ -31,6 +33,7 @@ What exists today and what comes next:
   - [Inspecting a plug-in](#inspecting-a-plug-in)
   - [Processing audio files](#processing-audio-files)
   - [Rendering MIDI with an instrument](#rendering-midi-with-an-instrument)
+  - [Rendering a modular graph](#rendering-a-modular-graph)
   - [Measuring a response](#measuring-a-response)
   - [Presets](#presets)
   - [From Pedalboard to pluginhost](#from-pedalboard-to-pluginhost)
@@ -166,6 +169,23 @@ and controllers to the next plug-in of the chain; `--midi-out` writes what the l
 (type 0, 960 ticks per quarter note, 120 BPM, times compensated for the latencies). When the last plug-in produces only
 MIDI, `-o` can be left out. `process` also accepts `--midi <file.mid>` (a vocoder or a side-chained gate driven by
 notes).
+
+### Rendering a modular graph
+
+```
+pluginhost graph mastering.pluginui-graph -i mix.wav -o master.wav
+pluginhost graph pads.pluginui-graph --midi chords.mid -o pads.wav --tail 4
+pluginhost graph drone.pluginui-graph --length 30 -o drone.wav
+```
+
+A graph file (`.pluginui-graph`, saved by Plug-in Host, or written by a program with `PluginGraph`, see
+[the library](#modular-graphs)) holds modules joined by cables: plug-ins with their state, audio and MIDI inputs and
+outputs, files, test signals, sums, gains. `-i` plays the role of the audio device's input (its channels feed the
+audio input modules), `--midi` feeds the MIDI input modules, and the output file has every channel an audio output
+module writes to. `--midi-out` collects what reaches the MIDI output modules. Without `-i` or `--midi`, give the
+length with `--length`. The latency of the longest path to an output is removed (unless
+`--no-latency-compensation`), and the automatic tail is the longest one the plug-ins report — 10 s when the graph has
+a loop. A plug-in that cannot be found is reported and stays silent; the rest of the graph plays.
 
 ### Measuring a response
 
@@ -335,6 +355,48 @@ NAudio's (MIT), without the ASIO SDK.
 `TestSignalGenerator`, `FileSource`; `RackSlot.Bypass`, `Mute`, `GainDb`, `Meter`; `MidiInput` opens a MIDI input
 port (short messages with their time, system exclusive on request), `MidiOutput` an output port (`Send`, `SendSysex`,
 `AllNotesOff`).
+
+### Modular graphs
+
+`PluginGraph` plays modules joined by cables, live (it is an `IAudioRenderer`, like `PluginRack`) or offline
+(`OfflineRenderer.Render(graph, …)`):
+
+```csharp
+using PluginUI.Host.Graph;
+
+var graph = new PluginGraph();
+var input = graph.Add(new AudioInputNode { FirstChannel = 0, Channels = 2 });
+var comp = graph.Add(new PluginNode(loader.Load("Pro-C 2"), PluginReference.From(description)));
+var sum = graph.Add(new AudioSumNode());                        // dry + wet: parallel compression
+var output = graph.Add(new AudioOutputNode());
+graph.Connect(input.Outputs[0], comp.Inputs[0]);
+graph.Connect(comp.Outputs[0], sum.Inputs[0]);
+graph.Connect(input.Outputs[0], sum.Inputs[1]);                 // the dry path waits for the compressor's latency
+graph.Connect(sum.Outputs[0], output.Inputs[0]);
+device.Start(graph);
+graph.Save("parallel.pluginui-graph");
+```
+
+- **Modules**: `PluginNode` (one port per bus of the plug-in — main, side chain… — and its MIDI input and output),
+  `AudioInputNode` / `AudioOutputNode` (channels of the device), `TestSignalNode`, `AudioFileNode` (WAV in a loop),
+  `MidiInputNode` (fed by `graph.PostMidiInput`), `KeyboardNode`, `MidiOutputNode` (to `graph.MidiOutput`), `GainNode`
+  (gain, polarity, mute), `AudioSumNode` (inputs with their gains), `MidiMergeNode`. Your own: derive from `GraphNode`
+  (ports with `SetPorts`, processing in `Process` with a `NodeContext`) and register the type with
+  `PluginGraph.RegisterNodeType` so files can create it.
+- **Cables**: an output feeds any number of inputs; an input takes one cable (`Connect` replaces it): signals are only
+  added by a sum module. Audio goes to audio, MIDI to MIDI. Widths are converted: a mono signal feeds every channel,
+  several channels entering a mono input are averaged, otherwise the first channels are copied.
+- **Loops** are allowed. The most recent cable of a loop is its feedback cable (`IsFeedback`): it delivers one block
+  late, since a plug-in processes whole blocks. `LoopBlockSize` runs the modules of loops in shorter sub-blocks (the
+  delay becomes that sub-block); `BreakLoopAt` chooses the cable.
+- **Latency**: `PathLatencySamples` gives each module's latency from the sources; a sum (`CompensateLatency`, on by
+  default) delays its inputs so they arrive aligned (`DelaySamples` on the cable). A plug-in changing its latency is
+  followed.
+- **Files**: `ToJson` / `Save` and `LoadJson` / `Load`, with a function that loads plug-ins (`loader.Load` takes the
+  saved `PluginReference`). A plug-in that cannot be loaded becomes a `MissingPluginNode`, which keeps its cables and
+  state and is saved back unchanged; `Load` returns what could not be restored.
+- **Threads**: edit the graph on the UI thread; each edit swaps in a new execution plan, the audio thread never waits.
+  `NodeFailed` reports a module that threw (it falls silent until the graph is prepared again).
 
 The MIDI a plug-in produces is in `plugin.OutputMidi` after each `Process` (`EventOutputCount` > 0 when it has an event
 output). In a rack, `RackSlot.MidiOut` takes an `IMidiSink`, called on the audio thread: a `MidiOutput` (it queues the

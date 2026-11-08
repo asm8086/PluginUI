@@ -1,4 +1,4 @@
-<!-- 2026/11/08 00:38:00 UTC - PluginUI -->
+<!-- 2026/11/08 12:00:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -7,6 +7,20 @@ All notable changes to this project are documented in this file. The format foll
 Before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
+
+### Added
+
+- **Modular graph engine** (`PluginUI.Host.Graph`): `PluginGraph` plays modules joined by cables, live (an
+  `IAudioRenderer`) or offline (`OfflineRenderer.Render(graph, …)`). Modules: `PluginNode` (a port per bus — main,
+  side chain… — plus MIDI in and out), `AudioInputNode` / `AudioOutputNode` (device channels), `TestSignalNode`,
+  `AudioFileNode`, `MidiInputNode`, `KeyboardNode`, `MidiOutputNode`, `GainNode`, `AudioSumNode`, `MidiMergeNode`;
+  custom modules derive from `GraphNode`. An output feeds any number of cables, an input takes one: signals are added
+  only by the sum modules. Loops are allowed — the most recent cable of a loop delivers one block late, or one
+  `LoopBlockSize` sub-block (the loop's modules then run in sub-blocks) — and sums align their inputs on the latency of
+  their paths (`CompensateLatency`). Graph files (JSON, `Save` / `Load`) keep modules, positions, cables and plug-in
+  states; a plug-in that cannot be found becomes a `MissingPluginNode` that keeps its place, cables and state.
+- `pluginhost graph <file> -o out.wav [-i in.wav] [--midi file.mid] [--length s]`: renders a graph file.
+- `PluginLoader.Load(PluginReference)`: loads the plug-in a graph file refers to (catalog entry, else its path).
 
 ### Changed
 

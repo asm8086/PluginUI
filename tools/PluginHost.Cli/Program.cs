@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 12:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -38,6 +38,11 @@ public static class Program
                  (a MIDI effect alone: -o is not written, use --midi-out)
           pluginhost measure -p <plugin> -o <response.csv> [plugin options] [--ir <ir.wav>] [--method impulse|sine]
                  [--rate 48000] [--min 20] [--max 20000] [--points 200] [--level -20] [--channel 0] [--db 20log10|6log2]
+
+        Graph (a modular patch saved by Plug-in Host, .pluginui-graph):
+          pluginhost graph <file> -o <out.wav> [-i <in.wav>] [--midi <file.mid>] [--length <seconds>] [--rate 48000] [audio options]
+                 -i feeds the audio input modules, --midi the MIDI input modules; the output has the channels the audio
+                 output modules use; --midi-out collects the MIDI output modules
 
         Plug-in options (apply to the -p before them):
           --set "Name=value"           value as the plug-in displays it ("Gain=-6 dB", "Mode=Warm")
@@ -79,6 +84,7 @@ public static class Program
                 "process" => Process(a),
                 "render" => Render(a),
                 "measure" => Measure(a),
+                "graph" => GraphCommand(a),
                 "help" or "--help" or "-h" or "/?" => Help(),
                 _ => throw new UsageException($"Unknown command '{command}'."),
             };
@@ -485,6 +491,35 @@ public static class Program
         WavFile.Write(output, result, format);
         SaveCatalogUsage(loader.Catalog);
         Console.WriteLine($"{output}: {result.ChannelCount} ch, {result.Duration:0.###} s, {options.Midi.Count} MIDI messages, peak {20 * Math.Log10(Math.Max(1e-12, result.Peak())):0.0} dBFS");
+        return 0;
+    }
+
+    private static int GraphCommand(Arguments a)
+    {
+        string file = a.Next() ?? throw new UsageException("graph <file> -o <out.wav>");
+        string output = a.Option("-o") ?? a.Option("--output") ?? throw new UsageException("graph needs -o <out.wav>");
+        string? input = a.Option("-i") ?? a.Option("--input");
+        string? midi = a.Option("--midi");
+        double rate = a.DoubleOption("--rate") ?? 48000;
+        double? length = a.DoubleOption("--length");
+        var format = BitsFrom(a);
+        var options = RenderOptionsFrom(a);
+        var midiOut = MidiOutputFrom(a, options);
+        a.EnsureEmpty();
+        if (input is null && midi is null && length is null) throw new UsageException("graph: give -i <in.wav>, --midi <file.mid> or --length <seconds>.");
+        using var loader = new PluginLoader(PluginCatalog.Load(HostPaths.CatalogFile), "pluginhost");
+        using var graph = new PluginUI.Host.Graph.PluginGraph();
+        foreach (string warning in graph.Load(file, loader.Load)) Console.Error.WriteLine("Warning: " + warning);
+        var audio = input is null ? null : WavFile.Read(input);
+        double sampleRate = audio?.SampleRate ?? rate;
+        options.Length = length;
+        if (midi is not null) options.Midi = MidiFile.Read(midi, sampleRate);
+        var result = OfflineRenderer.Render(graph, audio, sampleRate, options);
+        if (!Console.IsErrorRedirected) Console.Error.WriteLine();
+        WavFile.Write(output, result, format);
+        midiOut?.Invoke(sampleRate);
+        SaveCatalogUsage(loader.Catalog);
+        Console.WriteLine($"{output}: {result.ChannelCount} ch, {result.Duration:0.###} s at {result.SampleRate:0} Hz, {graph.Nodes.Count} modules, peak {20 * Math.Log10(Math.Max(1e-12, result.Peak())):0.0} dBFS");
         return 0;
     }
 

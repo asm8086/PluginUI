@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/08 12:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -88,6 +88,29 @@ public sealed class PluginLoader : IDisposable
         }
         Catalog.MarkUsed(description);
         return Track(instance);
+    }
+
+    /// <summary>
+    /// Loads the plug-in a graph file refers to: the catalog entry it designates, or else its module path when the file
+    /// exists (VST 3 class or name, VST 2 identifier).
+    /// </summary>
+    /// <exception cref="ArgumentException">The plug-in is neither in the catalog nor at its path.</exception>
+    public PluginInstance Load(Graph.PluginReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(reference);
+        if (reference.FindIn(Catalog) is { } description) return Load(description);
+        if (reference.Path.Length > 0 && (File.Exists(reference.Path) || Directory.Exists(reference.Path)))
+        {
+            return Load(new PluginDescription
+            {
+                Format = reference.Format,
+                Path = Path.GetFullPath(reference.Path),
+                ClassId = reference.ClassId,
+                Name = reference.Name,
+                Vendor = reference.Vendor,
+            });
+        }
+        throw new ArgumentException($"'{reference.Name}' ({reference.Vendor}) is not in the plug-in list and '{reference.Path}' does not exist. Scan the folders.");
     }
 
     private Vst3Module Module(string path)

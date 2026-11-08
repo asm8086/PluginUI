@@ -1,4 +1,4 @@
-<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
+<!-- 2026/11/08 12:00:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -22,6 +22,8 @@ Ce qui existe et ce qui vient ensuite :
 | Sortie MIDI, messages exclusifs, MIDI émis par les plug-ins (vers un port, un autre plug-in ou un fichier) | fait |
 | ASIO (tous les canaux de la carte, ses fréquences, son panneau de configuration) | fait |
 | Hôte graphique : liste de plug-ins avec ordres de tri et colonnes, fenêtres d'éditeur, presets | fait |
+| Moteur de graphe modulaire : modules et câbles, boucles, compensation de latence, fichiers de graphe (`PluginGraph`, `pluginhost graph`) | fait |
+| Vue du graphe dans l'hôte graphique | en cours |
 
 ## Sommaire
 
@@ -32,6 +34,7 @@ Ce qui existe et ce qui vient ensuite :
   - [Examiner un plug-in](#examiner-un-plug-in)
   - [Traiter des fichiers audio](#traiter-des-fichiers-audio)
   - [Rendre du MIDI avec un instrument](#rendre-du-midi-avec-un-instrument)
+  - [Rendre un graphe modulaire](#rendre-un-graphe-modulaire)
   - [Mesurer une réponse](#mesurer-une-réponse)
   - [Presets](#presets)
   - [De Pedalboard à pluginhost](#de-pedalboard-à-pluginhost)
@@ -172,6 +175,24 @@ hauteur) transmet ses notes et contrôleurs au plug-in suivant de la chaîne ; `
 dernier plug-in dans un fichier MIDI (type 0, 960 ticks par noire, 120 BPM, instants compensés des latences). Quand le
 dernier plug-in ne produit que du MIDI, `-o` peut être omis. `process` accepte aussi `--midi <fichier.mid>` (un
 vocodeur ou une porte en side-chain pilotés par des notes).
+
+### Rendre un graphe modulaire
+
+```
+pluginhost graph mastering.pluginui-graph -i mix.wav -o master.wav
+pluginhost graph pads.pluginui-graph --midi accords.mid -o pads.wav --tail 4
+pluginhost graph bourdon.pluginui-graph --length 30 -o bourdon.wav
+```
+
+Un fichier de graphe (`.pluginui-graph`, enregistré par Plug-in Host, ou écrit par un programme avec `PluginGraph`,
+voir [la bibliothèque](#graphes-modulaires)) contient des modules reliés par des câbles : plug-ins avec leur état,
+entrées et sorties audio et MIDI, fichiers, signaux de test, sommes, gains. `-i` joue le rôle de l'entrée du
+périphérique audio (ses canaux alimentent les modules d'entrée audio), `--midi` alimente les modules d'entrée MIDI, et
+le fichier de sortie a tous les canaux sur lesquels écrit un module de sortie audio. `--midi-out` recueille ce qui
+arrive aux modules de sortie MIDI. Sans `-i` ni `--midi`, donnez la durée avec `--length`. La latence du plus long
+chemin vers une sortie est retirée (sauf avec `--no-latency-compensation`), et la queue automatique est la plus longue
+qu'annoncent les plug-ins — 10 s quand le graphe a une boucle. Un plug-in introuvable est signalé et reste muet ; le
+reste du graphe joue.
 
 ### Mesurer une réponse
 
@@ -351,6 +372,50 @@ Media Technologies GmbH ; la liaison est écrite d'après celle de NAudio (MIT),
 `DeviceInputSource`, `TestSignalGenerator`, `FileSource` ; `RackSlot.Bypass`, `Mute`, `GainDb`, `Meter` ; `MidiInput`
 ouvre un port d'entrée MIDI (messages courts avec leur instant, messages exclusifs sur demande), `MidiOutput` un port
 de sortie (`Send`, `SendSysex`, `AllNotesOff`).
+
+### Graphes modulaires
+
+`PluginGraph` fait jouer des modules reliés par des câbles, en direct (c'est un `IAudioRenderer`, comme `PluginRack`)
+ou hors temps réel (`OfflineRenderer.Render(graph, …)`) :
+
+```csharp
+using PluginUI.Host.Graph;
+
+var graph = new PluginGraph();
+var input = graph.Add(new AudioInputNode { FirstChannel = 0, Channels = 2 });
+var comp = graph.Add(new PluginNode(loader.Load("Pro-C 2"), PluginReference.From(description)));
+var sum = graph.Add(new AudioSumNode());                        // sec + traité : compression parallèle
+var output = graph.Add(new AudioOutputNode());
+graph.Connect(input.Outputs[0], comp.Inputs[0]);
+graph.Connect(comp.Outputs[0], sum.Inputs[0]);
+graph.Connect(input.Outputs[0], sum.Inputs[1]);                 // le chemin sec attend la latence du compresseur
+graph.Connect(sum.Outputs[0], output.Inputs[0]);
+device.Start(graph);
+graph.Save("parallele.pluginui-graph");
+```
+
+- **Modules** : `PluginNode` (un connecteur par bus du plug-in — principal, sidechain… — et son entrée et sa sortie
+  MIDI), `AudioInputNode` / `AudioOutputNode` (canaux du périphérique), `TestSignalNode`, `AudioFileNode` (WAV en
+  boucle), `MidiInputNode` (alimenté par `graph.PostMidiInput`), `KeyboardNode`, `MidiOutputNode` (vers
+  `graph.MidiOutput`), `GainNode` (gain, polarité, muet), `AudioSumNode` (entrées avec leur gain), `MidiMergeNode`.
+  Les vôtres : dérivez de `GraphNode` (connecteurs avec `SetPorts`, traitement dans `Process` avec un `NodeContext`)
+  et enregistrez le type avec `PluginGraph.RegisterNodeType` pour que les fichiers puissent le créer.
+- **Câbles** : une sortie alimente autant d'entrées que voulu ; une entrée ne prend qu'un câble (`Connect` le
+  remplace) : les signaux ne s'additionnent que dans un module de sommation. L'audio va vers l'audio, le MIDI vers le
+  MIDI. Les largeurs sont converties : un signal mono alimente tous les canaux, plusieurs canaux qui entrent dans une
+  entrée mono sont moyennés, sinon les premiers canaux sont copiés.
+- **Boucles** : elles sont permises. Le câble le plus récent d'une boucle est son câble de retour (`IsFeedback`) : il
+  livre avec un bloc de retard, puisqu'un plug-in traite des blocs entiers. `LoopBlockSize` fait tourner les modules
+  des boucles par sous-blocs plus courts (le retard devient ce sous-bloc) ; `BreakLoopAt` choisit le câble.
+- **Latence** : `PathLatencySamples` donne la latence de chaque module depuis les sources ; un sommateur
+  (`CompensateLatency`, actif par défaut) retarde ses entrées pour qu'elles arrivent alignées (`DelaySamples` sur le
+  câble). Un plug-in qui change de latence est suivi.
+- **Fichiers** : `ToJson` / `Save` et `LoadJson` / `Load`, avec une fonction qui charge les plug-ins (`loader.Load`
+  prend la `PluginReference` enregistrée). Un plug-in qui ne peut pas être chargé devient un `MissingPluginNode`, qui
+  garde ses câbles et son état et est réenregistré tel quel ; `Load` renvoie ce qui n'a pas pu être restauré.
+- **Threads** : modifiez le graphe sur le thread de l'interface ; chaque modification met en place un nouveau plan
+  d'exécution, le thread audio n'attend jamais. `NodeFailed` signale un module qui a levé une exception (il se tait
+  jusqu'à ce que le graphe soit préparé de nouveau).
 
 Le MIDI produit par un plug-in se trouve dans `plugin.OutputMidi` après chaque `Process` (`EventOutputCount` > 0
 quand il a une sortie d'événements). Dans un rack, `RackSlot.MidiOut` prend un `IMidiSink`, appelé sur le thread audio :
