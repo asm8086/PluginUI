@@ -1,4 +1,4 @@
-<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
@@ -31,5 +31,8 @@
     <ProjectReference Include="..\..\src\PluginUI.Host.Vst2\PluginUI.Host.Vst2.csproj" />
     <ProjectReference Include="..\..\src\PluginUI.Host.Windows\PluginUI.Host.Windows.csproj" />
   </ItemGroup>
+
+  <!-- The 32-bit bridge (PluginHost.Bridge32.exe) in the "bridge32" folder, for 32-bit VST 2 plug-ins. -->
+  <Import Project="..\PluginHost.Bridge\Bridge32.targets" />
 
 </Project>

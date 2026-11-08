@@ -1,4 +1,4 @@
-<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -79,6 +79,7 @@ PluginUI/
 ├── tools/PluginUIEditor/           WinForms visual designer (toolbox, properties, preview, code, new projects)
 ├── tools/PluginHost.Cli/           pluginhost: command line plug-in host (scan, list, process, render, measure, presets, graphs)
 ├── tools/PluginHost.Desktop/       Plug-in Host: graphical host built with PluginUI (sortable plug-in list, modular graph, editors, presets)
+├── tools/PluginHost.Bridge/        PluginHost.Bridge32.exe: 32-bit bridge that runs 32-bit VST 2 plug-ins for the 64-bit hosts
 ├── samples/PluginUI.Gallery/       Demo application (standalone window + PNG capture mode)
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer: desktop application (IL or NativeAOT) built with PluginUI.Desktop

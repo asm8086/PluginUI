@@ -1,0 +1,38 @@
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
+<Project>
+
+  <!--
+    Imported by the 64-bit hosts (PluginHost.Desktop, PluginHost.Cli): on Windows, building or publishing a host also
+    builds or publishes the 32-bit bridge (PluginHost.Bridge32.exe) and copies it into the host's "bridge32" folder.
+    -p:BuildBridge32=false skips it.
+
+    The bridge is built with the same global properties as the host's own references (the host's runtime identifier,
+    self-containment, NativeAOT and output folders removed), so that the libraries are built once, and copied from its
+    own output folder.
+  -->
+  <PropertyGroup>
+    <Bridge32Project>$(MSBuildThisFileDirectory)PluginHost.Bridge.csproj</Bridge32Project>
+    <Bridge32Output>$(MSBuildThisFileDirectory)bin\$(Configuration)\net10.0\win-x86\</Bridge32Output>
+    <BuildBridge32 Condition="'$(BuildBridge32)' == '' And $([MSBuild]::IsOSPlatform('Windows')) And $(RuntimeIdentifier.StartsWith('win-')) And '$(RuntimeIdentifier)' != 'win-x86'">true</BuildBridge32>
+    <_Bridge32RemovedProperties>RuntimeIdentifier;SelfContained;PublishAot;IlcInstructionSet;PublishDir;OutDir;OutputPath;PublishSingleFile;PublishTrimmed</_Bridge32RemovedProperties>
+  </PropertyGroup>
+
+  <Target Name="_RestoreBridge32">
+    <MSBuild Projects="$(Bridge32Project)" Targets="Restore" Properties="Configuration=$(Configuration);_Bridge32Restore=$([System.Guid]::NewGuid())"
+             RemoveProperties="$(_Bridge32RemovedProperties)" />
+  </Target>
+
+  <Target Name="BuildBridge32" AfterTargets="Build" DependsOnTargets="_RestoreBridge32" Condition="'$(BuildBridge32)' == 'true' And '$(_IsPublishing)' != 'true'">
+    <MSBuild Projects="$(Bridge32Project)" Targets="Build" Properties="Configuration=$(Configuration)" RemoveProperties="$(_Bridge32RemovedProperties)" />
+    <ItemGroup>
+      <_Bridge32Files Include="$(Bridge32Output)**\*" Exclude="$(Bridge32Output)publish\**" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_Bridge32Files)" DestinationFiles="@(_Bridge32Files->'$(OutDir)bridge32\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="PublishBridge32" AfterTargets="Publish" DependsOnTargets="_RestoreBridge32" Condition="'$(BuildBridge32)' == 'true'">
+    <MSBuild Projects="$(Bridge32Project)" Targets="Publish" Properties="Configuration=$(Configuration)" RemoveProperties="$(_Bridge32RemovedProperties)" />
+    <Copy SourceFiles="$(Bridge32Output)publish\PluginHost.Bridge32.exe" DestinationFolder="$(PublishDir)bridge32\" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

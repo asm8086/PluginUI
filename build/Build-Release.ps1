@@ -1,4 +1,4 @@
-# 2026/11/05 14:06:00 UTC - PluginUI
+# 2026/11/08 17:00:00 UTC - PluginUI
 # SPDX-FileCopyrightText: 2026 asm8086
 # SPDX-License-Identifier: MIT
 
@@ -117,7 +117,8 @@ function Invoke-Build([string]$t) {
         # The plug-in hosts, NativeAOT. Two folders: PluginHost.exe and pluginhost.exe differ only by case.
         Invoke-Native dotnet (@('publish', (Join-Path $Root 'tools/PluginHost.Desktop'), '-p:PublishAot=true') + $common + @('-o', (Join-Path $dir 'pluginhost-gui')))
         Invoke-Native dotnet (@('publish', (Join-Path $Root 'tools/PluginHost.Cli'), '-p:PublishAot=true') + $common + @('-o', (Join-Path $dir 'pluginhost-cli')))
-        foreach ($exe in 'pluginhost-gui/PluginHost.exe', 'pluginhost-cli/pluginhost.exe') {
+        # Each host carries the 32-bit bridge for 32-bit VST 2 plug-ins (tools/PluginHost.Bridge/Bridge32.targets).
+        foreach ($exe in 'pluginhost-gui/PluginHost.exe', 'pluginhost-cli/pluginhost.exe', 'pluginhost-gui/bridge32/PluginHost.Bridge32.exe', 'pluginhost-cli/bridge32/PluginHost.Bridge32.exe') {
             if (-not (Test-Path (Join-Path $dir $exe))) { throw "NativeAOT output not found: $dir/$exe" }
         }
     }

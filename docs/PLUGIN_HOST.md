@@ -1,4 +1,4 @@
-<!-- 2026/11/08 15:53:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -65,8 +65,11 @@ exist (`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST
 the registry; on Linux `~/.vst3`, `/usr/lib/vst3`, `/usr/local/lib/vst3`, `~/.vst`, `/usr/lib/vst`, `/usr/local/lib/vst`).
 Every folder and its subfolders are searched for both formats: `.vst3` modules, and the libraries with a VST 2 entry
 point (the libraries the plug-ins use are left out without being loaded, and so are those inside `.vst3` bundles).
-Each plug-in of a shell module (Waves' WaveShell) is listed on its own; 32-bit plug-ins are listed without being loaded,
-with the status `Incompatible` and their architecture (`ModuleArchitecture.X86`): "32-bit" in Plug-in Host, in amber. Settings of earlier versions, with separate VST3 and VST2 lists, are merged into the single list.
+Each plug-in of a shell module (Waves' WaveShell) is listed on its own. **32-bit VST 2 plug-ins** are scanned and run in
+the 32-bit bridge, `PluginHost.Bridge32.exe` (in the `bridge32` folder next to the host, see [32-bit plug-ins](#32-bit-plug-ins));
+their architecture is recorded (`ModuleArchitecture.X86`). 32-bit VST3 plug-ins, and 32-bit VST 2 plug-ins when the
+bridge is missing, are listed without being loaded, with the status `Incompatible`: "32-bit" in Plug-in Host, in amber.
+Settings of earlier versions, with separate VST3 and VST2 lists, are merged into the single list.
 
 ```
 pluginhost folders                          # list the folders
@@ -509,6 +512,26 @@ using var plugin = module.CreatePlugin();
 ```
 
 (the project that does this sets `<NPlugFactoryExport>false</NPlugFactoryExport>`).
+
+### 32-bit plug-ins
+
+A 64-bit program cannot load a 32-bit DLL. Plug-in Host and `pluginhost` run each 32-bit VST 2 plug-in in a **bridge**:
+`PluginHost.Bridge32.exe`, a 32-bit program built and published with them into their `bridge32` folder
+(`tools/PluginHost.Bridge`; `-p:BuildBridge32=false` skips it). One bridge process per plug-in loads it and serves the
+host through shared memory: one round trip per block (blocks of up to 4096 samples; larger ones go in pieces), parameter
+values mirrored in the shared memory, text values, states and presets as control calls. The plug-in's own parameter
+changes reach the host with `Idle()`. A plug-in that crashes stops its bridge only: the host carries on, and the module
+fails as any plug-in that throws. Scans describe 32-bit modules in the bridge too, shell modules (32-bit WaveShell)
+included. The editors of bridged plug-ins are not shown yet: the generic parameter table stands in.
+
+```csharp
+Vst2Hosting.Register();                                     // also enables the bridge when it is installed
+using var old = Vst2Hosting.LoadAnyArchitecture(@"C:\Program Files (x86)\VSTPlugins\Chorus.dll");   // a Vst2BridgedPlugin
+using var direct = Vst2Bridge.Load(path, null, "My host", ModuleArchitecture.X86);        // or explicitly
+```
+
+`Vst2Bridge.Bridge32Executable` tells or sets where the bridge is; `PluginScanner.BridgeScanners` holds the scanners of
+other architectures. A `Vst2BridgedPlugin` is a `PluginInstance` like any other (`Architecture`, `HasFailed`).
 
 Scanning from your own application: `PluginScanner.OutOfProcess(exe, args)` runs a helper process (for example
 `pluginhost scan-module`) per module; `PluginScanner.InProcess()` opens the modules in the calling process.

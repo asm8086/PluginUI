@@ -1,4 +1,4 @@
-// 2026/11/08 13:55:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -201,7 +201,8 @@ internal sealed class GraphView : ITickable
 
     private static string? Subtitle(GraphNode node) => node switch
     {
-        PluginNode p => p.Plugin.Vendor + (p.Plugin.LatencySamples > 0 ? L.T($" · latency {p.Plugin.LatencySamples}", $" · latence {p.Plugin.LatencySamples}") : string.Empty),
+        PluginNode p => p.Plugin.Vendor + (p.Plugin is PluginUI.Host.Vst2.Vst2BridgedPlugin ? L.T(" · 32-bit", " · 32 bits") : string.Empty)
+            + (p.Plugin.LatencySamples > 0 ? L.T($" · latency {p.Plugin.LatencySamples}", $" · latence {p.Plugin.LatencySamples}") : string.Empty),
         MissingPluginNode m => m.Reference?.Vendor,
         GainNode g => Db(g.GainDb) + (g.Invert ? L.T(" · inverted", " · inversé") : string.Empty),
         TestSignalNode t => SignalName(t.Generator.Signal) + " · " + t.Generator.LevelDb.ToString("0.#", CultureInfo.InvariantCulture) + " dBFS",
@@ -740,9 +741,10 @@ internal sealed class GraphView : ITickable
         return true;
     }
 
-    private static string LatencyText(PluginNode node) => node.Plugin.LatencySamples > 0
-        ? L.T($", latency {node.Plugin.LatencySamples} samples", $", latence {node.Plugin.LatencySamples} échantillons")
-        : string.Empty;
+    private static string LatencyText(PluginNode node) => (node.Plugin is PluginUI.Host.Vst2.Vst2BridgedPlugin ? L.T(", in the 32-bit bridge", ", dans le pont 32 bits") : string.Empty)
+        + (node.Plugin.LatencySamples > 0
+            ? L.T($", latency {node.Plugin.LatencySamples} samples", $", latence {node.Plugin.LatencySamples} échantillons")
+            : string.Empty);
 
     /// <summary>Saves the graph (with the plug-in states).</summary>
     public bool Save(string path, bool remember = true)

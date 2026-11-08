@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -27,6 +27,11 @@
   <ItemGroup>
     <!-- The fake VST 2 plug-in, hosted through its entry point (TestVst2 builds the same code as a native module). -->
     <Compile Include="..\PluginUI.Host.TestVst2\FakeVst2.cs" Link="FakeVst2.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Gain32.dll: a real 32-bit VST 2 module (built from gain32.c) for the tests of the 32-bit bridge. -->
+    <None Update="TestData\Gain32.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

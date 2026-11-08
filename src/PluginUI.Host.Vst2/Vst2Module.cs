@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -38,7 +38,7 @@ public sealed unsafe class Vst2Module : IDisposable
     {
         Path = path;
         _library = library;
-        Entry = (delegate* unmanaged<delegate* unmanaged<AEffect*, int, int, nint, void*, float, nint>, AEffect*>)entry;
+        Entry = (delegate* unmanaged[Cdecl]<delegate* unmanaged[Cdecl]<AEffect*, int, int, nint, void*, float, nint>, AEffect*>)entry;
         string directory = System.IO.Path.GetDirectoryName(path) ?? string.Empty;
         byte[] bytes = Encoding.Default.GetBytes(directory + "\0");
         _directory = (byte*)NativeMemory.Alloc((nuint)bytes.Length);
@@ -48,7 +48,7 @@ public sealed unsafe class Vst2Module : IDisposable
     /// <summary>Path of the module.</summary>
     public string Path { get; }
 
-    internal delegate* unmanaged<delegate* unmanaged<AEffect*, int, int, nint, void*, float, nint>, AEffect*> Entry { get; }
+    internal delegate* unmanaged[Cdecl]<delegate* unmanaged[Cdecl]<AEffect*, int, int, nint, void*, float, nint>, AEffect*> Entry { get; }
 
     internal byte* Directory => _directory;
 

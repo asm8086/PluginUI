@@ -1,4 +1,4 @@
-// 2026/11/08 15:53:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -542,7 +542,7 @@ internal sealed class MainWindow
         int ok = _catalog.Plugins.Count(p => p.Status == PluginStatus.Ok);
         int incompatible = _catalog.Plugins.Count(p => p.Status == PluginStatus.Incompatible);
         int failed = _catalog.Plugins.Count - ok - incompatible;
-        string text = L.T($"{_rows.Count} shown of {ok}", $"{_rows.Count} affichés sur {ok}");
+        string text = L.T($"{_rows.Count} shown of {_catalog.Plugins.Count}", $"{_rows.Count} affichés sur {_catalog.Plugins.Count}");
         if (failed > 0) text += L.T($", {failed} failed", $", {failed} en échec");
         if (incompatible > 0) text += L.T($", {incompatible} 32-bit", $", {incompatible} en 32 bits");
         return text;
@@ -554,7 +554,11 @@ internal sealed class MainWindow
             : L.T("Never scanned", "Jamais recherché");
 
     private static string IncompatibleText(PluginDescription p) => p.Architecture is ModuleArchitecture.X86 or ModuleArchitecture.Arm
-        ? L.T("A 32-bit plug-in: Plug-in Host is a 64-bit program and cannot load it.", "Un plug-in 32 bits : Plug-in Host est un programme 64 bits et ne peut pas le charger.")
+        ? p.Format == PluginFormat.Vst2
+            ? L.T("A 32-bit VST 2 plug-in: it runs in the 32-bit bridge, which is missing (bridge32\\PluginHost.Bridge32.exe next to PluginHost.exe).",
+                "Un plug-in VST 2 32 bits : il fonctionne dans le pont 32 bits, qui est absent (bridge32\\PluginHost.Bridge32.exe à côté de PluginHost.exe).")
+            : L.T("A 32-bit VST3 plug-in: Plug-in Host runs the 32-bit VST 2 plug-ins only, in its bridge.",
+                "Un plug-in VST3 32 bits : Plug-in Host ne fait fonctionner que les plug-ins VST 2 32 bits, dans son pont.")
         : L.T($"Built for another processor ({ArchitectureText(p.Architecture)}): Plug-in Host cannot load it.",
             $"Compilé pour un autre processeur ({ArchitectureText(p.Architecture)}) : Plug-in Host ne peut pas le charger.");
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 2026/11/08 15:53:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -79,7 +79,7 @@ plug-ins. It shares its settings, its plug-in list and its graph files with <cod
 <ul>
   <li>Windows 10 or 11, 64-bit (x64 or ARM64).</li>
   <li>A sound card: its ASIO driver for the lowest latency, otherwise the Windows sound device (WASAPI).</li>
-  <li>64-bit VST3 or VST&nbsp;2 plug-ins. 32-bit plug-ins are listed, marked “32-bit”, but do not load.</li>
+  <li>64-bit VST3 or VST&nbsp;2 plug-ins, and 32-bit VST&nbsp;2 plug-ins through the 32-bit bridge (<a href="#bridge">chapter 10</a>). 32-bit VST3 plug-ins are listed, marked “32-bit”, but do not load.</li>
 </ul>
 
 <h3>From a release</h3>
@@ -87,7 +87,7 @@ plug-ins. It shares its settings, its plug-in list and its graph files with <cod
   <li>On the <a href="https://github.com/asm8086/PluginUI/releases">Releases</a> page of the project, download
   <code>PluginHost-&lt;version&gt;-win-x64.zip</code> (or <code>…-win-arm64.zip</code> for an ARM PC).</li>
   <li>Unzip it into a folder of your choice. No installation and no .NET runtime are needed: <code>PluginHost.exe</code> is a
-  native program.</li>
+  native program. Keep the <code>bridge32</code> folder next to it: it runs the 32-bit plug-ins.</li>
   <li>Start <code>PluginHost.exe</code>. If Windows SmartScreen shows a warning (the program is not signed), click
   <strong>More info</strong> then <strong>Run anyway</strong>.</li>
 </ol>
@@ -194,7 +194,7 @@ columns, the filters, the theme and the sound card come back at the next start.<
   <li>the <strong>kind</strong>: instruments and effects, instruments only, effects only;</li>
   <li>the <strong>sort</strong>: name, vendor, category, format, input or output channels, latency, installation date,
   recently used, most used, favorites first, folder, status;</li>
-  <li><strong>Favorites only</strong> and <strong>Show failures</strong> (the plug-ins the scan could not load, in red, and the 32-bit plug-ins, in amber).</li>
+  <li><strong>Favorites only</strong> and <strong>Show failures</strong> (the plug-ins the scan could not load, in red, and those that cannot run here, such as 32-bit VST3 plug-ins, in amber).</li>
 </ul>
 
 <h3>Sort and choose the columns</h3>
@@ -471,6 +471,21 @@ window can stay open while the graph plays, next to others.</p>
 
 <p>Closing the window closes the editor only: the plug-in keeps playing in the graph. Several windows can be open at once.</p>
 
+<h3 id="bridge">32-bit plug-ins</h3>
+<p>Plug-in Host is a 64-bit program, and a 64-bit program cannot load a 32-bit plug-in. It runs each <strong>32-bit VST&nbsp;2
+plug-in</strong> in a <strong>bridge</strong>: a small 32-bit program, <code>PluginHost.Bridge32.exe</code>, installed in the
+<code>bridge32</code> folder next to <code>PluginHost.exe</code>. Nothing needs to be done: the search lists these plug-ins
+normally (with the architecture x86 in the details), and they are added to the graph, played, saved and restored like the
+others.</p>
+<ul>
+  <li>In the graph, their module says <strong>32-bit</strong> after the vendor; the log says “in the 32-bit bridge” when they
+  are loaded.</li>
+  <li>Their window shows the <strong>generic parameter table</strong>: their own editors are not shown yet.</li>
+  <li>Each one runs in its own bridge process: if it crashes, Plug-in Host carries on and the module is marked as failed.</li>
+  <li>Each block makes a round trip to the bridge: a little more processing than a 64-bit plug-in.</li>
+  <li>32-bit VST3 plug-ins are not bridged: they stay listed in amber, with the status “32-bit”.</li>
+</ul>
+
 <!-- ============================================================== 11 -->
 <h2 id="log"><span class="num">11</span>The log</h2>
 
@@ -569,7 +584,7 @@ your message: it tells which file was loaded, with which result.</p></div>
   <dt>A plug-in is missing from the list.</dt>
   <dd>Tick <strong>Show failures</strong>: if it shows in red, the details pane (<kbd>Ctrl</kbd>+<kbd>I</kbd>) gives the reason.
   Otherwise, check that its folder is in <strong>Plug-in folders</strong> and use <strong>Scan everything again</strong>
-  (<kbd>Shift</kbd>+<kbd>F5</kbd>). A 32-bit plug-in shows in amber with the status “32-bit”: Plug-in Host, a 64-bit program, cannot load it.</dd>
+  (<kbd>Shift</kbd>+<kbd>F5</kbd>). A 32-bit VST&nbsp;2 plug-in in amber means that the bridge is missing (<code>bridge32</code> folder next to <code>PluginHost.exe</code>); a 32-bit VST3 plug-in cannot be loaded.</dd>
 
   <dt>A module shows MISSING.</dt>
   <dd>The plug-in could not be loaded when the graph was opened; double-click the module to read the reason. Its cables and

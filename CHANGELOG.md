@@ -1,4 +1,4 @@
-<!-- 2026/11/08 15:53:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -45,13 +45,24 @@ Before 1.0, minor versions may contain breaking changes.
   `CanLoad`). Plug-in Host shows them in amber with the status "32-bit", an Architecture column and line in the
   details, a count in the status bar and the log; `pluginhost scan` lists them as not loadable.
 
+- **32-bit VST 2 plug-ins run through a bridge**: `PluginHost.Bridge32.exe` (`tools/PluginHost.Bridge`, win-x86,
+  self-contained) loads one plug-in in its own process; shared memory carries audio blocks (cut at 4096 frames),
+  parameter changes, MIDI in and out, transport and latency, and a control channel carries descriptions, parameter
+  texts, states and presets. `Vst2BridgedPlugin` is a `PluginInstance` like the others; `Vst2Hosting.LoadAnyArchitecture`
+  (now `PluginLoader.Vst2Loader`) and `Vst2Bridge.Load` choose it from the module's machine type;
+  `PluginScanner.BridgeScanners` scans 32-bit VST 2 modules (shells included) in the bridge. A plug-in that crashes stops
+  only its bridge. Building or publishing Plug-in Host or `pluginhost` on Windows also builds the bridge into their
+  `bridge32` folder (`-p:BuildBridge32=false` skips it). Plug-in Host marks these plug-ins "32-bit" in the graph and
+  shows their generic parameter table (their own editors come later).
+
 ### Changed
 
 - VST 3 state streams also offer `ISizeableStream` and `IStreamAttributes` (a graph state says `StateType` =
   `Project`, as DAWs do; a preset gives its file name), and a refused state now says what happened: the plug-in's
   result, the bytes it read and the interfaces it asked for. A plug-in that reads the whole state and answers
   `kResultFalse` (Waves shells do) is taken as having applied it, as DAWs do.
-  result, the bytes it read and the interfaces it asked for.
+- VST 2 entry points and host callbacks are declared `cdecl`, the VST 2 calling convention (needed by 32-bit
+  plug-ins; the same on 64-bit).
 - `NodeEditor.ZoomToFit` called before the editor has its size (a graph restored at start) is done again when the
   editor is laid out.
 - Graph files: a plug-in that loads but refuses its saved state stays in the graph with its default settings (with a

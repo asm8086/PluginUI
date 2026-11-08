@@ -1,0 +1,42 @@
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The 32-bit bridge of the plug-in hosts: PluginHost.Bridge32.exe runs one 32-bit VST 2 plug-in for a 64-bit
+    PluginHost.exe or pluginhost.exe ("bridge ...") and describes 32-bit modules for their scans ("scan-module ...").
+    Built and published with the hosts into their "bridge32" folder (Bridge32.targets); on its own:
+      dotnet publish -c Release   (one self-contained PluginHost.Bridge32.exe for win-x86)
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>PluginHost.Bridge32</AssemblyName>
+    <RootNamespace>PluginUI.Host.Bridge</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Plug-ins are third-party native code: no CET shadow stack (see tools/PluginHost.Cli). -->
+    <CETCompat>false</CETCompat>
+    <IsTrimmable>true</IsTrimmable>
+    <!-- One file when published: trimmed, compressed. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <!-- Only the executable: no symbols or documentation of the libraries beside it. -->
+    <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PluginUI.Host\PluginUI.Host.csproj" />
+    <ProjectReference Include="..\..\src\PluginUI.Host.Vst2\PluginUI.Host.Vst2.csproj" />
+  </ItemGroup>
+
+</Project>

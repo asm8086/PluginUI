@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -649,7 +649,7 @@ public sealed unsafe class Vst2Plugin : PluginInstance
 
     // ---------------------------------------------------------------- host callback
 
-    [UnmanagedCallersOnly]
+    [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     private static nint HostCallback(AEffect* effect, int opcode, int index, nint value, void* ptr, float opt)
     {
         try

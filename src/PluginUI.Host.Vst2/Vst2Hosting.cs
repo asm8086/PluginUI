@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,21 @@ public static class Vst2Hosting
     public static void Register()
     {
         InProcessModuleScanner.Vst2Scanner = Describe;
-        PluginLoader.Vst2Loader = (path, plugin, hostName) => Load(path, plugin, hostName);
+        PluginLoader.Vst2Loader = LoadAnyArchitecture;
+        Vst2Bridge.RegisterScanners();
+    }
+
+    /// <summary>
+    /// Opens a VST 2 plug-in in this process, or in a bridge when it is built for a processor this process cannot load (a
+    /// 32-bit plug-in in a 64-bit host, see <see cref="Vst2Bridge"/>).
+    /// </summary>
+    public static PluginInstance LoadAnyArchitecture(string path, string? plugin = null, string hostName = "PluginUI Host")
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        var architecture = ModuleArchitectures.ReadMachine(path);
+        if (!ModuleArchitectures.CanLoad(architecture) && Vst2Bridge.ExecutableFor(architecture) is not null)
+            return Vst2Bridge.Load(path, string.IsNullOrEmpty(plugin) ? null : plugin, hostName, architecture);
+        return Load(path, plugin, hostName);
     }
 
     /// <summary>Opens a VST 2 plug-in.</summary>

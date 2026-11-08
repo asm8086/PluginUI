@@ -1,4 +1,4 @@
-// 2026/11/08 15:53:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -114,8 +114,10 @@ internal static class Snapshots
                 P("Breath Tamer", "Restoration Lab", "Fx|Restoration", 2, 2, latency: 26623, days: 400),
                 P("Mono Analyzer", "Measure Co", "Fx|Analyzer", 1, 1, days: 10),
                 P("Old Shell", "Unknown", "", 0, 0, status: PluginStatus.Failed, error: "The scanner stopped (code 0xC0000005: access violation in the plug-in)."),
-                P("Tape Chorus", "", "", 0, 0, status: PluginStatus.Incompatible, error: ModuleArchitectures.IncompatibilityMessage(ModuleArchitecture.X86),
-                    days: 3000, folder: @"C:\Program Files (x86)\VSTPlugins", format: PluginFormat.Vst2, architecture: ModuleArchitecture.X86),
+                P("Tape Chorus", "Vintage Bits", "Fx|Modulation", 2, 2, days: 3000, uses: 4, folder: @"C:\Program Files (x86)\VSTPlugins",
+                    format: PluginFormat.Vst2, architecture: ModuleArchitecture.X86),
+                P("Old Phaser", "", "", 0, 0, status: PluginStatus.Incompatible, error: ModuleArchitectures.IncompatibilityMessage(ModuleArchitecture.X86),
+                    days: 3200, folder: @"C:\Program Files (x86)\Common Files\VST3", architecture: ModuleArchitecture.X86),
             ],
             LastScanUtc = new DateTime(2026, 11, 6, 21, 30, 0, DateTimeKind.Utc),
         };

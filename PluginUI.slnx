@@ -1,4 +1,4 @@
-<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/PluginUI/PluginUI.csproj" />
@@ -19,6 +19,7 @@
     <Project Path="tools/PluginHost.Desktop/PluginHost.Desktop.csproj" />
     <Project Path="tools/PluginUIEditor/PluginUIEditor.csproj" />
     <Project Path="tools/PluginHost.Cli/PluginHost.Cli.csproj" />
+    <Project Path="tools/PluginHost.Bridge/PluginHost.Bridge.csproj" />
   </Folder>
   <Folder Name="/build/">
     <Project Path="build/ValidatePlugin/ValidatePlugin.csproj" />

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 2026/11/08 15:53:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -79,7 +79,7 @@ l'hôte en ligne de commande (voir <a href="#fichiers">chapitre 14</a>).</p>
 <ul>
   <li>Windows 10 ou 11, 64 bits (x64 ou ARM64).</li>
   <li>Une carte son : son pilote ASIO pour la latence la plus basse, sinon la carte son de Windows (WASAPI).</li>
-  <li>Des plug-ins VST3 ou VST&nbsp;2 64 bits. Les plug-ins 32 bits sont listés, signalés « 32 bits », mais ne se chargent pas.</li>
+  <li>Des plug-ins VST3 ou VST&nbsp;2 64 bits, et des plug-ins VST&nbsp;2 32 bits par le pont 32 bits (<a href="#pont">chapitre 10</a>). Les plug-ins VST3 32 bits sont listés, signalés « 32 bits », mais ne se chargent pas.</li>
 </ul>
 
 <h3>Depuis une version publiée</h3>
@@ -87,7 +87,7 @@ l'hôte en ligne de commande (voir <a href="#fichiers">chapitre 14</a>).</p>
   <li>Sur la page <a href="https://github.com/asm8086/PluginUI/releases">Releases</a> du projet, téléchargez
   <code>PluginHost-&lt;version&gt;-win-x64.zip</code> (ou <code>…-win-arm64.zip</code> pour un PC ARM).</li>
   <li>Décompressez l'archive dans un dossier de votre choix. Aucune installation ni aucun runtime .NET ne sont nécessaires :
-  <code>PluginHost.exe</code> est un programme natif.</li>
+  <code>PluginHost.exe</code> est un programme natif. Gardez le dossier <code>bridge32</code> à côté : il fait fonctionner les plug-ins 32 bits.</li>
   <li>Lancez <code>PluginHost.exe</code>. Si Windows SmartScreen affiche un avertissement (le programme n'est pas signé),
   cliquez sur <strong>Informations complémentaires</strong> puis <strong>Exécuter quand même</strong>.</li>
 </ol>
@@ -195,7 +195,7 @@ quelques secondes, mais restent dans le <a href="#journal">journal</a>.</p>
   <li>le <strong>tri</strong> : nom, marque, catégorie, format, canaux d'entrée ou de sortie, latence, date d'installation,
   utilisés récemment, les plus utilisés, favoris d'abord, dossier, état ;</li>
   <li><strong>Favoris seulement</strong> et <strong>Afficher les échecs</strong> (les plug-ins que la recherche n'a pas pu
-  charger, en rouge, et les plug-ins 32 bits, en orange).</li>
+  charger, en rouge, et ceux qui ne peuvent pas fonctionner ici, comme les plug-ins VST3 32 bits, en orange).</li>
 </ul>
 
 <h3>Trier et choisir les colonnes</h3>
@@ -477,6 +477,20 @@ aussitôt, et la fenêtre peut rester ouverte pendant que le graphe joue, à cô
 <p>Fermer la fenêtre ne ferme que l'éditeur : le plug-in continue de jouer dans le graphe. Plusieurs fenêtres peuvent être
 ouvertes à la fois.</p>
 
+<h3 id="pont">Les plug-ins 32 bits</h3>
+<p>Plug-in Host est un programme 64 bits, et un programme 64 bits ne peut pas charger un plug-in 32 bits. Il fait donc
+fonctionner chaque <strong>plug-in VST&nbsp;2 32 bits</strong> dans un <strong>pont</strong> : un petit programme 32 bits,
+<code>PluginHost.Bridge32.exe</code>, installé dans le dossier <code>bridge32</code> à côté de <code>PluginHost.exe</code>.
+Il n'y a rien à faire : la recherche liste ces plug-ins normalement (avec l'architecture x86 dans les détails), et ils
+s'ajoutent au graphe, jouent, s'enregistrent et se restaurent comme les autres.</p>
+<ul>
+  <li>Dans le graphe, leur module indique <strong>32 bits</strong> après la marque ; le journal précise « dans le pont 32 bits » à leur chargement.</li>
+  <li>Leur fenêtre affiche la <strong>table générique des paramètres</strong> : leurs propres éditeurs ne s'affichent pas encore.</li>
+  <li>Chacun tourne dans son propre processus de pont : s'il plante, Plug-in Host continue et le module est marqué en échec.</li>
+  <li>Chaque bloc fait un aller-retour vers le pont : un peu plus de calcul qu'un plug-in 64 bits.</li>
+  <li>Les plug-ins VST3 32 bits ne passent pas par le pont : ils restent listés en orange, avec l'état « 32 bits ».</li>
+</ul>
+
 <!-- ============================================================== 11 -->
 <h2 id="journal"><span class="num">11</span>Le journal</h2>
 
@@ -576,7 +590,7 @@ collez-le dans votre message : il dit quel fichier a été chargé, avec quel r
   <dt>Un plug-in manque dans la liste.</dt>
   <dd>Cochez <strong>Afficher les échecs</strong> : s'il apparaît en rouge, le volet des détails (<kbd>Ctrl</kbd>+<kbd>I</kbd>)
   donne la raison. Sinon, vérifiez que son dossier est dans <strong>Dossiers de plug-ins</strong> et lancez
-  <strong>Tout rechercher à nouveau</strong> (<kbd>Maj</kbd>+<kbd>F5</kbd>). Un plug-in 32 bits apparaît en orange avec l'état « 32 bits » : Plug-in Host, programme 64 bits, ne peut pas le charger.</dd>
+  <strong>Tout rechercher à nouveau</strong> (<kbd>Maj</kbd>+<kbd>F5</kbd>). Un plug-in VST&nbsp;2 32 bits en orange signifie que le pont manque (dossier <code>bridge32</code> à côté de <code>PluginHost.exe</code>) ; un plug-in VST3 32 bits ne peut pas être chargé.</dd>
 
   <dt>Un module affiche ABSENT.</dt>
   <dd>Le plug-in n'a pas pu être chargé à l'ouverture du graphe ; double-cliquez sur le module pour lire la raison. Ses

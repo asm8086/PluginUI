@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 //
@@ -17,11 +17,11 @@ internal unsafe struct AEffect
     public const int ExpectedMagic = 0x56737450;
 
     public int Magic;
-    public delegate* unmanaged<AEffect*, int, int, nint, void*, float, nint> Dispatcher;
+    public delegate* unmanaged[Cdecl]<AEffect*, int, int, nint, void*, float, nint> Dispatcher;
     /// <summary>Accumulating process (before 2.4).</summary>
-    public delegate* unmanaged<AEffect*, float**, float**, int, void> Process;
-    public delegate* unmanaged<AEffect*, int, float, void> SetParameter;
-    public delegate* unmanaged<AEffect*, int, float> GetParameter;
+    public delegate* unmanaged[Cdecl]<AEffect*, float**, float**, int, void> Process;
+    public delegate* unmanaged[Cdecl]<AEffect*, int, float, void> SetParameter;
+    public delegate* unmanaged[Cdecl]<AEffect*, int, float> GetParameter;
     public int NumPrograms;
     public int NumParams;
     public int NumInputs;
@@ -38,8 +38,8 @@ internal unsafe struct AEffect
     public void* User;
     public int UniqueId;
     public int Version;
-    public delegate* unmanaged<AEffect*, float**, float**, int, void> ProcessReplacing;
-    public delegate* unmanaged<AEffect*, double**, double**, int, void> ProcessDoubleReplacing;
+    public delegate* unmanaged[Cdecl]<AEffect*, float**, float**, int, void> ProcessReplacing;
+    public delegate* unmanaged[Cdecl]<AEffect*, double**, double**, int, void> ProcessDoubleReplacing;
     public fixed byte Future[56];
 }
 

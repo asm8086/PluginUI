@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 //
@@ -24,11 +24,11 @@ internal static unsafe class FakeVst2
     public static bool ShellMode { get; set; }
     public static State? Last;
 
-    public static nint EntryPoint => (nint)(delegate* unmanaged<delegate* unmanaged<AEffect*, int, int, nint, void*, float, nint>, AEffect*>)&Entry;
+    public static nint EntryPoint => (nint)(delegate* unmanaged[Cdecl]<delegate* unmanaged[Cdecl]<AEffect*, int, int, nint, void*, float, nint>, AEffect*>)&Entry;
 
     internal sealed class State
     {
-        public delegate* unmanaged<AEffect*, int, int, nint, void*, float, nint> Host;
+        public delegate* unmanaged[Cdecl]<AEffect*, int, int, nint, void*, float, nint> Host;
         public int HostVersion, Id, Program, Opens, StartProcess, EditCloses, ShellIndex, ResizeAnswer = -1;
         public bool IsShell, Active, WantResize;
         public string Name = string.Empty;
@@ -52,11 +52,11 @@ internal static unsafe class FakeVst2
 
     private static string Read(void* text) => Marshal.PtrToStringAnsi((nint)text) ?? string.Empty;
 
-    [UnmanagedCallersOnly]
-    private static AEffect* Entry(delegate* unmanaged<AEffect*, int, int, nint, void*, float, nint> host) => Create(host);
+    [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    private static AEffect* Entry(delegate* unmanaged[Cdecl]<AEffect*, int, int, nint, void*, float, nint> host) => Create(host);
 
     /// <summary>The entry point's work: creates one plug-in.</summary>
-    public static AEffect* Create(delegate* unmanaged<AEffect*, int, int, nint, void*, float, nint> host)
+    public static AEffect* Create(delegate* unmanaged[Cdecl]<AEffect*, int, int, nint, void*, float, nint> host)
     {
         // Like real plug-ins, ask the host before the object exists (effect = null).
         var st = new State { Host = host, HostVersion = (int)host(null, 1, 0, 0, null, 0) };
@@ -98,13 +98,13 @@ internal static unsafe class FakeVst2
         return e;
     }
 
-    [UnmanagedCallersOnly]
+    [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     private static void SetParameter(AEffect* e, int index, float value) => S(e).Params[index] = value;
 
-    [UnmanagedCallersOnly]
+    [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     private static float GetParameter(AEffect* e, int index) => S(e).Params[index];
 
-    [UnmanagedCallersOnly]
+    [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     private static nint Dispatcher(AEffect* e, int opcode, int index, nint value, void* ptr, float opt)
     {
         var st = S(e);
@@ -190,7 +190,7 @@ internal static unsafe class FakeVst2
         }
     }
 
-    [UnmanagedCallersOnly]
+    [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
     private static void ProcessReplacing(AEffect* e, float** inputs, float** outputs, int frames)
     {
         var st = S(e);

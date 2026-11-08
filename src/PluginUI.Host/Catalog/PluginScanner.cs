@@ -1,4 +1,4 @@
-// 2026/11/08 15:53:00 UTC - PluginUI
+// 2026/11/08 17:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -49,6 +49,13 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
     public bool? IncludeVst2 { get; set; }
 
     private bool ScansVst2 => IncludeVst2 ?? InProcessModuleScanner.Vst2Scanner is not null;
+
+    /// <summary>
+    /// Scanners of VST 2 modules built for a processor this process cannot load, by architecture (set by the VST 2
+    /// package when a bridge is installed, see <c>Vst2Bridge</c>). Other such modules are listed as
+    /// <see cref="PluginStatus.Incompatible"/>.
+    /// </summary>
+    public static Dictionary<ModuleArchitecture, IModuleScanner> BridgeScanners { get; } = [];
 
     /// <summary>
     /// Module files of the folders: .vst3 files and bundles (VST 3), and the libraries with a VST 2 entry point (.dll on
@@ -176,7 +183,24 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
             progress?.Report(new ScanProgress(path, i, modules.Count));
             var architecture = ModuleArchitectures.Of(path, format);
             List<PluginDescription> found;
-            if (!ModuleArchitectures.CanLoad(architecture))
+            if (!ModuleArchitectures.CanLoad(architecture) && format == PluginFormat.Vst2 && BridgeScanners.TryGetValue(architecture, out var bridge))
+            {
+                try
+                {
+                    found = bridge.Scan(path, format, timeout).ToList();
+                    if (found.Count == 0) throw new InvalidOperationException("The module contains no plug-in.");
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    found = [new PluginDescription
+                    {
+                        Format = format, Path = path, Name = Path.GetFileNameWithoutExtension(path), Status = PluginStatus.Failed,
+                        Error = ex.Message, Category = string.Empty,
+                    }];
+                }
+            }
+            else if (!ModuleArchitectures.CanLoad(architecture))
             {
                 // Not even started: the loader would only refuse it ("not a valid Win32 application").
                 incompatible++;

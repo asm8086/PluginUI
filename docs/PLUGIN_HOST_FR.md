@@ -1,4 +1,4 @@
-<!-- 2026/11/08 15:53:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -69,8 +69,11 @@ dossier inscrit par Steinberg dans le registre ; sous Linux `~/.vst3`, `/usr/lib
 `/usr/lib/vst`, `/usr/local/lib/vst`). Chaque dossier et ses sous-dossiers sont parcourus pour les deux formats : les
 modules `.vst3`, et les bibliothèques dotées d'un point d'entrée VST 2 (celles qu'utilisent les plug-ins sont écartées
 sans être chargées, de même que celles des paquets `.vst3`). Chaque plug-in d'un module shell (le WaveShell de Waves)
-est listé séparément ; les plug-ins 32 bits sont listés sans être chargés,
-avec l'état `Incompatible` et leur architecture (`ModuleArchitecture.X86`) : « 32 bits » dans Plug-in Host, en orange. Les réglages des versions
+est listé séparément. Les **plug-ins VST 2 32 bits** sont décrits et joués dans le pont 32 bits,
+`PluginHost.Bridge32.exe` (dans le dossier `bridge32` à côté de l'hôte, voir [Plug-ins 32 bits](#plug-ins-32-bits)) ;
+leur architecture est enregistrée (`ModuleArchitecture.X86`). Les plug-ins VST3 32 bits, et les plug-ins VST 2 32 bits
+quand le pont manque, sont listés sans être chargés, avec l'état `Incompatible` : « 32 bits » dans Plug-in Host, en
+orange. Les réglages des versions
 précédentes, avec des listes VST3 et VST2 séparées, sont fusionnés en une seule liste.
 
 ```
@@ -534,6 +537,28 @@ using var plugin = module.CreatePlugin();
 ```
 
 (le projet qui fait cela définit `<NPlugFactoryExport>false</NPlugFactoryExport>`).
+
+### Plug-ins 32 bits
+
+Un programme 64 bits ne peut pas charger une DLL 32 bits. Plug-in Host et `pluginhost` font fonctionner chaque plug-in
+VST 2 32 bits dans un **pont** : `PluginHost.Bridge32.exe`, un programme 32 bits compilé et publié avec eux dans leur
+dossier `bridge32` (`tools/PluginHost.Bridge` ; `-p:BuildBridge32=false` s'en passe). Un processus de pont par plug-in le
+charge et sert l'hôte par une mémoire partagée : un aller-retour par bloc (blocs de 4096 échantillons au plus ; les plus
+grands passent en morceaux), les valeurs des paramètres recopiées dans la mémoire partagée, les textes des valeurs, les
+états et les presets en appels de contrôle. Les changements que le plug-in fait lui-même arrivent à l'hôte par `Idle()`.
+Un plug-in qui plante n'arrête que son pont : l'hôte continue, et le module échoue comme tout plug-in qui lève une
+exception. Les recherches décrivent aussi les modules 32 bits dans le pont, modules shell compris (WaveShell 32 bits).
+Les éditeurs des plug-ins du pont ne s'affichent pas encore : la table générique des paramètres les remplace.
+
+```csharp
+Vst2Hosting.Register();                                     // active aussi le pont quand il est installé
+using var ancien = Vst2Hosting.LoadAnyArchitecture(@"C:\Program Files (x86)\VSTPlugins\Chorus.dll");   // un Vst2BridgedPlugin
+using var direct = Vst2Bridge.Load(chemin, null, "Mon hôte", ModuleArchitecture.X86);       // ou explicitement
+```
+
+`Vst2Bridge.Bridge32Executable` indique ou fixe l'emplacement du pont ; `PluginScanner.BridgeScanners` contient les
+recherches des autres architectures. Un `Vst2BridgedPlugin` est un `PluginInstance` comme un autre (`Architecture`,
+`HasFailed`).
 
 Recherche des plug-ins depuis votre propre application : `PluginScanner.OutOfProcess(exe, args)` lance un processus
 auxiliaire (par exemple `pluginhost scan-module`) par module ; `PluginScanner.InProcess()` ouvre les modules dans le
