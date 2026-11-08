@@ -258,7 +258,8 @@ détails de chaque plug-in, les recherches avec leur progression, les dossiers d
 plug-ins, entrées et sorties audio et MIDI, signaux de test, fichiers, claviers, gains, sommes, muxers reliés par des
 câbles (boucles permises, sommes alignées sur la latence), joué en direct par ASIO ou WASAPI et enregistré dans des
 fichiers de graphe que `pluginhost graph` rend hors temps réel. Chaque module de plug-in ouvre son propre éditeur ou
-une table générique des paramètres, avec les presets. Il partage les dossiers et la liste des plug-ins avec
+une table générique des paramètres, avec les presets ; un journal garde les messages de la session (plug-ins chargés
+ou refusés, fichiers de graphe, périphérique audio). Il partage les dossiers et la liste des plug-ins avec
 `pluginhost`.
 
 ![Plug-in Host](docs/images/fr/pluginhost-graph.png)

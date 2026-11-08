@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -32,6 +32,8 @@ internal sealed class MainWindow
     private readonly float[] _outputLevels = new float[2];
     private readonly DockPanel _graphPage = new();
     private readonly GraphView _graph;
+    private readonly HostLog _log = new();
+    private readonly LogView _logView;
     private readonly List<(string Text, string Key, bool Descending)> _sortChoices;
     private PluginCatalog _catalog;
     private HostSettings _hostSettings;
@@ -169,6 +171,11 @@ internal sealed class MainWindow
             IsCheckedWhen = () => Tabs!.SelectedIndex == 1,
             Description = L.T("Shows the graph of modules that plays", "Affiche le graphe de modules qui joue"),
         };
+        var showLog = new Command(L.T("&Log", "&Journal"), () => Tabs!.SelectedIndex = 2, KeyGesture.Parse("Ctrl+3"))
+        {
+            IsCheckedWhen = () => Tabs!.SelectedIndex == 2,
+            Description = L.T("Shows the messages of the session: plug-ins loaded or refused, graph files, audio device", "Affiche les messages de la session : plug-ins chargés ou refusés, fichiers de graphe, périphérique audio"),
+        };
         var favorite = new Command(L.T("&Favorite", "&Favori"), ToggleFavorite, KeyGesture.Parse("Ctrl+D"))
         {
             CanExecuteWhen = () => Selected.Any(),
@@ -238,6 +245,7 @@ internal sealed class MainWindow
         var viewMenu = new MenuItem(t.MenuView);
         viewMenu.Items.Add(new MenuItem(showList));
         viewMenu.Items.Add(new MenuItem(showGraph));
+        viewMenu.Items.Add(new MenuItem(showLog));
         viewMenu.Items.Add(MenuItem.Separator());
         viewMenu.Items.Add(new MenuItem(search));
         viewMenu.Items.Add(new MenuItem(details));
@@ -301,6 +309,13 @@ internal sealed class MainWindow
         Tabs = new TabView { Margin = new Thickness(0f, 4f, 0f, 0f) };
         Tabs.AddPage(L.T("Plug-ins", "Plug-ins"), listPage);
         Tabs.AddPage(L.T("Graph", "Graphe"), _graphPage);
+        _logView = new LogView(() => Host!, _log);
+        Tabs.AddPage(LogHeader(), _logView.Root);
+        _logView.CountsChanged += () =>
+        {
+            Tabs.Pages[2].Header = LogHeader();
+            Tabs.InvalidateVisual();
+        };
         Tabs.SelectionChanged += (_, index) => _settings.Value.Tab = index;
         var root = new DockPanel();
         root.Children.Add(MenuBar);
@@ -322,11 +337,14 @@ internal sealed class MainWindow
         };
         Window.Closed += _ => SaveAll();
         _audio = new AudioEngine(Host) { WindowHandle = () => Window.WindowHandle };
-        _audio.Message += message => StatusBar.ShowMessage(message, 10.0);
+        _audio.Message += (message, level) => Report(message, 10.0, level, L.T("Audio device", "Périphérique audio"));
         _audio.Changed += () => StatusBar.InvalidateVisual();
         _audio.Start(saveChanges ? s : new GuiSettings { AudioApi = "none" });
+        _log.Info(L.T("Host", "Hôte"), L.T($"Started; {_catalog.Plugins.Count} plug-ins in the list.", $"Démarré ; {_catalog.Plugins.Count} plug-ins dans la liste."));
+        _log.Info(L.T("Audio device", "Périphérique audio"), _audio.Describe());
         _graph = new GraphView(Host, Window, _audio, _loader, () => _settings.Value.LightTheme);
-        _graph.Message += message => StatusBar.ShowMessage(message, 8.0);
+        _graph.Log = _log;
+        _graph.Message += message => Report(message, 8.0, LogLevel.Warning, L.T("Graph", "Graphe"));
         _graph.PluginListRequested += () => Tabs.SelectedIndex = 0;
         _graphPage.Children.Add(_graph.Root);
         Host.AddTicker(new Ticker(() =>
@@ -337,7 +355,7 @@ internal sealed class MainWindow
         }));
         if (!saveChanges || !File.Exists(SessionGraphPath) || !_graph.Load(SessionGraphPath, remember: false)) _graph.NewGraph();
         else if (s.GraphFile is { Length: > 0 } named && File.Exists(named)) _graph.AdoptPath(named);
-        Tabs.SelectedIndex = Math.Clamp(s.Tab, 0, 1);
+        Tabs.SelectedIndex = Math.Clamp(s.Tab, 0, 2);
 
         _ready = true;
         SyncSortChoice();
@@ -357,6 +375,9 @@ internal sealed class MainWindow
     public DataTable Table { get; }
 
     public TabView Tabs { get; }
+
+    /// <summary>The messages of the session (Log tab).</summary>
+    internal HostLog Log => _log;
 
     internal GraphView Graph => _graph;
 
@@ -552,7 +573,7 @@ internal sealed class MainWindow
     {
         if (description.Status != PluginStatus.Ok)
         {
-            StatusBar.ShowMessage(L.T($"{description.Name} could not be loaded during the scan.", $"{description.Name} n'a pas pu être chargé lors de la recherche."));
+            Report(L.T($"{description.Name} could not be loaded during the scan.", $"{description.Name} n'a pas pu être chargé lors de la recherche."), level: LogLevel.Warning);
             return;
         }
         if (_graph.AddPlugin(description) is null) return;
@@ -560,7 +581,7 @@ internal sealed class MainWindow
         Table.InvalidateVisual();
         Tabs.SelectedIndex = 1;
         _graph.Editor.Focus();
-        StatusBar.ShowMessage(L.T($"{description.Name} added to the graph: double-click it to open its window.", $"{description.Name} ajouté au graphe : double-cliquez dessus pour ouvrir sa fenêtre."), 6.0);
+        Report(L.T($"{description.Name} added to the graph: double-click it to open its window.", $"{description.Name} ajouté au graphe : double-cliquez dessus pour ouvrir sa fenêtre."), 6.0);
     }
 
     // ---------------------------------------------------------------- graph files
@@ -593,7 +614,7 @@ internal sealed class MainWindow
         }
         if (!_graph.Save(path)) return false;
         _settings.Value.GraphFile = path;
-        StatusBar.ShowMessage(L.T("Graph saved: ", "Graphe enregistré : ") + path, 6.0);
+        Report(L.T("Graph saved: ", "Graphe enregistré : ") + path, 6.0);
         return true;
     }
 
@@ -642,7 +663,7 @@ internal sealed class MainWindow
         SaveHostSettings();
         SaveCatalog();
         Refresh();
-        StatusBar.ShowMessage(L.T($"{modules.Count} module(s) ignored (remove them from IgnoredModules in settings.json to scan them again)",
+        Report(L.T($"{modules.Count} module(s) ignored (remove them from IgnoredModules in settings.json to scan them again)",
             $"{modules.Count} module(s) ignoré(s) (retirez-les de IgnoredModules dans settings.json pour les rechercher à nouveau)"), 8.0);
     }
 
@@ -714,11 +735,12 @@ internal sealed class MainWindow
         Host.InvalidateLayout();
         if (task.IsCanceled || task.Exception?.InnerException is OperationCanceledException)
         {
-            StatusBar.ShowMessage(L.T("Scan stopped; the list is unchanged.", "Recherche arrêtée ; la liste est inchangée."));
+            Report(L.T("Scan stopped; the list is unchanged.", "Recherche arrêtée ; la liste est inchangée."));
             return;
         }
         if (task.Exception is { } error)
         {
+            _log.Error(L.T("Scan", "Recherche"), L.T("The scan failed: ", "La recherche a échoué : ") + error.InnerException?.Message);
             MessageDialog.Show(Window, _app.Name, L.T("The scan failed:\n", "La recherche a échoué :\n") + error.InnerException?.Message);
             return;
         }
@@ -733,7 +755,9 @@ internal sealed class MainWindow
         SaveCatalog();
         Refresh();
         var s = task.Result;
-        StatusBar.ShowMessage(L.T($"{s.Modules} modules: {s.Scanned} scanned, {s.Unchanged} unchanged, {s.Removed} plug-ins removed, {s.Failed} failed.",
+        foreach (var failed in work.Plugins.Where(p => p.Status == PluginStatus.Failed))
+            _log.Warning(L.T("Scan", "Recherche"), $"{failed.Name} ({failed.Path}): " + (failed.Error ?? L.T("could not be loaded", "n'a pas pu être chargé")));
+        Report(L.T($"{s.Modules} modules: {s.Scanned} scanned, {s.Unchanged} unchanged, {s.Removed} plug-ins removed, {s.Failed} failed.",
             $"{s.Modules} modules : {s.Scanned} ouverts, {s.Unchanged} inchangés, {s.Removed} plug-ins retirés, {s.Failed} en échec."), 10.0);
     }
 
@@ -775,7 +799,7 @@ internal sealed class MainWindow
         }
         catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or DllNotFoundException or EntryPointNotFoundException)
         {
-            StatusBar.ShowMessage(ex.Message, 8.0);
+            Report(ex.Message, 8.0, LogLevel.Error);
         }
         try
         {
@@ -783,7 +807,7 @@ internal sealed class MainWindow
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
         {
-            StatusBar.ShowMessage(ex.Message, 8.0);
+            Report(ex.Message, 8.0, LogLevel.Error);
         }
         List<AsioDriverInfo> asioDrivers = [];
         try
@@ -792,7 +816,7 @@ internal sealed class MainWindow
         }
         catch (Exception ex) when (ex is PlatformNotSupportedException or TypeInitializationException)
         {
-            StatusBar.ShowMessage(ex.Message, 8.0);
+            Report(ex.Message, 8.0, LogLevel.Error);
         }
         static string Describe(AudioEndpoint e) => $"{e.Name} ({e.Channels} ch, {e.SampleRate / 1000.0:0.#} kHz)";
 
@@ -825,7 +849,7 @@ internal sealed class MainWindow
         {
             string? name = asioDrivers.Count > 0 ? asioDrivers[Math.Max(0, asio.SelectedIndex)].Name : null;
             if (name is null || !_audio.ShowAsioControlPanel(name))
-                StatusBar.ShowMessage(L.T("Choose this driver and click OK first: its control panel opens while it runs.",
+                Report(L.T("Choose this driver and click OK first: its control panel opens while it runs.",
                     "Choisissez ce pilote et cliquez sur OK d'abord : son panneau s'ouvre pendant qu'il fonctionne."), 8.0);
         })
         {
@@ -855,7 +879,7 @@ internal sealed class MainWindow
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
         {
-            StatusBar.ShowMessage(ex.Message, 8.0);
+            Report(ex.Message, 8.0, LogLevel.Error);
         }
         var midiOutNames = new List<string?> { null };
         midiOutNames.AddRange(outPorts.Select(p => (string?)p.Name));
@@ -938,7 +962,7 @@ internal sealed class MainWindow
             Host.Post(() =>
             {
                 _audio.Start(s);
-                StatusBar.ShowMessage(_audio.Describe(), 6.0);
+                Report(_audio.Describe(), 6.0);
             });
         };
         Host.ShowPopup(dialog);
@@ -1006,7 +1030,7 @@ internal sealed class MainWindow
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            StatusBar.ShowMessage(L.T("The plug-in list could not be saved: ", "La liste des plug-ins n'a pas pu être enregistrée : ") + ex.Message, 8.0);
+            Report(L.T("The plug-in list could not be saved: ", "La liste des plug-ins n'a pas pu être enregistrée : ") + ex.Message, 8.0, LogLevel.Error);
         }
     }
 
@@ -1019,7 +1043,7 @@ internal sealed class MainWindow
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            StatusBar.ShowMessage(L.T("The folders could not be saved: ", "Les dossiers n'ont pas pu être enregistrés : ") + ex.Message, 8.0);
+            Report(L.T("The folders could not be saved: ", "Les dossiers n'ont pas pu être enregistrés : ") + ex.Message, 8.0, LogLevel.Error);
         }
     }
 
@@ -1045,6 +1069,19 @@ internal sealed class MainWindow
     }
 
     // ---------------------------------------------------------------- helpers
+
+    /// <summary>Shows a message in the status bar and writes it in the log.</summary>
+    private void Report(string text, double seconds = 4.0, LogLevel level = LogLevel.Info, string? source = null)
+    {
+        _log.Add(level, source ?? L.T("Host", "Hôte"), text);
+        StatusBar.ShowMessage(text, seconds);
+    }
+
+    private string LogHeader()
+    {
+        int problems = _log.Count(LogLevel.Warning) + _log.Count(LogLevel.Error);
+        return L.T("Log", "Journal") + (problems > 0 ? $" ({problems})" : string.Empty);
+    }
 
     private DropDown Choice(string[] items, int selected, Action<int> changed, float width)
     {

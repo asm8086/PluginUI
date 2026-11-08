@@ -1,4 +1,4 @@
-// 2026/11/08 13:07:00 UTC - PluginUI
+// 2026/11/08 13:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -160,6 +160,7 @@ internal static class Snapshots
         main.Graph.Sync();
         main.Graph.SnapToConnectors();
         main.Graph.Editor.ZoomToFit();
+        main.Graph.OutputMeter.SetLevels(0.42f, 0.38f);
         var compressor = main.Graph.Graph.Nodes.First(n => n.DisplayTitle == "Glass Compressor");
         main.Graph.Editor.Select(main.Graph.Editor.Nodes.Where(n => ReferenceEquals(n.Tag, compressor)));
         Settle(host);
@@ -172,6 +173,18 @@ internal static class Snapshots
         Settle(host);
         host.RenderToPng(Path.Combine(dir, "pluginhost-graph-menu" + suffix + ".png"), 1f);
         host.CloseAllPopups();
+
+        // The log, with what a session writes there.
+        main.Log.Info("Glass Compressor", L.T(@"Loaded (C:\Program Files\Common Files\VST3\Example Audio\Glass Compressor.vst3), latency 64 samples",
+            @"Chargé (C:\Program Files\Common Files\VST3\Example Audio\Glass Compressor.vst3), latence 64 échantillons"));
+        main.Log.Info("Felt Piano", L.T(@"Loaded (C:\Program Files\Common Files\VST3\Woodworks\Felt Piano.vst3)", @"Chargé (C:\Program Files\Common Files\VST3\Woodworks\Felt Piano.vst3)"));
+        main.Log.Error("Old Tape", L.T(@"Could not be loaded (C:\Program Files\Common Files\VST3\Old Tape.vst3): the module could not be loaded",
+            @"N'a pas pu être chargé (C:\Program Files\Common Files\VST3\Old Tape.vst3) : le module n'a pas pu être chargé"));
+        main.Log.Warning(L.T("Graph", "Graphe"), L.T("Plug-in 'Glass Delay': its saved settings could not be restored; it starts with its default settings.",
+            "Plug-in « Glass Delay » : ses réglages enregistrés n'ont pas pu être restaurés ; il démarre avec ses réglages par défaut."));
+        main.Tabs.SelectedIndex = 2;
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-log" + suffix + ".png"), 1f);
 
         // Windows of modules, rendered alone (no window is created).
         foreach (var (module, name) in new (GraphNode, string)[] { (main.Graph.Graph.Nodes.OfType<GainNode>().First(), "pluginhost-gain"), (new KeyboardNode(), "pluginhost-keyboard") })

@@ -1,4 +1,4 @@
-// 2026/11/08 13:07:00 UTC - PluginUI
+// 2026/11/08 13:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -84,8 +84,8 @@ internal sealed class GraphView : ITickable
         _info = new Label { TextSource = InfoText, IsDim = true, VerticalAlignment = VerticalAlignment.Center };
         OutputMeter = new LevelMeter
         {
-            Orientation = Orientation.Horizontal, ChannelCount = 2, Width = 150f, Height = 14f, ShowScale = false, MinDb = -60f, Dock = Side.Right,
-            VerticalAlignment = VerticalAlignment.Center, ToolTip = L.T("Output level of the audio device", "Niveau de sortie du périphérique audio"),
+            Orientation = Orientation.Horizontal, ChannelCount = 2, Width = 204f, Height = 14f, ShowScale = false, MinDb = -60f, Dock = Side.Right, ShowPeakValue = true,
+            VerticalAlignment = VerticalAlignment.Center, ToolTip = L.T("Output level of the audio device; on the right the highest peak (click to clear)", "Niveau de sortie du périphérique audio ; à droite la crête la plus haute (clic pour effacer)"),
         };
         var bar = new DockPanel { Dock = Side.Top, Height = 40f, Padding = new Thickness(10f, 7f, 10f, 7f) };
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8f, Dock = Side.Left };
@@ -121,8 +121,13 @@ internal sealed class GraphView : ITickable
     /// <summary>Changed since it was opened or saved.</summary>
     public bool IsModified { get; private set; }
 
-    /// <summary>A message for the status bar.</summary>
+    /// <summary>A message for the status bar (the main window also writes it in the log).</summary>
     public event Action<string>? Message;
+
+    /// <summary>The log of the session: plug-ins loaded or refused, graph files.</summary>
+    public HostLog? Log { get; set; }
+
+    private static string Source => L.T("Graph", "Graphe");
 
     /// <summary>Asks to show the plug-in list (to add a plug-in).</summary>
     public event Action? PluginListRequested;
@@ -349,6 +354,7 @@ internal sealed class GraphView : ITickable
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
+            Log?.Error(description.Name, L.T($"Could not be opened ({description.Path}): {ex.Message}", $"N'a pas pu être ouvert ({description.Path}) : {ex.Message}"));
             MessageDialog.Show(_window, _window.Title, L.T($"{description.Name} could not be opened:\n{ex.Message}", $"{description.Name} n'a pas pu être ouvert :\n{ex.Message}"));
             return null;
         }
@@ -362,9 +368,11 @@ internal sealed class GraphView : ITickable
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             instance.Dispose();
+            Log?.Error(description.Name, L.T($"Could not be started: {ex.Message}", $"N'a pas pu démarrer : {ex.Message}"));
             MessageDialog.Show(_window, _window.Title, L.T($"{description.Name} could not be started:\n{ex.Message}", $"{description.Name} n'a pas pu démarrer :\n{ex.Message}"));
             return null;
         }
+        Log?.Info(description.Name, L.T($"Loaded ({description.Path})", $"Chargé ({description.Path})") + LatencyText(node));
         // The usual connections: notes from the MIDI input, sound to a free output.
         if (node.FindInput("midi-in") is { } midiIn && Graph.Nodes.OfType<MidiInputNode>().FirstOrDefault() is { } port)
             Graph.Connect(port.Outputs[0], midiIn);
@@ -525,6 +533,7 @@ internal sealed class GraphView : ITickable
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
+            Log?.Error(node.DisplayTitle, L.T($"Its window could not be opened: {ex.Message}", $"Sa fenêtre n'a pas pu s'ouvrir : {ex.Message}"));
             MessageDialog.Show(_window, _window.Title, L.T($"The window of {node.DisplayTitle} could not be opened:\n{ex.Message}", $"La fenêtre de {node.DisplayTitle} n'a pas pu s'ouvrir :\n{ex.Message}"));
             return;
         }
@@ -704,6 +713,15 @@ internal sealed class GraphView : ITickable
         IsModified = false;
         Sync();
         Editor.ZoomToFit();
+        Log?.Info(Source, (remember ? L.T("Opened: ", "Ouvert : ") : L.T("Graph of the last session restored: ", "Graphe de la dernière session restauré : ")) + path);
+        foreach (var node in Graph.Nodes)
+        {
+            if (node is PluginNode plugin)
+                Log?.Info(node.DisplayTitle, L.T($"Loaded ({plugin.Reference.Path})", $"Chargé ({plugin.Reference.Path})") + LatencyText(plugin));
+            else if (node is MissingPluginNode missing)
+                Log?.Error(node.DisplayTitle, L.T($"Could not be loaded ({missing.Reference?.Path}): {missing.Reason}", $"N'a pas pu être chargé ({missing.Reference?.Path}) : {missing.Reason}"));
+        }
+        foreach (var warning in warnings.Where(w => !w.Contains("could not be loaded", StringComparison.Ordinal))) Log?.Warning(Source, warning);
         if (warnings.Count > 0)
         {
             MessageDialog.Show(_window, _window.Title, L.T("Some parts of the graph could not be restored:\n\n", "Certaines parties du graphe n'ont pas pu être restaurées :\n\n")
@@ -711,6 +729,10 @@ internal sealed class GraphView : ITickable
         }
         return true;
     }
+
+    private static string LatencyText(PluginNode node) => node.Plugin.LatencySamples > 0
+        ? L.T($", latency {node.Plugin.LatencySamples} samples", $", latence {node.Plugin.LatencySamples} échantillons")
+        : string.Empty;
 
     /// <summary>Saves the graph (with the plug-in states).</summary>
     public bool Save(string path, bool remember = true)

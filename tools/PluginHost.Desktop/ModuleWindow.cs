@@ -1,4 +1,4 @@
-// 2026/11/08 12:57:00 UTC - PluginUI
+// 2026/11/08 13:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -134,7 +134,7 @@ internal sealed class ModuleWindow : ITickable
             meter = new LevelMeter
             {
                 Orientation = Orientation.Horizontal, ChannelCount = Math.Clamp(node.Meter.ChannelCount, 1, 16), Height = Math.Min(24f, 6f * node.Meter.ChannelCount + 4f),
-                ShowScale = false, MinDb = -60f, Dock = Side.Bottom, Margin = new Thickness(0f, 10f, 0f, 0f),
+                ShowScale = false, MinDb = -60f, Dock = Side.Bottom, Margin = new Thickness(0f, 10f, 0f, 0f), ShowPeakValue = true,
                 ToolTip = node is AudioOutputNode or DemuxNode ? L.T("Level arriving at the module", "Niveau qui arrive au module") : L.T("Output level of the module", "Niveau de sortie du module"),
             };
             root.Children.Add(meter);

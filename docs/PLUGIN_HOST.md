@@ -1,4 +1,4 @@
-<!-- 2026/11/08 13:07:00 UTC - PluginUI -->
+<!-- 2026/11/08 13:55:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -232,8 +232,9 @@ compensated; responses are measured directly; one executable, no Python installa
 
 **Plug-in Host** (`tools/PluginHost.Desktop`, `PluginHost.exe`) is the same host with a window, built with PluginUI. It
 shares the plug-in folders, the plug-in list and the graph files with `pluginhost`: a scan made by one is seen by the
-other, a graph saved here is rendered there (`pluginhost graph`). It has two tabs: **Plug-ins**, the list of the
-installed plug-ins, and **Graph**, the modules that play and their cables (Ctrl+1, Ctrl+2).
+other, a graph saved here is rendered there (`pluginhost graph`). It has three tabs: **Plug-ins**, the list of the
+installed plug-ins, **Graph**, the modules that play and their cables, and **Log**, the messages of the session
+(Ctrl+1, Ctrl+2, Ctrl+3).
 
 ```
 dotnet run --project tools/PluginHost.Desktop                                    # IL, with the debugger
@@ -270,7 +271,7 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   - MIDI input port, MIDI output port.
 
   The status bar shows the device, its sample rate and its buffer; the meter at the right of the graph's bar shows the
-  output level.
+  output level, and beside it the highest peak in dB since it was last clicked.
 
 ![Audio and MIDI](images/pluginhost-audio.png)
 
@@ -314,22 +315,36 @@ window open or not.
 - **Menu of a module** (right click, Shift+F10): open, bypass and mute (plug-ins), rename, **Connect**
   (every compatible input, for the keyboard and screen readers), **Disconnect**, remove (Delete; the settings of a
   plug-in are lost, so the host asks first).
-- **View**: scroll bars when the graph is larger than the view; the wheel scrolls (Shift+wheel sideways), Ctrl+wheel
-  zooms around the mouse, the middle button (or Alt+drag) pans, **Show all** (Home) fits the graph.
-  Modules move on a grid that holds their first connector (Shift = free), so the cables between aligned modules are
-  straight; drag on an empty place to select several, Ctrl+click to add one. Ctrl+Left / Ctrl+Right select the
+- **View**: scroll bars when the graph is larger than the view, and then dragging an empty place moves the view; the
+  wheel scrolls (Shift+wheel sideways), Ctrl+wheel zooms around the mouse, the middle button (or Alt+drag) pans,
+  **Show all** (Home) fits the graph. Modules move on a grid that holds their first connector (Shift = free), so the
+  cables between aligned modules are straight; drag on an empty place to select several (Shift+drag when the scroll
+  bars are shown), Ctrl+click to add one. Ctrl+Left / Ctrl+Right select the
   previous or next module, the arrows move the selection.
 - **Graph files** (File menu): **New graph** (Ctrl+N: an audio input, a MIDI input and an audio output), **Open a
   graph** (Ctrl+Shift+O), **Save the graph** (Ctrl+S), **Save the graph as** (Ctrl+Shift+S). A `.pluginui-graph` file
   keeps the modules, their places, the cables and the state of each plug-in. A plug-in that cannot be found when a
-  graph is opened stays as a **missing** module: silent, with its cables and its state, saved back unchanged. The graph
-  as it was when the host closed comes back at the next start.
+  graph is opened stays as a **missing** module: silent, with its cables and its state, saved back unchanged; the reason
+  is in its tooltip, in its window (double-click) and in the log. A plug-in that loads but refuses its saved state
+  stays loaded with its default settings, and the log says so. The graph as it was when the host closed comes back at
+  the next start.
 
 ![Menu of a module](images/pluginhost-graph-menu.png)
 
 ![Window of a gain module](images/pluginhost-gain.png)
 
 ![Window of a keyboard module](images/pluginhost-keyboard.png)
+
+### The log
+
+![The log](images/pluginhost-log.png)
+
+The **Log** tab lists the messages of the session, with their time, level and source: the start, the audio device,
+each plug-in loaded (with its file and its latency) or refused (with the reason), the graph files opened and saved,
+what could not be restored, the plug-ins a scan could not load. The messages of the status bar go there too, so none
+is lost when it fades. The list shows everything, the warnings and errors, or the errors only; **Copy all** puts the
+messages shown in the clipboard (time, level, source, message, separated by tabs), to paste them in a mail or a bug
+report; the right click copies the selected rows. The title of the tab counts the warnings and errors.
 
 ### Plug-in windows
 

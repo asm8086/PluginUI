@@ -56,6 +56,9 @@ Before 1.0, minor versions may contain breaking changes.
   Graph files (New, Open, Save, Save as), the session's graph restored at start, a Graph menu (add a module, rename,
   loop delay), module menus with Connect / Disconnect for the keyboard and screen readers. A plug-in window no longer
   chooses a source or a MIDI destination: cables do. Closing a plug-in window keeps the plug-in playing.
+  A third tab, **Log**, keeps the messages of the session (start, audio device, plug-ins loaded with their file and
+  latency or refused with the reason, graph files, scan failures, the status bar's messages), filtered by level and
+  copied to the clipboard. The output meters show the highest peak in dB.
 - `PluginUI.NPlug` now requires `NPlug` 0.7.0 (VST 3 SDK 3.8.1: host transport requests, MIDI 2.0 orchestral
   articulation information and note expression identifiers, "randomize around current" parameter function), with
   `NPlug.Validator` 1.4.2 for the tests and the validation tool.

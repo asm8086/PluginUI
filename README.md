@@ -253,7 +253,8 @@ channels, latency, installation date, recent and frequent use, favorites…), th
 their progress, the plug-in folders, and a **modular graph**: plug-ins, audio and MIDI inputs and outputs, test
 signals, files, keyboards, gains, sums, muxers joined by cables (loops allowed, latency-aligned sums), played live
 through ASIO or WASAPI and saved as graph files that `pluginhost graph` renders offline. Each plug-in module opens its
-own editor or a generic parameter table, with presets. It shares the folders and the plug-in list with `pluginhost`.
+own editor or a generic parameter table, with presets; a log keeps the messages of the session (plug-ins loaded or
+refused, graph files, audio device). It shares the folders and the plug-in list with `pluginhost`.
 
 ![Plug-in Host](docs/images/pluginhost-graph.png)
 

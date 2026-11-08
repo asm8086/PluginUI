@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -39,8 +39,8 @@ internal sealed class AudioEngine : IDisposable
     /// <summary>The open MIDI output port changed (UI thread).</summary>
     public event Action? MidiOutputChanged;
 
-    /// <summary>A message for the status bar (device failed, MIDI port busy…), raised on the UI thread.</summary>
-    public event Action<string>? Message;
+    /// <summary>A message for the status bar and the log (device failed, MIDI port busy…), raised on the UI thread.</summary>
+    public event Action<string, LogLevel>? Message;
 
     /// <summary>The device or its format changed (raised on the UI thread).</summary>
     public event Action? Changed;
@@ -83,7 +83,7 @@ internal sealed class AudioEngine : IDisposable
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or System.Runtime.InteropServices.COMException or DllNotFoundException or EntryPointNotFoundException)
         {
             driver?.Dispose();
-            Message?.Invoke(L.T("The audio device could not be opened: ", "Le périphérique audio n'a pas pu être ouvert : ") + ex.Message);
+            Message?.Invoke(L.T("The audio device could not be opened: ", "Le périphérique audio n'a pas pu être ouvert : ") + ex.Message, LogLevel.Error);
             driver = new NullAudioDriver();
             driver.Start(Graph);
         }
@@ -92,13 +92,13 @@ internal sealed class AudioEngine : IDisposable
             // The ASIO control panel changed the buffer or the sample rate: start again with them.
             if (!ReferenceEquals(d, Driver) || _settings is null) return;
             StartDriver(_settings);
-            Message?.Invoke(L.T("The audio device was restarted: ", "Le périphérique audio a été redémarré : ") + Describe());
+            Message?.Invoke(L.T("The audio device was restarted: ", "Le périphérique audio a été redémarré : ") + Describe(), LogLevel.Info);
             Changed?.Invoke();
         });
         driver.Failed += (d, message) => _host.Post(() =>
         {
             if (!ReferenceEquals(d, Driver)) return;
-            Message?.Invoke(L.T("The audio device stopped: ", "Le périphérique audio s'est arrêté : ") + message);
+            Message?.Invoke(L.T("The audio device stopped: ", "Le périphérique audio s'est arrêté : ") + message, LogLevel.Error);
             Driver.Dispose();
             Driver = new NullAudioDriver();
             Driver.Start(Graph);
@@ -117,7 +117,7 @@ internal sealed class AudioEngine : IDisposable
         }
         catch (InvalidOperationException ex)
         {
-            Message?.Invoke(ex.Message);
+            Message?.Invoke(ex.Message, LogLevel.Error);
         }
         return true;
     }
@@ -132,14 +132,14 @@ internal sealed class AudioEngine : IDisposable
             var port = MidiInput.Ports.FirstOrDefault(p => p.Name == name);
             if (port is null)
             {
-                Message?.Invoke(L.T($"The MIDI port '{name}' is not connected.", $"Le port MIDI « {name} » n'est pas branché."));
+                Message?.Invoke(L.T($"The MIDI port '{name}' is not connected.", $"Le port MIDI « {name} » n'est pas branché."), LogLevel.Warning);
                 return;
             }
             _midi = MidiInput.Open(port, Route);
         }
         catch (Exception ex) when (ex is InvalidOperationException or DllNotFoundException or EntryPointNotFoundException)
         {
-            Message?.Invoke(ex.Message);
+            Message?.Invoke(ex.Message, LogLevel.Error);
         }
     }
 
@@ -157,7 +157,7 @@ internal sealed class AudioEngine : IDisposable
             var port = MidiOutput.Ports.FirstOrDefault(p => p.Name == name);
             if (port is null)
             {
-                Message?.Invoke(L.T($"The MIDI port '{name}' is not connected.", $"Le port MIDI « {name} » n'est pas branché."));
+                Message?.Invoke(L.T($"The MIDI port '{name}' is not connected.", $"Le port MIDI « {name} » n'est pas branché."), LogLevel.Warning);
                 return;
             }
             _midiOut = MidiOutput.Open(port);
@@ -166,7 +166,7 @@ internal sealed class AudioEngine : IDisposable
         }
         catch (Exception ex) when (ex is InvalidOperationException or DllNotFoundException or EntryPointNotFoundException)
         {
-            Message?.Invoke(ex.Message);
+            Message?.Invoke(ex.Message, LogLevel.Error);
         }
     }
 

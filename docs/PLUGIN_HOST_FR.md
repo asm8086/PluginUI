@@ -1,4 +1,4 @@
-<!-- 2026/11/08 13:07:00 UTC - PluginUI -->
+<!-- 2026/11/08 13:55:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -241,8 +241,9 @@ installation de Python.
 
 **Plug-in Host** (`tools/PluginHost.Desktop`, `PluginHost.exe`) est le même hôte avec une fenêtre, construit avec
 PluginUI. Il partage les dossiers, la liste des plug-ins et les fichiers de graphe avec `pluginhost` : une recherche
-faite par l'un est vue par l'autre, un graphe enregistré ici se rend là-bas (`pluginhost graph`). Il a deux onglets :
-**Plug-ins**, la liste des plug-ins installés, et **Graphe**, les modules qui jouent et leurs câbles (Ctrl+1, Ctrl+2).
+faite par l'un est vue par l'autre, un graphe enregistré ici se rend là-bas (`pluginhost graph`). Il a trois onglets :
+**Plug-ins**, la liste des plug-ins installés, **Graphe**, les modules qui jouent et leurs câbles, et **Journal**, les
+messages de la session (Ctrl+1, Ctrl+2, Ctrl+3).
 
 ```
 dotnet run --project tools/PluginHost.Desktop                                    # IL, avec le débogueur
@@ -282,7 +283,7 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   - ports d'entrée et de sortie MIDI.
 
   La barre d'état indique le périphérique, sa fréquence d'échantillonnage et son tampon ; l'indicateur à droite de la
-  barre du graphe montre le niveau de sortie.
+  barre du graphe montre le niveau de sortie et, à côté, la crête la plus haute en dB depuis le dernier clic dessus.
 
 ![Audio et MIDI](images/fr/pluginhost-audio.png)
 
@@ -329,23 +330,38 @@ est dans le graphe, que sa fenêtre soit ouverte ou non.
 - **Menu d'un module** (clic droit, Maj+F10) : ouvrir, contourner et muet (plug-ins), renommer,
   **Relier** (toutes les entrées compatibles, pour le clavier et les lecteurs d'écran), **Débrancher**, supprimer
   (Suppr ; les réglages d'un plug-in sont perdus, l'hôte demande donc confirmation).
-- **Vue** : barres de défilement quand le graphe dépasse la vue ; la molette fait défiler (Maj+molette de côté),
-  Ctrl+molette zoome autour de la souris, le bouton du milieu (ou Alt+glisser) déplace la vue, **Tout afficher**
-  (Origine) ajuste le graphe. Les modules se déplacent sur une grille qui tient leur premier connecteur
-  (Maj = librement), si bien que les câbles entre modules alignés sont droits ; glissez sur un endroit vide pour en
-  sélectionner plusieurs, Ctrl+clic pour en ajouter un. Ctrl+Gauche / Ctrl+Droite sélectionnent le
+- **Vue** : barres de défilement quand le graphe dépasse la vue, et glisser sur un endroit vide déplace alors la vue ;
+  la molette fait défiler (Maj+molette de côté), Ctrl+molette zoome autour de la souris, le bouton du milieu (ou
+  Alt+glisser) déplace la vue, **Tout afficher** (Origine) ajuste le graphe. Les modules se déplacent sur une grille qui
+  tient leur premier connecteur (Maj = librement), si bien que les câbles entre modules alignés sont droits ; glissez
+  sur un endroit vide pour en sélectionner plusieurs (Maj+glisser quand les barres de défilement sont affichées),
+  Ctrl+clic pour en ajouter un. Ctrl+Gauche / Ctrl+Droite sélectionnent le
   module précédent ou suivant, les flèches déplacent la sélection.
 - **Fichiers de graphe** (menu Fichier) : **Nouveau graphe** (Ctrl+N : une entrée audio, une entrée MIDI et une sortie
   audio), **Ouvrir un graphe** (Ctrl+Maj+O), **Enregistrer le graphe** (Ctrl+S), **Enregistrer le graphe sous**
   (Ctrl+Maj+S). Un fichier `.pluginui-graph` garde les modules, leur place, les câbles et l'état de chaque plug-in. Un
   plug-in introuvable à l'ouverture d'un graphe reste comme module **absent** : muet, avec ses câbles et son état,
-  réenregistré tel quel. Le graphe tel qu'il était à la fermeture de l'hôte revient au lancement suivant.
+  réenregistré tel quel ; la raison est dans son info-bulle, dans sa fenêtre (double-clic) et dans le journal. Un plug-in
+  qui se charge mais refuse son état enregistré reste chargé avec ses réglages par défaut, et le journal le signale. Le
+  graphe tel qu'il était à la fermeture de l'hôte revient au lancement suivant.
 
 ![Menu d'un module](images/fr/pluginhost-graph-menu.png)
 
 ![Fenêtre d'un module de gain](images/fr/pluginhost-gain.png)
 
 ![Fenêtre d'un module clavier](images/fr/pluginhost-keyboard.png)
+
+### Le journal
+
+![Le journal](images/fr/pluginhost-log.png)
+
+L'onglet **Journal** liste les messages de la session, avec leur heure, leur niveau et leur source : le démarrage, le
+périphérique audio, chaque plug-in chargé (avec son fichier et sa latence) ou refusé (avec la raison), les fichiers de
+graphe ouverts et enregistrés, ce qui n'a pas pu être restauré, les plug-ins qu'une recherche n'a pas pu charger. Les
+messages de la barre d'état y vont aussi : aucun ne se perd quand il s'efface. La liste montre tout, les avertissements
+et erreurs, ou les erreurs seules ; **Tout copier** met les messages affichés dans le presse-papiers (heure, niveau,
+source, message, séparés par des tabulations), pour les coller dans un courriel ou un rapport de bogue ; le clic droit
+copie les lignes choisies. Le titre de l'onglet compte les avertissements et les erreurs.
 
 ### Fenêtres des plug-ins
 

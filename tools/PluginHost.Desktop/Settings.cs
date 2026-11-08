@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -66,7 +66,7 @@ internal sealed class GuiSettings
     /// <summary>The graph file being edited (null = never saved under a name; the session graph is restored anyway).</summary>
     public string? GraphFile { get; set; }
 
-    /// <summary>Tab shown at start: 0 the plug-in list, 1 the graph.</summary>
+    /// <summary>Tab shown at start: 0 the plug-in list, 1 the graph, 2 the log.</summary>
     public int Tab { get; set; }
 }
 

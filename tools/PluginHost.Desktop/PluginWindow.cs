@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -106,7 +106,7 @@ internal sealed class PluginWindow : ITickable
         bool playable = plugin.EventInputCount > 0 && (plugin.IsInstrument || !plugin.InputBuses.Any(b => !b.IsAuxiliary && b.ChannelCount > 0));
         _meter = new LevelMeter
         {
-            Orientation = Orientation.Horizontal, ChannelCount = Math.Clamp(mainOutputs, 1, 16), Width = 170f, Height = Math.Min(26f, 6f * Math.Clamp(mainOutputs, 1, 16) + 4f),
+            Orientation = Orientation.Horizontal, ChannelCount = Math.Clamp(mainOutputs, 1, 16), Width = 224f, ShowPeakValue = true, Height = Math.Min(26f, 6f * Math.Clamp(mainOutputs, 1, 16) + 4f),
             ShowScale = false, Dock = Side.Right, VerticalAlignment = VerticalAlignment.Center, MinDb = -60f,
         };
         var transport = new DockPanel { Dock = Side.Bottom, Height = TransportHeight, Padding = new Thickness(8f, 7f, 8f, 7f) };
