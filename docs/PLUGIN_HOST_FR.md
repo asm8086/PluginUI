@@ -1,4 +1,4 @@
-<!-- 2026/11/08 13:46:00 UTC - PluginUI -->
+<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -244,6 +244,10 @@ PluginUI. Il partage les dossiers, la liste des plug-ins et les fichiers de grap
 faite par l'un est vue par l'autre, un graphe enregistré ici se rend là-bas (`pluginhost graph`). Il a trois onglets :
 **Plug-ins**, la liste des plug-ins installés, **Graphe**, les modules qui jouent et leurs câbles, et **Journal**, les
 messages de la session (Ctrl+1, Ctrl+2, Ctrl+3).
+
+Le **manuel d'utilisation** de Plug-in Host — un tutoriel, chaque fenêtre, les raccourcis clavier et le dépannage — existe
+en page web ([français](manual/fr/index.html), [English](manual/en/index.html)) et en PDF
+([français](manual/fr/PluginHost-Manuel-fr.pdf), [English](manual/en/PluginHost-Manual-en.pdf)).
 
 ```
 dotnet run --project tools/PluginHost.Desktop                                    # IL, avec le débogueur

@@ -1,4 +1,4 @@
-<!-- 2026/11/08 13:46:00 UTC - PluginUI -->
+<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -258,7 +258,8 @@ refused, graph files, audio device). It shares the folders and the plug-in list 
 
 ![Plug-in Host](docs/images/pluginhost-graph.png)
 
-Both hosts load VST3 and VST 2 plug-ins. Guide: [docs/PLUGIN_HOST.md](docs/PLUGIN_HOST.md).
+Both hosts load VST3 and VST 2 plug-ins. Guide: [docs/PLUGIN_HOST.md](docs/PLUGIN_HOST.md). User manual of Plug-in Host:
+[web page](docs/manual/en/index.html), [PDF](docs/manual/en/PluginHost-Manual-en.pdf).
 
 ## Concepts
 

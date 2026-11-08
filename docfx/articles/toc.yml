@@ -1,4 +1,4 @@
-# 2026/11/06 12:53:00 UTC - PluginUI
+# 2026/11/08 15:20:00 UTC - PluginUI
 - name: Overview
   href: ../../README.md
 - name: Getting started
@@ -13,6 +13,8 @@
   href: ../../docs/DESKTOP.md
 - name: Plug-in host (PluginUI.Host, pluginhost, Plug-in Host)
   href: ../../docs/PLUGIN_HOST.md
+- name: Plug-in Host user manual (HTML, PDF)
+  href: ../../docs/manual/en/index.html
 - name: Accessibility (screen readers, high contrast)
   href: ../../docs/ACCESSIBILITY.md
 - name: Sample instrument (DemoSynth)

@@ -1,4 +1,4 @@
-<!-- 2026/11/08 14:03:00 UTC - PluginUI -->
+<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -34,6 +34,10 @@ Before 1.0, minor versions may contain breaking changes.
   (English, French).
 - `LevelMeter.ShowPeakValue`: readout of the highest peak in dB (one decimal) at the end of the bars, kept until a
   click on the meter; `GetMaxLevel`, `MaxLevel`, `PeakValueText`, `ResetPeakValue`.
+- **Plug-in Host user manual** in English and French, as web pages (`docs/manual/en`, `docs/manual/fr`, published
+  with the documentation site) and as A4 PDF files: a tutorial, the main window, the plug-in list, scans, audio and
+  MIDI, the graph and its modules, plug-in windows, the log, the keyboard shortcuts, troubleshooting, files.
+  `docs/manual/build-pdf.py` prints the PDF files again from the web pages.
 
 ### Changed
 

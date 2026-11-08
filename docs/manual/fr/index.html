@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plug-in Host — Manuel d'utilisation</title>
+<meta name="description" content="Manuel d'utilisation de Plug-in Host, l'hôte VST3 et VST 2 modulaire de PluginUI : liste des plug-ins, graphe de modules, audio et MIDI, journal, raccourcis et dépannage.">
+<meta name="author" content="asm8086">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap">
+<link rel="stylesheet" href="../manual.css">
+</head>
+<body>
+<main>
+
+<section class="cover">
+  <div class="lang-switch"><a href="../en/index.html">English</a> · <a href="PluginHost-Manuel-fr.pdf">PDF</a></div>
+  <div class="kicker">PluginUI</div>
+  <h1>Plug-in Host</h1>
+  <p class="subtitle">Manuel d'utilisation de l'hôte VST3 et VST&nbsp;2 modulaire</p>
+  <img src="../../images/fr/pluginhost-graph.png" alt="Le graphe de modules de Plug-in Host">
+  <p class="meta">Version de développement postérieure à PluginUI 0.4.0 · 8 novembre 2026<br>
+  asm8086 — <a href="https://github.com/asm8086/PluginUI">github.com/asm8086/PluginUI</a> · Licence MIT</p>
+</section>
+
+<nav class="toc" aria-label="Sommaire">
+  <h2>Sommaire</h2>
+  <ol>
+    <li><a href="#presentation">Présentation</a></li>
+    <li><a href="#installation">Installation et premier lancement</a></li>
+    <li><a href="#prise-en-main">Prise en main : votre premier graphe</a></li>
+    <li><a href="#fenetre">La fenêtre principale</a></li>
+    <li><a href="#liste">La liste des plug-ins</a></li>
+    <li><a href="#recherche">Trouver les plug-ins installés</a></li>
+    <li><a href="#audio">Audio et MIDI</a></li>
+    <li><a href="#graphe">Le graphe</a></li>
+    <li><a href="#modules">Les modules et leurs réglages</a></li>
+    <li><a href="#fenetres-plugins">Les fenêtres des plug-ins</a></li>
+    <li><a href="#journal">Le journal</a></li>
+    <li><a href="#raccourcis">Raccourcis clavier</a></li>
+    <li><a href="#depannage">Dépannage</a></li>
+    <li><a href="#fichiers">Fichiers et ligne de commande</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================== 1 -->
+<h2 id="presentation"><span class="num">1</span>Présentation</h2>
+
+<p><strong>Plug-in Host</strong> est un hôte de plug-ins audio pour Windows. Il charge les plug-ins <strong>VST3</strong> et
+<strong>VST&nbsp;2</strong> installés sur l'ordinateur, les fait jouer en direct par la carte son (<strong>ASIO</strong> ou
+<strong>WASAPI</strong>) et les relie entre eux comme sur un rack modulaire : chaque plug-in, chaque entrée ou sortie, chaque
+générateur de signal est un <em>module</em>, et des <em>câbles</em> transportent l'audio et le MIDI d'un module à l'autre.</p>
+
+<p>Il sert à :</p>
+<ul>
+  <li>essayer un plug-in rapidement, sans ouvrir une station audio (STAN) ;</li>
+  <li>monter une chaîne d'effets ou un instrument pour jouer en direct, avec la latence la plus basse que permet la carte son ;</li>
+  <li>construire des traitements parallèles, multibandes ou avec des boucles de réinjection ;</li>
+  <li>tester ses propres plug-ins pendant leur développement (journal détaillé, état enregistré et restauré, latence affichée).</li>
+</ul>
+
+<p>La fenêtre a trois onglets :</p>
+<ul>
+  <li><strong>Plug-ins</strong> : la liste des plug-ins installés, avec recherche, filtres, tris et détails ;</li>
+  <li><strong>Graphe</strong> : les modules qui jouent et leurs câbles ;</li>
+  <li><strong>Journal</strong> : les messages de la session (plug-ins chargés ou refusés, fichiers, périphérique audio).</li>
+</ul>
+
+<p>Plug-in Host fait partie de <a href="https://github.com/asm8086/PluginUI">PluginUI</a>, une bibliothèque C# d'interfaces
+pour plug-ins audio. Il partage ses réglages, sa liste de plug-ins et ses fichiers de graphe avec <code>pluginhost</code>,
+l'hôte en ligne de commande (voir <a href="#fichiers">chapitre 14</a>).</p>
+
+<!-- ============================================================== 2 -->
+<h2 id="installation"><span class="num">2</span>Installation et premier lancement</h2>
+
+<h3>Configuration requise</h3>
+<ul>
+  <li>Windows 10 ou 11, 64 bits (x64 ou ARM64).</li>
+  <li>Une carte son : son pilote ASIO pour la latence la plus basse, sinon la carte son de Windows (WASAPI).</li>
+  <li>Des plug-ins VST3 ou VST&nbsp;2 64 bits. Les plug-ins 32 bits ne se chargent pas.</li>
+</ul>
+
+<h3>Depuis une version publiée</h3>
+<ol class="steps">
+  <li>Sur la page <a href="https://github.com/asm8086/PluginUI/releases">Releases</a> du projet, téléchargez
+  <code>PluginHost-&lt;version&gt;-win-x64.zip</code> (ou <code>…-win-arm64.zip</code> pour un PC ARM).</li>
+  <li>Décompressez l'archive dans un dossier de votre choix. Aucune installation ni aucun runtime .NET ne sont nécessaires :
+  <code>PluginHost.exe</code> est un programme natif.</li>
+  <li>Lancez <code>PluginHost.exe</code>. Si Windows SmartScreen affiche un avertissement (le programme n'est pas signé),
+  cliquez sur <strong>Informations complémentaires</strong> puis <strong>Exécuter quand même</strong>.</li>
+</ol>
+
+<h3>Depuis les sources</h3>
+<p>Avec le SDK .NET 10 et le dépôt cloné :</p>
+<pre><code># pour le débogage
+dotnet run --project tools/PluginHost.Desktop
+# un seul PluginHost.exe natif
+dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true</code></pre>
+<p>Dans Visual Studio, ouvrez la solution et lancez le projet <strong>PluginHost.Desktop</strong>.</p>
+
+<h3>Au premier lancement</h3>
+<p>La liste des plug-ins est vide : lancez une recherche avec <kbd>F5</kbd> (<a href="#recherche">chapitre 6</a>), puis
+choisissez votre carte son dans <strong>Fichier &gt; Audio et MIDI</strong> (<kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>A</kbd>,
+<a href="#audio">chapitre 7</a>). L'onglet Graphe contient déjà un graphe minimal : une entrée audio, une entrée MIDI et
+une sortie audio.</p>
+
+<div class="note"><p><span class="label">Langue.</span> L'interface suit la langue de Windows (français ou anglais).
+<strong>Affichage &gt; Langue</strong> la change ; elle s'applique au prochain lancement.</p></div>
+
+<!-- ============================================================== 3 -->
+<h2 id="prise-en-main"><span class="num">3</span>Prise en main : votre premier graphe</h2>
+
+<p>Ce tutoriel fait passer une guitare (ou un micro) branchée sur l'entrée 1 de la carte son dans un ampli virtuel puis
+dans un délai, et l'envoie sur les sorties 1 et 2. Remplacez les plug-ins par ceux que vous avez.</p>
+
+<ol class="steps">
+  <li><strong>Choisir la carte son.</strong> <strong>Fichier &gt; Audio et MIDI</strong> : choisissez <strong>ASIO</strong>
+  et le pilote de votre carte (ou <strong>WASAPI</strong> et vos périphériques), avec ses entrées, puis <strong>OK</strong>.
+  La barre d'état affiche le périphérique, sa fréquence et son tampon.</li>
+  <li><strong>Trouver les plug-ins.</strong> Appuyez sur <kbd>F5</kbd>. La progression s'affiche dans la barre d'état ; la
+  liste se remplit à la fin de la recherche.</li>
+  <li><strong>Repartir d'un graphe vierge.</strong> <strong>Fichier &gt; Nouveau graphe</strong> (<kbd>Ctrl</kbd>+<kbd>N</kbd>) :
+  une entrée audio, une entrée MIDI et une sortie audio.</li>
+  <li><strong>Ajouter l'ampli.</strong> Dans l'onglet <strong>Plug-ins</strong>, tapez son nom dans la zone de recherche
+  (<kbd>Ctrl</kbd>+<kbd>F</kbd>) et double-cliquez sur sa ligne. Il arrive dans le graphe, déjà relié à l'entrée MIDI et à la
+  sortie audio libre, et l'onglet <strong>Graphe</strong> s'affiche.</li>
+  <li><strong>Brancher l'entrée.</strong> Glissez du connecteur <em>Sortie</em> du module <strong>Entrée audio</strong> jusqu'au
+  connecteur d'entrée de l'ampli. Seuls les connecteurs compatibles s'allument pendant le glissement.</li>
+  <li><strong>Ajouter le délai.</strong> Revenez à la liste (<kbd>Ctrl</kbd>+<kbd>1</kbd>) et double-cliquez sur le délai.
+  Comme la sortie audio a déjà un câble, il arrive sans câble de sortie.</li>
+  <li><strong>Insérer le délai.</strong> Glissez de la sortie de l'ampli vers l'entrée du délai, puis de la sortie du délai
+  vers l'entrée de <strong>Sortie audio</strong> : le nouveau câble remplace l'ancien, car une entrée ne prend qu'un câble.</li>
+  <li><strong>Régler.</strong> Double-cliquez sur un plug-in pour ouvrir sa fenêtre (son interface, ses presets). Jouez :
+  l'indicateur à droite de la barre du graphe montre le niveau de sortie et la crête la plus haute en dB.</li>
+  <li><strong>Enregistrer.</strong> <strong>Fichier &gt; Enregistrer le graphe</strong> (<kbd>Ctrl</kbd>+<kbd>S</kbd>). Le
+  fichier <code>.pluginui-graph</code> garde les modules, les câbles et les réglages de chaque plug-in. Le graphe en cours
+  revient aussi tout seul au prochain lancement.</li>
+</ol>
+
+<div class="tip"><p><span class="label">Astuce.</span> Pour entendre l'ampli et le délai en parallèle plutôt qu'en série,
+ajoutez un module <strong>Somme audio</strong> (<strong>Ajouter un module</strong>), reliez les deux plug-ins à ses entrées et
+sa sortie à <strong>Sortie audio</strong>. Les signaux ne s'additionnent que dans une somme.</p></div>
+
+<!-- ============================================================== 4 -->
+<h2 id="fenetre"><span class="num">4</span>La fenêtre principale</h2>
+
+<figure>
+  <img src="../../images/fr/pluginhost-main.png" alt="La fenêtre principale et la liste des plug-ins">
+  <figcaption>La fenêtre principale, onglet Plug-ins, avec le volet des détails à droite.</figcaption>
+</figure>
+
+<h3>Les menus</h3>
+<div class="table-scroll"><table>
+  <tr><th>Menu</th><th>Contenu</th></tr>
+  <tr><td>Fichier</td><td class="wrap">Nouveau graphe, Ouvrir un graphe, Enregistrer le graphe, Enregistrer le graphe sous ;
+  Rechercher les nouveaux plug-ins, Tout rechercher à nouveau, Arrêter la recherche ; Dossiers de plug-ins ; Audio et MIDI ; Quitter.</td></tr>
+  <tr><td>Plug-in</td><td class="wrap">Ajouter au graphe, Favori, Afficher dans l'Explorateur, Copier le chemin, Ignorer le module.</td></tr>
+  <tr><td>Graphe</td><td class="wrap">Ajouter un module, Renommer le module, Retard des boucles.</td></tr>
+  <tr><td>Affichage</td><td class="wrap">Liste des plug-ins, Graphe, Journal ; Rechercher ; Volet des détails ; Plein écran ;
+  Colonnes ; Thème clair ; Langue.</td></tr>
+  <tr><td>Aide</td><td class="wrap">À propos (version et crédits).</td></tr>
+</table></div>
+
+<figure class="small">
+  <img src="../../images/fr/pluginhost-view.png" alt="Le menu Affichage">
+  <figcaption>Le menu Affichage.</figcaption>
+</figure>
+
+<h3>La barre d'outils</h3>
+<p>De gauche à droite : <strong>Rechercher les nouveaux plug-ins</strong>, <strong>Arrêter la recherche</strong>,
+<strong>Dossiers de plug-ins</strong> (roue dentée), <strong>Audio et MIDI</strong> (onde), <strong>Ajouter au graphe</strong>,
+<strong>Copier le chemin</strong>, <strong>Volet des détails</strong> et <strong>À propos</strong>. Survoler un bouton affiche
+son rôle et son raccourci.</p>
+
+<h3>La barre d'état</h3>
+<p>Elle montre la progression d'une recherche ou le dernier message, le nombre de plug-ins affichés (et en échec), le
+périphérique audio avec sa fréquence et son tampon, et la date de la dernière recherche. Ses messages s'effacent après
+quelques secondes, mais restent dans le <a href="#journal">journal</a>.</p>
+
+<h3>Thème, plein écran</h3>
+<p><strong>Affichage &gt; Thème clair</strong> (<kbd>Ctrl</kbd>+<kbd>T</kbd>) bascule entre le thème sombre et le thème clair.
+<strong>Plein écran</strong> (<kbd>F11</kbd>, <kbd>Échap</kbd> pour en sortir) donne tout l'écran à la fenêtre. L'onglet choisi, les colonnes, les filtres, le thème et la carte son sont retrouvés au lancement suivant.</p>
+
+<!-- ============================================================== 5 -->
+<h2 id="liste"><span class="num">5</span>La liste des plug-ins</h2>
+
+<h3>Rechercher et filtrer</h3>
+<p>La barre au-dessus de la liste réunit :</p>
+<ul>
+  <li>la <strong>zone de recherche</strong> (<kbd>Ctrl</kbd>+<kbd>F</kbd>) : nom, marque ou catégorie ;</li>
+  <li>le <strong>format</strong> : tous, VST3 ou VST2 ;</li>
+  <li>le <strong>type</strong> : instruments et effets, instruments seuls, effets seuls ;</li>
+  <li>le <strong>tri</strong> : nom, marque, catégorie, format, canaux d'entrée ou de sortie, latence, date d'installation,
+  utilisés récemment, les plus utilisés, favoris d'abord, dossier, état ;</li>
+  <li><strong>Favoris seulement</strong> et <strong>Afficher les échecs</strong> (les plug-ins que la recherche n'a pas pu
+  charger, en rouge).</li>
+</ul>
+
+<h3>Trier et choisir les colonnes</h3>
+<p>Un clic sur l'en-tête d'une colonne trie la liste ; un second clic inverse l'ordre. Un clic droit sur l'en-tête (ou
+<strong>Affichage &gt; Colonnes</strong>) affiche ou masque les colonnes : favori, nom, marque, type, catégories, format,
+entrées, sorties, sidechain, MIDI, latence, paramètres, éditeur, version, installé, utilisé le, utilisations, dossier, état.
+Glissez le bord d'un en-tête pour changer la largeur.</p>
+
+<figure class="small">
+  <img src="../../images/fr/pluginhost-columns.png" alt="Le menu des colonnes">
+  <figcaption>Le clic droit sur l'en-tête choisit les colonnes.</figcaption>
+</figure>
+
+<h3>Le volet des détails</h3>
+<p><strong>Affichage &gt; Volet des détails</strong> (<kbd>Ctrl</kbd>+<kbd>I</kbd>) affiche à droite tout ce qu'on sait du
+plug-in choisi : format et version du SDK, version, catégories, bus d'entrée et de sortie, entrée MIDI, latence (en
+échantillons et en millisecondes), nombre de paramètres, présence d'un éditeur, chemin du fichier, dates, nombre
+d'utilisations et, pour un plug-in en échec, la raison de l'échec.</p>
+
+<h3>Le menu Plug-in</h3>
+<p>Il s'ouvre aussi par un clic droit sur une ligne ou par la touche Menu du clavier :</p>
+<ul>
+  <li><strong>Ajouter au graphe</strong> (<kbd>Entrée</kbd>, double-clic, <kbd>Ctrl</kbd>+<kbd>O</kbd>) ;</li>
+  <li><strong>Favori</strong> (<kbd>Ctrl</kbd>+<kbd>D</kbd>) : une étoile marque les plug-ins que vous utilisez souvent ;</li>
+  <li><strong>Afficher dans l'Explorateur</strong> et <strong>Copier le chemin</strong> (<kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>C</kbd>) ;</li>
+  <li><strong>Ignorer le module</strong> : retire le fichier de la liste et des recherches suivantes (pour un plug-in qui pose
+  problème).</li>
+</ul>
+
+<!-- ============================================================== 6 -->
+<h2 id="recherche"><span class="num">6</span>Trouver les plug-ins installés</h2>
+
+<h3>Lancer une recherche</h3>
+<ul>
+  <li><strong>Rechercher les nouveaux plug-ins</strong> (<kbd>F5</kbd>) n'ouvre que les fichiers nouveaux ou modifiés depuis la
+  dernière recherche : c'est rapide.</li>
+  <li><strong>Tout rechercher à nouveau</strong> (<kbd>Maj</kbd>+<kbd>F5</kbd>) ouvre de nouveau tous les fichiers.</li>
+  <li><strong>Arrêter la recherche</strong> l'interrompt : la liste reste alors inchangée.</li>
+</ul>
+<p>Chaque fichier est ouvert dans un <strong>processus séparé</strong> : un plug-in qui plante ou ne répond plus pendant la
+recherche est marqué en échec, sans arrêter Plug-in Host. La liste ne change qu'une fois la recherche terminée ; la barre
+d'état en donne le bilan (modules ouverts, inchangés, retirés, en échec) et le journal la liste des échecs.</p>
+
+<h3>Les dossiers de plug-ins</h3>
+<figure class="small">
+  <img src="../../images/fr/pluginhost-folders.png" alt="La fenêtre des dossiers de plug-ins">
+  <figcaption>Fichier &gt; Dossiers de plug-ins.</figcaption>
+</figure>
+<p><strong>Fichier &gt; Dossiers de plug-ins</strong> (<kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>F</kbd>) donne une seule liste de dossiers,
+chacun parcouru avec ses sous-dossiers pour les deux formats. <strong>Dossiers standard</strong> remet les dossiers habituels
+de Windows (par exemple <code>C:\Program Files\Common Files\VST3</code> et les dossiers VST&nbsp;2 connus). Après une
+modification, lancez une recherche.</p>
+
+<!-- ============================================================== 7 -->
+<h2 id="audio"><span class="num">7</span>Audio et MIDI</h2>
+
+<figure>
+  <img src="../../images/fr/pluginhost-audio.png" alt="La fenêtre Audio et MIDI">
+  <figcaption>Fichier &gt; Audio et MIDI, avec WASAPI.</figcaption>
+</figure>
+
+<p><strong>Fichier &gt; Audio et MIDI</strong> (<kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>A</kbd>) choisit le pilote et les ports :</p>
+
+<h3>WASAPI (la carte son de Windows)</h3>
+<ul>
+  <li>Périphérique de sortie et périphérique d'entrée.</li>
+  <li>Taille du tampon : par défaut la plus petite que permet le périphérique, souvent moins de 3&nbsp;ms à 48&nbsp;kHz.</li>
+  <li>Le périphérique reste partagé avec les autres applications, à la fréquence réglée dans les paramètres de son de Windows.</li>
+</ul>
+
+<h3>ASIO (pilote de la carte son)</h3>
+<figure>
+  <img src="../../images/fr/pluginhost-asio.png" alt="Les réglages ASIO">
+  <figcaption>Les réglages ASIO.</figcaption>
+</figure>
+<ul>
+  <li>Le <strong>pilote</strong> de la carte et son <strong>Panneau de configuration</strong> (tampon, horloge, routage). Le
+  panneau s'ouvre quand le pilote fonctionne : choisissez d'abord le pilote et validez par <strong>OK</strong>.</li>
+  <li>Les <strong>entrées</strong> : aucune, ou toutes celles de la carte.</li>
+  <li>La <strong>fréquence d'échantillonnage</strong> : celle du pilote, ou de 44,1 à 192&nbsp;kHz si la carte l'accepte.</li>
+  <li>Le <strong>tampon</strong> : celui du panneau de configuration par défaut.</li>
+</ul>
+<p>Toutes les sorties de la carte sont disponibles. Quand le panneau de configuration change le tampon ou la fréquence,
+Plug-in Host redémarre le pilote de lui-même.</p>
+
+<h3>MIDI</h3>
+<p>Le <strong>port d'entrée MIDI</strong> alimente les modules <strong>Entrée MIDI</strong> du graphe (un clavier maître, par
+exemple) ; le <strong>port de sortie MIDI</strong> reçoit ce qui arrive aux modules <strong>Sortie MIDI</strong>.</p>
+
+<h3>Sans carte son</h3>
+<p>Avec <strong>Aucun périphérique audio</strong> comme pilote, ou si le périphérique ne peut pas s'ouvrir, le graphe tourne sur une horloge à
+48&nbsp;kHz avec une sortie muette : les plug-ins, leurs éditeurs et leurs paramètres se comportent comme dans une STAN.</p>
+
+<h3>Le niveau de sortie</h3>
+<p>L'indicateur à droite de la barre du graphe montre le niveau des deux premières sorties. À sa droite, la
+<strong>crête la plus haute</strong> en dB depuis le dernier clic sur l'indicateur (par exemple <code>-7.5 dB</code>, ou
+<code>+1.2 dB</code> en rouge quand le signal dépasse 0&nbsp;dBFS). Un clic l'efface.</p>
+
+<!-- ============================================================== 8 -->
+<h2 id="graphe"><span class="num">8</span>Le graphe</h2>
+
+<figure>
+  <img src="../../images/fr/pluginhost-graph.png" alt="Un graphe de modules">
+  <figcaption>Un graphe : deux sources, un compresseur avec sidechain, un écho avec une boucle de réinjection, un piano,
+  une somme et une sortie.</figcaption>
+</figure>
+
+<h3>Principe</h3>
+<p>Ce qui joue est un <strong>graphe de modules</strong> reliés par des <strong>câbles</strong>. Les entrées d'un module sont à
+gauche, ses sorties à droite ; chaque connecteur indique son nombre de canaux, par exemple <code>Entrée (2)</code>. Les
+connecteurs audio sont bleus, les connecteurs MIDI orange.</p>
+<ul>
+  <li>Une <strong>sortie</strong> alimente autant de câbles que voulu.</li>
+  <li>Une <strong>entrée ne prend qu'un câble</strong> : un nouveau câble remplace l'ancien. Les signaux ne s'additionnent que
+  dans un module <strong>Somme audio</strong> ou <strong>Fusion MIDI</strong>.</li>
+  <li>Un signal mono qui entre dans une entrée stéréo alimente les deux canaux ; deux canaux qui entrent dans une entrée mono
+  sont moyennés ; sinon les premiers canaux se correspondent. Les modules <strong>Muxer</strong> et <strong>Demuxer</strong>
+  réunissent ou séparent les canaux explicitement.</li>
+  <li>Un plug-in joue tant que son module est dans le graphe, que sa fenêtre soit ouverte ou non.</li>
+</ul>
+
+<h3>Ajouter des modules</h3>
+<ul>
+  <li><strong>Un plug-in</strong> : double-clic (ou <kbd>Entrée</kbd>) sur sa ligne dans la liste. Son entrée MIDI est reliée au
+  module <strong>Entrée MIDI</strong> et sa sortie principale à un module <strong>Sortie audio</strong> qui n'a pas encore de câble.</li>
+  <li><strong>Les autres modules</strong> : bouton <strong>Ajouter un module</strong> de la barre, menu <strong>Graphe &gt; Ajouter
+  un module</strong>, ou clic droit sur un endroit vide du graphe (le module se place à cet endroit).</li>
+</ul>
+
+<h3>Câbler</h3>
+<ul>
+  <li><strong>Tirer un câble</strong> : glissez d'un connecteur à un autre, depuis une sortie ou depuis une entrée. Seuls les
+  connecteurs compatibles s'allument : audio vers audio, MIDI vers MIDI.</li>
+  <li><strong>Déplacer ou enlever un câble</strong> : saisissez son bout côté entrée et écartez-le ; lâchez-le sur une autre
+  entrée pour le déplacer, ou dans le vide pour l'enlever. Un clic sur un câble le sélectionne ; <kbd>Suppr</kbd> l'enlève.</li>
+  <li><strong>Au clavier</strong> : le menu d'un module (clic droit, <kbd>Maj</kbd>+<kbd>F10</kbd>) propose <strong>Relier</strong>,
+  avec toutes les entrées compatibles, et <strong>Débrancher</strong>. C'est aussi ce qu'utilisent les lecteurs d'écran.</li>
+</ul>
+
+<h3>Les boucles</h3>
+<p>Un câble peut revenir en arrière et former une boucle, pour une réinjection par exemple. Un plug-in traite des blocs
+entiers d'échantillons : le câble qui ferme la boucle, dessiné en <strong>pointillés</strong> avec l'étiquette
+<code>1 bloc</code>, livre donc son signal <strong>avec un bloc de retard</strong>.</p>
+<ul>
+  <li><strong>Boucles</strong> dans la barre du graphe (ou <strong>Graphe &gt; Retard des boucles</strong>) fait tourner les
+  modules des boucles par sous-blocs de 16, 32, 64 ou 128 échantillons : le retard devient ce sous-bloc, au prix de plus
+  d'appels à leurs plug-ins.</li>
+  <li><strong>Couper la boucle ici</strong>, dans le menu d'un câble, choisit quel câble de la boucle porte le retard.</li>
+</ul>
+
+<h3>La latence</h3>
+<p>Certains plug-ins ont une latence (un limiteur à anticipation, un égaliseur à phase linéaire…). Une
+<strong>Somme audio</strong> retarde ses entrées pour que des chemins de latences différentes arrivent alignés : le retard
+ajouté s'affiche sur le câble, par exemple <code>+64</code>. Cela se désactive dans les réglages de la somme. La barre du
+graphe indique la latence jusqu'aux sorties, en échantillons et en millisecondes.</p>
+
+<h3>Le menu d'un module</h3>
+<figure class="small">
+  <img src="../../images/fr/pluginhost-graph-menu.png" alt="Le menu d'un module">
+  <figcaption>Clic droit sur un module.</figcaption>
+</figure>
+<ul>
+  <li><strong>Ouvrir</strong> (double-clic, <kbd>Entrée</kbd>) : la fenêtre du plug-in, ou celle des réglages du module.</li>
+  <li><strong>Contourner</strong> et <strong>Muet</strong> (plug-ins). Un module contourné ou muet est grisé, avec un badge.</li>
+  <li><strong>Renommer</strong> (<kbd>F2</kbd>).</li>
+  <li><strong>Relier</strong> et <strong>Débrancher</strong>.</li>
+  <li><strong>Supprimer</strong> (<kbd>Suppr</kbd>) : les réglages d'un plug-in sont alors perdus ; Plug-in Host demande confirmation.</li>
+</ul>
+
+<h3>Se déplacer dans le graphe</h3>
+<ul>
+  <li><strong>Déplacer la vue</strong> : glissez sur un endroit vide (ou bouton du milieu, ou <kbd>Alt</kbd>+glisser). La
+  molette fait défiler, <kbd>Maj</kbd>+molette de côté ; des barres de défilement apparaissent quand le graphe dépasse.</li>
+  <li><strong>Zoomer</strong> : <kbd>Ctrl</kbd>+molette autour de la souris, <kbd>+</kbd> et <kbd>−</kbd>, ou les boutons
+  <strong>−</strong> et <strong>+</strong> de la barre, de 10&nbsp;% à 250&nbsp;%. Le pourcentage entre les deux boutons
+  indique le zoom ; un clic dessus (ou <kbd>Ctrl</kbd>+<kbd>0</kbd>) revient à la taille réelle.</li>
+  <li><strong>Tout afficher</strong> (<kbd>Origine</kbd>) ajuste le graphe à la fenêtre.</li>
+</ul>
+
+<h3>Placer et sélectionner les modules</h3>
+<ul>
+  <li>Glissez l'en-tête d'un module pour le déplacer. Les modules s'alignent sur une grille qui tient leur premier
+  connecteur : deux modules alignés ont des câbles droits. <kbd>Maj</kbd> pendant le glissement les place librement.</li>
+  <li><kbd>Maj</kbd>+glisser sur un endroit vide sélectionne plusieurs modules au rectangle ; <kbd>Ctrl</kbd>+clic ajoute ou
+  retire un module de la sélection ; la sélection se déplace d'un bloc.</li>
+  <li>Au clavier : <kbd>Ctrl</kbd>+<kbd>←</kbd> / <kbd>Ctrl</kbd>+<kbd>→</kbd> sélectionnent le module précédent ou suivant,
+  <kbd>Ctrl</kbd>+<kbd>A</kbd> tous ; les flèches déplacent la sélection (<kbd>Maj</kbd> pour aller plus loin).</li>
+</ul>
+
+<h3>Les fichiers de graphe</h3>
+<ul>
+  <li><strong>Nouveau graphe</strong> (<kbd>Ctrl</kbd>+<kbd>N</kbd>) : une entrée audio, une entrée MIDI et une sortie audio.</li>
+  <li><strong>Ouvrir un graphe</strong> (<kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>O</kbd>), <strong>Enregistrer le graphe</strong>
+  (<kbd>Ctrl</kbd>+<kbd>S</kbd>), <strong>Enregistrer le graphe sous</strong> (<kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>S</kbd>).</li>
+  <li>Un fichier <code>.pluginui-graph</code> garde les modules, leur nom, leur place, les câbles et l'état de chaque plug-in.
+  Plug-in Host demande s'il faut enregistrer les modifications avant de fermer ou d'ouvrir un autre graphe.</li>
+  <li>Le graphe tel qu'il était à la fermeture revient au lancement suivant, même s'il n'a jamais été enregistré sous un nom.</li>
+</ul>
+
+<div class="warning"><p><span class="label">Plug-in absent.</span> Un plug-in introuvable à l'ouverture d'un graphe (désinstallé,
+déplacé) reste comme module <strong>ABSENT</strong> : muet, grisé, avec ses câbles et ses réglages, et réenregistré tel quel.
+La raison est dans son info-bulle, dans le message affiché par un double-clic et dans le journal. Réinstallez-le, lancez une
+recherche (<kbd>F5</kbd>) et rouvrez le graphe.</p></div>
+
+<!-- ============================================================== 9 -->
+<h2 id="modules"><span class="num">9</span>Les modules et leurs réglages</h2>
+
+<p>Un double-clic sur un module qui n'est pas un plug-in ouvre la <strong>fenêtre de ses réglages</strong>. Ils s'appliquent
+aussitôt, et la fenêtre peut rester ouverte pendant que le graphe joue, à côté d'autres.</p>
+
+<div class="table-scroll"><table>
+  <tr><th>Module</th><th>Rôle et réglages</th></tr>
+  <tr><td>Plug-in</td><td class="wrap">Un connecteur par bus (principal, sidechain…) avec son nombre de canaux, plus l'entrée et
+  la sortie MIDI. Sa fenêtre est décrite au <a href="#fenetres-plugins">chapitre 10</a>.</td></tr>
+  <tr><td>Entrée audio</td><td class="wrap">Des canaux d'entrée du périphérique : premier canal, nombre de canaux, gain.
+  Les canaux que le périphérique n'a pas restent muets.</td></tr>
+  <tr><td>Sortie audio</td><td class="wrap">Vers des canaux de sortie du périphérique : premier canal, nombre de canaux, gain,
+  muet. Plusieurs sorties sur les mêmes canaux s'additionnent.</td></tr>
+  <tr><td>Signal de test</td><td class="wrap">Sinus, carré, dent de scie, triangle, bruit blanc, bruit rose, balayage ou
+  impulsions : fréquence (début des balayages), fin et durée des balayages, intervalle des impulsions, niveau en dBFS,
+  nombre de canaux.</td></tr>
+  <tr><td>Fichier audio</td><td class="wrap">Lit un fichier WAV, rééchantillonné à la fréquence du périphérique : fichier,
+  en boucle, pause, gain, nombre de canaux.</td></tr>
+  <tr><td>Entrée MIDI</td><td class="wrap">Les notes du port d'entrée MIDI : tous les canaux ou un seul.</td></tr>
+  <tr><td>Clavier</td><td class="wrap">Un clavier à l'écran, joué à la souris ou au clavier de l'ordinateur : canal MIDI,
+  octave la plus basse. Sa fenêtre peut être agrandie.</td></tr>
+  <tr><td>Sortie MIDI</td><td class="wrap">Envoie au port de sortie MIDI ce qui lui arrive.</td></tr>
+  <tr><td>Gain</td><td class="wrap">Un grand bouton rotatif et une saisie en dB, inversion de polarité, muet, nombre de
+  canaux, indicateur de niveau.</td></tr>
+  <tr><td>Somme audio</td><td class="wrap">Additionne ses entrées : nombre d'entrées (2 à 32), nombre de canaux, gain des huit
+  premières entrées, alignement des entrées sur la latence de leurs chemins.</td></tr>
+  <tr><td>Fusion MIDI</td><td class="wrap">Réunit plusieurs flux MIDI dans l'ordre du temps : nombre d'entrées, alignement sur
+  la latence.</td></tr>
+  <tr><td>Muxer</td><td class="wrap">Réunit plusieurs câbles mono en un câble de plusieurs canaux (G et D en stéréo) : nombre
+  d'entrées.</td></tr>
+  <tr><td>Demuxer</td><td class="wrap">L'inverse : sépare les canaux d'un câble en sorties mono.</td></tr>
+</table></div>
+
+<figure class="small">
+  <img src="../../images/fr/pluginhost-gain.png" alt="La fenêtre d'un module de gain">
+  <figcaption>La fenêtre d'un module Gain.</figcaption>
+</figure>
+
+<figure>
+  <img src="../../images/fr/pluginhost-keyboard.png" alt="La fenêtre d'un module clavier">
+  <figcaption>La fenêtre d'un module Clavier.</figcaption>
+</figure>
+
+<!-- ============================================================== 10 -->
+<h2 id="fenetres-plugins"><span class="num">10</span>Les fenêtres des plug-ins</h2>
+
+<p>Un double-clic sur un module de plug-in ouvre sa fenêtre. Elle affiche :</p>
+<ul>
+  <li>l'<strong>éditeur</strong> du plug-in, à la taille qu'il demande, redimensionnable s'il le permet ;</li>
+  <li>ou la <strong>table générique des paramètres</strong> quand il n'a pas d'éditeur (le bouton <strong>Paramètres</strong>
+  l'affiche sinon). Les valeurs s'y saisissent comme le plug-in les affiche (<code>-6 dB</code>, <code>Warm</code>) ou en
+  valeurs normalisées, de 0 à 1.</li>
+</ul>
+
+<h3>La barre du haut</h3>
+<ul>
+  <li><strong>Charger un preset</strong> et <strong>Enregistrer le preset</strong> : fichiers <code>.vstpreset</code> pour les
+  plug-ins VST3, <code>.fxp</code> / <code>.fxb</code> pour les VST&nbsp;2. Ils s'échangent avec les STAN.</li>
+  <li><strong>Paramètres</strong> : la table générique.</li>
+  <li><strong>Plein écran</strong> (<kbd>F11</kbd>) : la fenêtre du plug-in sur tout l'écran, pour la scène ou un second
+  écran. <kbd>Échap</kbd> ou le bouton en sortent ; si l'éditeur du plug-in a le clavier, cliquez d'abord sur la barre du haut.</li>
+  <li>À droite : latence, nombre d'entrées et de sorties, fréquence d'échantillonnage.</li>
+</ul>
+
+<h3>La barre du bas</h3>
+<ul>
+  <li><strong>Contourner</strong> : l'entrée principale va directement à la sortie principale.</li>
+  <li><strong>Muet</strong> : coupe les sorties du plug-in.</li>
+  <li>L'indicateur de niveau de sa sortie, avec la crête la plus haute en dB (un clic l'efface).</li>
+  <li>Pour un instrument, un <strong>clavier à l'écran</strong> dont les notes vont à ce plug-in ; les notes du port d'entrée MIDI
+  allument ses touches.</li>
+</ul>
+
+<p>Fermer la fenêtre ne ferme que l'éditeur : le plug-in continue de jouer dans le graphe. Plusieurs fenêtres peuvent être
+ouvertes à la fois.</p>
+
+<!-- ============================================================== 11 -->
+<h2 id="journal"><span class="num">11</span>Le journal</h2>
+
+<figure>
+  <img src="../../images/fr/pluginhost-log.png" alt="L'onglet Journal">
+  <figcaption>L'onglet Journal.</figcaption>
+</figure>
+
+<p>L'onglet <strong>Journal</strong> (<kbd>Ctrl</kbd>+<kbd>3</kbd>) liste les messages de la session, avec leur heure, leur
+niveau (Info, Avertissement, Erreur) et leur source :</p>
+<ul>
+  <li>le démarrage et le périphérique audio ;</li>
+  <li>chaque plug-in chargé, avec son fichier et sa latence, ou refusé, avec la raison ;</li>
+  <li>les graphes ouverts et enregistrés, et ce qui n'a pas pu être restauré ;</li>
+  <li>les presets qui n'ont pas pu être chargés ou enregistrés ;</li>
+  <li>les plug-ins qu'une recherche n'a pas pu charger ;</li>
+  <li>tous les messages de la barre d'état.</li>
+</ul>
+
+<p>La liste déroulante montre tous les messages, les avertissements et erreurs, ou les erreurs seules.
+<strong>Tout copier</strong> met les messages affichés dans le presse-papiers (heure, niveau, source et message séparés par
+des tabulations) ; le clic droit copie les lignes choisies. Le titre de l'onglet compte les avertissements et les erreurs,
+par exemple <strong>Journal (2)</strong>. <strong>Effacer</strong> vide la liste.</p>
+
+<div class="tip"><p><span class="label">Signaler un problème.</span> Copiez le journal avec <strong>Tout copier</strong> et
+collez-le dans votre message : il dit quel fichier a été chargé, avec quel résultat.</p></div>
+
+<!-- ============================================================== 12 -->
+<h2 id="raccourcis"><span class="num">12</span>Raccourcis clavier</h2>
+
+<h3>Partout</h3>
+<div class="table-scroll"><table class="keys">
+  <tr><th>Touches</th><th>Action</th></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>Onglet Plug-ins / Graphe / Journal</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>N</kbd></td><td>Nouveau graphe</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>O</kbd></td><td>Ouvrir un graphe</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Enregistrer le graphe</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>S</kbd></td><td>Enregistrer le graphe sous</td></tr>
+  <tr><td><kbd>F5</kbd> / <kbd>Maj</kbd>+<kbd>F5</kbd></td><td>Rechercher les nouveaux plug-ins / tout rechercher à nouveau</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>F</kbd></td><td>Dossiers de plug-ins</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>A</kbd></td><td>Audio et MIDI</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>T</kbd></td><td>Thème clair ou sombre</td></tr>
+  <tr><td><kbd>F11</kbd> / <kbd>Échap</kbd></td><td>Plein écran / en sortir</td></tr>
+  <tr><td><kbd>F1</kbd></td><td>À propos</td></tr>
+</table></div>
+
+<h3>Liste des plug-ins</h3>
+<div class="table-scroll"><table class="keys">
+  <tr><th>Touches</th><th>Action</th></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Aller à la zone de recherche</td></tr>
+  <tr><td><kbd>Entrée</kbd>, double-clic, <kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Ajouter le plug-in au graphe</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Favori</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>C</kbd></td><td>Copier le chemin</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>I</kbd></td><td>Volet des détails</td></tr>
+  <tr><td>Touche Menu</td><td>Menu du plug-in</td></tr>
+</table></div>
+
+<h3>Graphe</h3>
+<div class="table-scroll"><table class="keys">
+  <tr><th>Touches</th><th>Action</th></tr>
+  <tr><td><kbd>Entrée</kbd>, double-clic</td><td>Ouvrir le module choisi</td></tr>
+  <tr><td><kbd>F2</kbd></td><td>Renommer le module</td></tr>
+  <tr><td><kbd>Suppr</kbd></td><td>Supprimer la sélection ou le câble choisi</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>←</kbd> / <kbd>→</kbd></td><td>Module précédent / suivant</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>Tout sélectionner</td></tr>
+  <tr><td>Flèches (<kbd>Maj</kbd> : plus loin)</td><td>Déplacer la sélection</td></tr>
+  <tr><td><kbd>Origine</kbd></td><td>Tout afficher</td></tr>
+  <tr><td><kbd>+</kbd> / <kbd>−</kbd> / <kbd>Ctrl</kbd>+<kbd>0</kbd></td><td>Zoomer / dézoomer / taille réelle</td></tr>
+  <tr><td><kbd>Maj</kbd>+<kbd>F10</kbd>, touche Menu</td><td>Menu de la sélection</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+molette</td><td>Zoomer autour de la souris</td></tr>
+  <tr><td>Molette / <kbd>Maj</kbd>+molette</td><td>Faire défiler / de côté</td></tr>
+  <tr><td>Glisser sur le fond</td><td>Déplacer la vue (aussi bouton du milieu, <kbd>Alt</kbd>+glisser)</td></tr>
+  <tr><td><kbd>Maj</kbd>+glisser sur le fond</td><td>Sélectionner au rectangle (<kbd>Ctrl</kbd> : ajouter)</td></tr>
+  <tr><td><kbd>Maj</kbd> en déplaçant un module</td><td>Le placer hors de la grille</td></tr>
+</table></div>
+
+<!-- ============================================================== 13 -->
+<h2 id="depannage"><span class="num">13</span>Dépannage</h2>
+
+<p>Le premier réflexe : ouvrir l'onglet <strong>Journal</strong>. La plupart des problèmes y sont expliqués.</p>
+
+<dl class="faq">
+  <dt>Je n'entends rien.</dt>
+  <dd>Vérifiez que la barre d'état affiche bien votre carte son (et non <em>Aucun périphérique audio</em>) ; sinon ouvrez
+  <strong>Audio et MIDI</strong>. Vérifiez ensuite que le dernier module est relié à une <strong>Sortie audio</strong> sur les
+  bons canaux, et qu'aucun module n'est <strong>muet</strong> ou <strong>contourné</strong> (badge sur le module). Les petits
+  indicateurs dans les modules montrent où le signal s'arrête.</dd>
+
+  <dt>Le pilote ASIO ne s'ouvre pas.</dt>
+  <dd>Un pilote ASIO ne sert souvent qu'une application à la fois : fermez la STAN ou le lecteur qui l'utilise, puis choisissez
+  de nouveau le pilote. Le message exact est dans le journal.</dd>
+
+  <dt>Le son craque.</dt>
+  <dd>Augmentez la taille du tampon (panneau de configuration ASIO, ou réglage WASAPI). Les boucles en sous-blocs
+  (<strong>Graphe &gt; Retard des boucles</strong>) coûtent aussi plus de calcul : revenez à <em>Un bloc</em>.</dd>
+
+  <dt>Un plug-in manque dans la liste.</dt>
+  <dd>Cochez <strong>Afficher les échecs</strong> : s'il apparaît en rouge, le volet des détails (<kbd>Ctrl</kbd>+<kbd>I</kbd>)
+  donne la raison. Sinon, vérifiez que son dossier est dans <strong>Dossiers de plug-ins</strong> et lancez
+  <strong>Tout rechercher à nouveau</strong> (<kbd>Maj</kbd>+<kbd>F5</kbd>). Les plug-ins 32 bits ne sont pas pris en charge.</dd>
+
+  <dt>Un module affiche ABSENT.</dt>
+  <dd>Le plug-in n'a pas pu être chargé à l'ouverture du graphe ; double-cliquez sur le module pour lire la raison. Ses
+  câbles et ses réglages sont gardés : réinstallez-le ou relancez une recherche, puis rouvrez le graphe.</dd>
+
+  <dt>Un plug-in démarre avec ses réglages par défaut.</dt>
+  <dd>Le journal affiche alors un avertissement : le plug-in a refusé l'état enregistré. Les détails entre parenthèses (code de
+  retour, octets lus, interfaces demandées) aident à comprendre pourquoi ; joignez-les à un rapport de bogue.</dd>
+
+  <dt>Un plug-in plante pendant la recherche.</dt>
+  <dd>La recherche le marque en échec sans arrêter Plug-in Host. Pour ne plus le voir, choisissez <strong>Ignorer le
+  module</strong> dans le menu Plug-in.</dd>
+
+  <dt>Le graphe est trop grand pour la fenêtre.</dt>
+  <dd><strong>Tout afficher</strong> (<kbd>Origine</kbd>) l'ajuste, les boutons <strong>−</strong> / <strong>+</strong> zooment, et
+  glisser sur le fond déplace la vue.</dd>
+
+  <dt>Les réglages de l'interface sont perdus ou étranges.</dt>
+  <dd>Fermez Plug-in Host et renommez <code>gui.json</code> dans le dossier des réglages (<a href="#fichiers">chapitre 14</a>) :
+  il repart des valeurs par défaut.</dd>
+</dl>
+
+<!-- ============================================================== 14 -->
+<h2 id="fichiers"><span class="num">14</span>Fichiers et ligne de commande</h2>
+
+<h3>Le dossier des réglages</h3>
+<p>Plug-in Host range ses fichiers dans <code>%APPDATA%\PluginUI\PluginHost</code>, c'est-à-dire en général
+<code>C:\Users\&lt;nom&gt;\AppData\Roaming\PluginUI\PluginHost</code> :</p>
+<div class="table-scroll"><table>
+  <tr><th>Fichier</th><th>Contenu</th></tr>
+  <tr><td><code>settings.json</code></td><td class="wrap">Les dossiers de plug-ins, les modules ignorés (<code>IgnoredModules</code>),
+  le délai accordé à chaque fichier pendant une recherche. Partagé avec <code>pluginhost</code>.</td></tr>
+  <tr><td><code>plugins.json</code></td><td class="wrap">La liste des plug-ins trouvés, avec favoris et utilisations. Partagée
+  avec <code>pluginhost</code>.</td></tr>
+  <tr><td><code>gui.json</code></td><td class="wrap">Les réglages de l'interface : thème, langue, colonnes, filtres, volet des détails,
+  carte son, ports MIDI, onglet, dernier graphe.</td></tr>
+  <tr><td><code>session.pluginui-graph</code></td><td class="wrap">Le graphe de la dernière session, rouvert au lancement.</td></tr>
+</table></div>
+<p><code>PluginHost.exe --config &lt;dossier&gt;</code> utilise un autre dossier de réglages, par exemple pour une configuration
+de scène séparée.</p>
+
+<h3>La ligne de commande</h3>
+<p><code>pluginhost</code>, l'hôte en ligne de commande (archive <code>pluginhost-cli-&lt;version&gt;-win-x64.zip</code>),
+partage les dossiers, la liste des plug-ins et les fichiers de graphe. Il peut, par exemple, rendre hors temps réel un graphe
+préparé dans Plug-in Host :</p>
+<pre><code>pluginhost graph mastering.pluginui-graph -i mix.wav -o master.wav
+pluginhost graph pads.pluginui-graph --midi accords.mid -o pads.wav --tail 4</code></pre>
+<p>Ses autres commandes (recherche, traitement d'un fichier, rendu MIDI, mesure d'une réponse, presets) sont décrites dans
+le <a href="https://github.com/asm8086/PluginUI/blob/main/docs/PLUGIN_HOST_FR.md">guide de l'hôte</a>, qui couvre aussi la
+bibliothèque <code>PluginUI.Host</code> pour les développeurs.</p>
+
+<footer class="colophon">
+  <p>Plug-in Host — Manuel d'utilisation · 8 novembre 2026 · asm8086 ·
+  <a href="https://github.com/asm8086/PluginUI">github.com/asm8086/PluginUI</a> · Licence MIT.<br>
+  Les captures d'écran sont produites par Plug-in Host lui-même avec des plug-ins de démonstration.</p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,5 +1,5 @@
 {
-  "comment": "2026/11/05 14:06:00 UTC - PluginUI",
+  "comment": "2026/11/08 15:20:00 UTC - PluginUI",
   "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
   "metadata": [
     {
@@ -44,7 +44,7 @@
     ],
     "resource": [
       { "files": [ "images/**" ] },
-      { "src": "..", "files": [ "docs/images/**.png", "LICENSE" ] }
+      { "src": "..", "files": [ "docs/images/**.png", "docs/manual/**.html", "docs/manual/**.css", "docs/manual/**.pdf", "LICENSE" ] }
     ],
     "overwrite": [
       { "files": [ "namespaces/*.md" ] }
