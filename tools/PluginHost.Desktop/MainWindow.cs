@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 12:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -12,8 +12,9 @@ using PluginUI.Host.Catalog;
 namespace PluginUI.Host.Desktop;
 
 /// <summary>
-/// Main window: the plug-in list (search, filters, sortable and configurable columns), the details of the selection,
-/// scans with their progress, the plug-in folders, and the windows of the open plug-ins.
+/// Main window: two tabs — the plug-in list (search, filters, sortable and configurable columns, details of the
+/// selection) and the graph of modules that plays — with the scans and their progress, the plug-in folders, the audio
+/// settings and the graph files.
 /// </summary>
 internal sealed class MainWindow
 {
@@ -28,9 +29,9 @@ internal sealed class MainWindow
     private readonly ProgressBar _progress;
     private readonly PluginLoader _loader;
     private readonly AudioEngine _audio;
-    private readonly LevelMeter _outputMeter;
     private readonly float[] _outputLevels = new float[2];
-    private readonly List<PluginWindow> _open = new();
+    private readonly DockPanel _graphPage = new();
+    private readonly GraphView _graph;
     private readonly List<(string Text, string Key, bool Descending)> _sortChoices;
     private PluginCatalog _catalog;
     private HostSettings _hostSettings;
@@ -55,7 +56,7 @@ internal sealed class MainWindow
         Table = new DataTable { MultiSelect = true, EmptyText = L.T("No plug-in. Scan the folders (F5).", "Aucun plug-in. Lancez une recherche (F5).") };
         AddColumns();
         Table.RestoreLayout(s.TableLayout);
-        Table.RowActivated += (_, item) => Open((PluginDescription)item);
+        Table.RowActivated += (_, item) => AddToGraph((PluginDescription)item);
         Table.SelectionChanged += _ => _details?.InvalidateVisual();
         Table.ColumnsChanged += _ => SaveLayout();
         Table.SortChanged += _ => { SyncSortChoice(); SaveLayout(); };
@@ -92,12 +93,7 @@ internal sealed class MainWindow
         {
             Orientation = Orientation.Horizontal, Spacing = 8f, Dock = Side.Top, Height = 40f, Padding = new Thickness(10f, 7f, 10f, 7f),
         };
-        _outputMeter = new LevelMeter
-        {
-            Orientation = Orientation.Horizontal, ChannelCount = 2, Width = 150f, Height = 14f, ShowScale = false, MinDb = -60f,
-            VerticalAlignment = VerticalAlignment.Center, ToolTip = L.T("Output level of the audio device", "Niveau de sortie du périphérique audio"),
-        };
-        filters.Add(_search, _format, _kind, _sort, _favorites, _failed, _progress, _outputMeter);
+        filters.Add(_search, _format, _kind, _sort, _favorites, _failed, _progress);
 
         // ---------------------------------------------------------------- details
         _details = new Label
@@ -136,10 +132,42 @@ internal sealed class MainWindow
         {
             Description = L.T("Audio device, input, buffer size and MIDI input", "Périphérique audio, entrée, taille de tampon et entrée MIDI"),
         };
-        var open = new Command(L.T("&Open", "&Ouvrir"), () => { foreach (var p in Selected) Open(p); }, KeyGesture.Parse("Ctrl+O"))
+        var open = new Command(L.T("&Add to the graph", "&Ajouter au graphe"), () => { foreach (var p in Selected.ToList()) AddToGraph(p); }, KeyGesture.Parse("Ctrl+O"))
         {
-            CanExecuteWhen = () => Selected.Any(p => p.Status == PluginStatus.Ok),
-            Description = L.T("Opens the selected plug-ins in their own windows (Enter, double-click)", "Ouvre les plug-ins choisis dans leur fenêtre (Entrée, double-clic)"),
+            CanExecuteWhen = () => Tabs!.SelectedIndex == 0 && Selected.Any(p => p.Status == PluginStatus.Ok),
+            Description = L.T("Adds the selected plug-ins to the graph as modules (Enter, double-click); double-click a module to open it",
+                "Ajoute les plug-ins choisis au graphe comme modules (Entrée, double-clic) ; double-cliquez sur un module pour l'ouvrir"),
+        };
+        var newGraph = new Command(L.T("&New graph", "&Nouveau graphe"), NewGraph, KeyGesture.Parse("Ctrl+N"))
+        {
+            Description = L.T("Starts again from an audio input, a MIDI input and an audio output", "Recommence avec une entrée audio, une entrée MIDI et une sortie audio"),
+        };
+        var openGraph = new Command(L.T("&Open a graph…", "&Ouvrir un graphe…"), OpenGraph, KeyGesture.Parse("Ctrl+Shift+O"))
+        {
+            Description = L.T("Opens a graph file with its plug-ins and their settings", "Ouvre un fichier de graphe avec ses plug-ins et leurs réglages"),
+        };
+        var saveGraph = new Command(L.T("&Save the graph", "&Enregistrer le graphe"), () => SaveGraph(false), KeyGesture.Parse("Ctrl+S"))
+        {
+            Description = L.T("Saves the modules, the cables and the settings of the plug-ins", "Enregistre les modules, les câbles et les réglages des plug-ins"),
+        };
+        var saveGraphAs = new Command(L.T("Save the graph &as…", "Enregistrer le graphe &sous…"), () => SaveGraph(true), KeyGesture.Parse("Ctrl+Shift+S"))
+        {
+            Description = L.T("Saves the graph in another file", "Enregistre le graphe dans un autre fichier"),
+        };
+        var rename = new Command(L.T("&Rename the module…", "&Renommer le module…"), () => _graph!.RenameSelected(), KeyGesture.Parse("F2"))
+        {
+            CanExecuteWhen = () => Tabs!.SelectedIndex == 1 && _graph!.Editor.SelectedNodes.Count == 1,
+            Description = L.T("Gives the selected module another name", "Donne un autre nom au module choisi"),
+        };
+        var showList = new Command(L.T("&Plug-in list", "Liste des &plug-ins"), () => Tabs!.SelectedIndex = 0, KeyGesture.Parse("Ctrl+1"))
+        {
+            IsCheckedWhen = () => Tabs!.SelectedIndex == 0,
+            Description = L.T("Shows the list of the installed plug-ins", "Affiche la liste des plug-ins installés"),
+        };
+        var showGraph = new Command(L.T("&Graph", "&Graphe"), () => Tabs!.SelectedIndex = 1, KeyGesture.Parse("Ctrl+2"))
+        {
+            IsCheckedWhen = () => Tabs!.SelectedIndex == 1,
+            Description = L.T("Shows the graph of modules that plays", "Affiche le graphe de modules qui joue"),
         };
         var favorite = new Command(L.T("&Favorite", "&Favori"), ToggleFavorite, KeyGesture.Parse("Ctrl+D"))
         {
@@ -180,6 +208,11 @@ internal sealed class MainWindow
         var about = new Command(t.FormatAbout(app.Name), ShowAbout, KeyGesture.Parse("F1")) { Description = L.T("Version and credits", "Version et crédits") };
 
         var fileMenu = new MenuItem(t.MenuFile);
+        fileMenu.Items.Add(new MenuItem(newGraph));
+        fileMenu.Items.Add(new MenuItem(openGraph));
+        fileMenu.Items.Add(new MenuItem(saveGraph));
+        fileMenu.Items.Add(new MenuItem(saveGraphAs));
+        fileMenu.Items.Add(MenuItem.Separator());
         fileMenu.Items.Add(new MenuItem(scan));
         fileMenu.Items.Add(new MenuItem(rescan));
         fileMenu.Items.Add(new MenuItem(stop));
@@ -196,7 +229,16 @@ internal sealed class MainWindow
         pluginMenu.Items.Add(new MenuItem(copyPath));
         pluginMenu.Items.Add(MenuItem.Separator());
         pluginMenu.Items.Add(new MenuItem(ignore));
+        var graphMenu = new MenuItem(L.T("&Graph", "&Graphe"));
+        var addModule = new MenuItem(L.T("&Add a module", "&Ajouter un module"));
+        graphMenu.Items.Add(addModule);
+        graphMenu.Items.Add(new MenuItem(rename));
+        var loops = new MenuItem(L.T("&Loop delay", "&Retard des boucles"));
+        graphMenu.Items.Add(loops);
         var viewMenu = new MenuItem(t.MenuView);
+        viewMenu.Items.Add(new MenuItem(showList));
+        viewMenu.Items.Add(new MenuItem(showGraph));
+        viewMenu.Items.Add(MenuItem.Separator());
         viewMenu.Items.Add(new MenuItem(search));
         viewMenu.Items.Add(new MenuItem(details));
         viewMenu.Items.Add(new MenuItem(app.FullScreenCommand));
@@ -211,9 +253,20 @@ internal sealed class MainWindow
         viewMenu.Items.Add(language);
         var helpMenu = new MenuItem(t.MenuHelp);
         helpMenu.Items.Add(new MenuItem(about));
-        MenuBar = new MenuBar(fileMenu, pluginMenu, viewMenu, helpMenu) { Dock = Side.Top };
+        MenuBar = new MenuBar(fileMenu, pluginMenu, graphMenu, viewMenu, helpMenu) { Dock = Side.Top };
         MenuBar.Opening += (_, top) =>
         {
+            if (ReferenceEquals(top, graphMenu))
+            {
+                addModule.Items.Clear();
+                addModule.Items.AddRange(_graph!.AddModuleItems(null));
+                loops.Items.Clear();
+                foreach (int size in new[] { 0, 16, 32, 64, 128 })
+                {
+                    loops.Items.Add(new MenuItem(size == 0 ? L.T("One block (the device's)", "Un bloc (celui du périphérique)") : L.T($"{size} samples (sub-blocks)", $"{size} échantillons (sous-blocs)"),
+                        () => _audio!.Graph.LoopBlockSize = size) { IsChecked = _audio!.Graph.LoopBlockSize == size });
+                }
+            }
             if (ReferenceEquals(top, viewMenu))
             {
                 columns.Items.Clear();
@@ -242,30 +295,49 @@ internal sealed class MainWindow
         StatusBar.Follow(MenuBar);
         StatusBar.Follow(ToolBar);
 
+        var listPage = new DockPanel();
+        listPage.Children.Add(filters);
+        listPage.Children.Add(_split);
+        Tabs = new TabView { Margin = new Thickness(0f, 4f, 0f, 0f) };
+        Tabs.AddPage(L.T("Plug-ins", "Plug-ins"), listPage);
+        Tabs.AddPage(L.T("Graph", "Graphe"), _graphPage);
+        Tabs.SelectionChanged += (_, index) => _settings.Value.Tab = index;
         var root = new DockPanel();
         root.Children.Add(MenuBar);
         root.Children.Add(ToolBar);
-        root.Children.Add(filters);
         root.Children.Add(StatusBar);
-        root.Children.Add(_split);
+        root.Children.Add(Tabs);
 
         Host = new UIHost(root, new Size(1180f, 720f), SizingMode.Relayout) { MinSize = new Size(820f, 420f) };
         if (s.LightTheme) Host.Theme = Theme.Light;
         Window = new StandaloneWindow(Host, app.Name);
-        Window.Closing += (_, _) => CloseAll();
+        Window.Closing += (_, e) =>
+        {
+            if (!ConfirmGraphChanges())
+            {
+                e.Cancel = true;
+                return;
+            }
+            CloseAll();
+        };
         Window.Closed += _ => SaveAll();
         _audio = new AudioEngine(Host) { WindowHandle = () => Window.WindowHandle };
         _audio.Message += message => StatusBar.ShowMessage(message, 10.0);
         _audio.Changed += () => StatusBar.InvalidateVisual();
-        _audio.Rack.SlotFailed += (slot, ex) => Host.Post(() => StatusBar.ShowMessage(
-            L.T($"{slot.Plugin.Name} stopped processing: {ex.Message}", $"{slot.Plugin.Name} a cessé de traiter : {ex.Message}"), 8.0));
         _audio.Start(saveChanges ? s : new GuiSettings { AudioApi = "none" });
+        _graph = new GraphView(Host, Window, _audio, _loader, () => _settings.Value.LightTheme);
+        _graph.Message += message => StatusBar.ShowMessage(message, 8.0);
+        _graph.PluginListRequested += () => Tabs.SelectedIndex = 0;
+        _graphPage.Children.Add(_graph.Root);
         Host.AddTicker(new Ticker(() =>
         {
-            _audio.Rack.OutputMeter.Read(_outputLevels);
-            _outputMeter.SetLevels(_outputLevels);
+            _audio.Graph.OutputMeter.Read(_outputLevels);
+            _graph.OutputMeter.SetLevels(_outputLevels);
             return true;
         }));
+        if (!saveChanges || !File.Exists(SessionGraphPath) || !_graph.Load(SessionGraphPath, remember: false)) _graph.NewGraph();
+        else if (s.GraphFile is { Length: > 0 } named && File.Exists(named)) _graph.AdoptPath(named);
+        Tabs.SelectedIndex = Math.Clamp(s.Tab, 0, 1);
 
         _ready = true;
         SyncSortChoice();
@@ -283,6 +355,13 @@ internal sealed class MainWindow
     public StatusBar StatusBar { get; }
 
     public DataTable Table { get; }
+
+    public TabView Tabs { get; }
+
+    internal GraphView Graph => _graph;
+
+    /// <summary>The graph as it was when the host closed (restored at the next start).</summary>
+    private string SessionGraphPath => _app.GetDataPath("session.pluginui-graph");
 
     private IEnumerable<PluginDescription> Selected => Table.SelectedItems.Cast<PluginDescription>();
 
@@ -398,7 +477,7 @@ internal sealed class MainWindow
         var plugins = selection.Cast<PluginDescription>().ToList();
         var items = new List<MenuItem>();
         if (plugins.Any(p => p.Status == PluginStatus.Ok))
-            items.Add(new MenuItem(L.T("&Open", "&Ouvrir"), () => { foreach (var p in plugins) Open(p); }) { ShortcutText = L.T("Enter", "Entrée") });
+            items.Add(new MenuItem(L.T("&Add to the graph", "&Ajouter au graphe"), () => { foreach (var p in plugins) AddToGraph(p); }) { ShortcutText = L.T("Enter", "Entrée") });
         bool allFavorites = plugins.All(p => p.IsFavorite);
         items.Add(new MenuItem(L.T("&Favorite", "&Favori"), ToggleFavorite) { IsChecked = allFavorites, ShortcutText = "Ctrl+D" });
         items.Add(MenuItem.Separator());
@@ -427,7 +506,7 @@ internal sealed class MainWindow
     private string DetailsText()
     {
         var selection = Selected.ToList();
-        if (selection.Count == 0) return L.T("Select a plug-in to see its details.\n\nDouble-click or Enter opens it.", "Choisissez un plug-in pour voir ses détails.\n\nDouble-clic ou Entrée l'ouvre.");
+        if (selection.Count == 0) return L.T("Select a plug-in to see its details.\n\nDouble-click or Enter adds it to the graph.", "Choisissez un plug-in pour voir ses détails.\n\nDouble-clic ou Entrée l'ajoute au graphe.");
         if (selection.Count > 1) return L.T($"{selection.Count} plug-ins selected.", $"{selection.Count} plug-ins choisis.");
         var p = selection[0];
         var sb = new StringBuilder();
@@ -468,44 +547,68 @@ internal sealed class MainWindow
 
     // ---------------------------------------------------------------- actions
 
-    private void Open(PluginDescription description)
+    /// <summary>Adds a plug-in of the list to the graph and shows the graph.</summary>
+    private void AddToGraph(PluginDescription description)
     {
         if (description.Status != PluginStatus.Ok)
         {
             StatusBar.ShowMessage(L.T($"{description.Name} could not be loaded during the scan.", $"{description.Name} n'a pas pu être chargé lors de la recherche."));
             return;
         }
-        if (_open.Find(w => w.Description.Key == description.Key) is { } existing)
-        {
-            existing.Window.Activate();
-            return;
-        }
-        PluginInstance instance;
-        try
-        {
-            instance = _loader.Load(description);
-        }
-        catch (Exception ex) when (ex is not OutOfMemoryException)
-        {
-            MessageDialog.Show(Window, _app.Name, L.T($"{description.Name} could not be opened:\n{ex.Message}", $"{description.Name} n'a pas pu être ouvert :\n{ex.Message}"));
-            return;
-        }
+        if (_graph.AddPlugin(description) is null) return;
         SaveCatalog();
         Table.InvalidateVisual();
-        PluginWindow window;
-        try
+        Tabs.SelectedIndex = 1;
+        _graph.Editor.Focus();
+        StatusBar.ShowMessage(L.T($"{description.Name} added to the graph: double-click it to open its window.", $"{description.Name} ajouté au graphe : double-cliquez dessus pour ouvrir sa fenêtre."), 6.0);
+    }
+
+    // ---------------------------------------------------------------- graph files
+
+    private void NewGraph()
+    {
+        if (!ConfirmGraphChanges()) return;
+        _graph.NewGraph();
+        _settings.Value.GraphFile = null;
+        Tabs.SelectedIndex = 1;
+    }
+
+    private void OpenGraph()
+    {
+        if (!ConfirmGraphChanges()) return;
+        if (FileDialogs.OpenFile(Host, L.T("Open a graph", "Ouvrir un graphe"), GraphView.Filter) is not { } path) return;
+        if (!_graph.Load(path)) return;
+        _settings.Value.GraphFile = path;
+        Tabs.SelectedIndex = 1;
+    }
+
+    private bool SaveGraph(bool choose)
+    {
+        string? path = _graph.FilePath;
+        if (choose || path is null)
         {
-            window = new PluginWindow(description, instance, _audio, Window, _settings.Value.LightTheme);
+            path = FileDialogs.SaveFile(Host, L.T("Save the graph", "Enregistrer le graphe"), GraphView.Filter,
+                Path.GetFileName(_graph.FilePath ?? L.T("Graph.pluginui-graph", "Graphe.pluginui-graph")), "pluginui-graph");
+            if (path is null) return false;
         }
-        catch (Exception ex) when (ex is not OutOfMemoryException)
+        if (!_graph.Save(path)) return false;
+        _settings.Value.GraphFile = path;
+        StatusBar.ShowMessage(L.T("Graph saved: ", "Graphe enregistré : ") + path, 6.0);
+        return true;
+    }
+
+    /// <summary>Offers to save a named graph that changed; false when the user cancels.</summary>
+    private bool ConfirmGraphChanges()
+    {
+        if (!_saveChanges || _graph.FilePath is null || !_graph.IsModified) return true;
+        var answer = MessageDialog.Show(Window, _app.Name, L.T($"Save the changes of {Path.GetFileName(_graph.FilePath)}?", $"Enregistrer les modifications de {Path.GetFileName(_graph.FilePath)} ?"),
+            MessageBoxButtons.YesNoCancel);
+        return answer switch
         {
-            instance.Dispose();
-            MessageDialog.Show(Window, _app.Name, L.T($"{description.Name} could not be started:\n{ex.Message}", $"{description.Name} n'a pas pu démarrer :\n{ex.Message}"));
-            return;
-        }
-        _open.Add(window);
-        window.Window.Closed += _ => _open.Remove(window);
-        window.Show();
+            MessageBoxResult.Yes => SaveGraph(false),
+            MessageBoxResult.No => true,
+            _ => false,
+        };
     }
 
     private void ToggleFavorite()
@@ -555,7 +658,7 @@ internal sealed class MainWindow
         _settings.Value.LightTheme = !_settings.Value.LightTheme;
         Host.Theme = _settings.Value.LightTheme ? Theme.Light : Theme.Dark;
         Window.UpdateTitleBarTheme();
-        foreach (var w in _open) w.SetTheme(_settings.Value.LightTheme);
+        _graph.SetTheme(_settings.Value.LightTheme);
     }
 
     private void SetLanguage(string code)
@@ -570,8 +673,8 @@ internal sealed class MainWindow
     {
         var about = new AboutBox(_app.Name, typeof(MainWindow).Assembly.GetName().Version?.ToString(3))
         {
-            Text = L.T("Audio plug-in host built with PluginUI.Host: VST3 today, VST2 and audio devices next. Plug-in list and folders shared with the pluginhost command line tool.",
-                       "Hôte de plug-ins audio construit avec PluginUI.Host : VST3 aujourd'hui, VST2 et périphériques audio ensuite. Liste et dossiers de plug-ins partagés avec l'outil en ligne de commande pluginhost."),
+            Text = L.T("Audio plug-in host built with PluginUI.Host: VST3 and VST 2 plug-ins in a graph of modules, on WASAPI or ASIO. Plug-in list, folders and graph files shared with the pluginhost command line tool.",
+                       "Hôte de plug-ins audio construit avec PluginUI.Host : plug-ins VST3 et VST 2 dans un graphe de modules, sur WASAPI ou ASIO. Liste et dossiers de plug-ins et fichiers de graphe partagés avec l'outil en ligne de commande pluginhost."),
             Url = "https://github.com/asm8086/PluginUI",
         };
         Host.ShowPopup(about);
@@ -928,7 +1031,8 @@ internal sealed class MainWindow
     private void CloseAll()
     {
         _scan?.Cancel();
-        foreach (var w in _open.ToList()) w.Window.Close();
+        _graph.CloseWindows();
+        if (_saveChanges) _graph.Save(SessionGraphPath, remember: false);
     }
 
     private void SaveAll()

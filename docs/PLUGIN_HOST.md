@@ -22,7 +22,7 @@ What exists today and what comes next:
 | ASIO (all the channels of the card, its sample rates, its control panel) | done |
 | Graphical host: plug-in list with sort orders and columns, editor windows, presets | done |
 | Modular graph engine: modules and cables, loops, latency compensation, graph files (`PluginGraph`, `pluginhost graph`) | done |
-| Graph view in the graphical host | in progress |
+| Graph view in the graphical host: modules, cables, plug-in windows, graph files | done |
 
 ## Contents
 
@@ -231,7 +231,9 @@ compensated; responses are measured directly; one executable, no Python installa
 ## The graphical host
 
 **Plug-in Host** (`tools/PluginHost.Desktop`, `PluginHost.exe`) is the same host with a window, built with PluginUI. It
-shares the plug-in folders and the plug-in list with `pluginhost`: a scan made by one is seen by the other.
+shares the plug-in folders, the plug-in list and the graph files with `pluginhost`: a scan made by one is seen by the
+other, a graph saved here is rendered there (`pluginhost graph`). It has two tabs: **Plug-ins**, the list of the
+installed plug-ins, and **Graph**, the modules that play and their cables (Ctrl+1, Ctrl+2).
 
 ```
 dotnet run --project tools/PluginHost.Desktop                                    # IL, with the debugger
@@ -251,8 +253,8 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 - **Full screen** (F11, View menu; Esc to leave): the window covers the whole screen, without title bar.
 
 ![View menu](images/pluginhost-view.png)
-- **Plug-in menu** (also the right click on a row, or the menu key): open (Enter, double-click), favorite (Ctrl+D),
-  show in Explorer, copy the path, ignore the module (it is left out of later scans).
+- **Plug-in menu** (also the right click on a row, or the menu key): add to the graph (Enter, double-click), favorite
+  (Ctrl+D), show in Explorer, copy the path, ignore the module (it is left out of later scans).
 - **Scan** (F5: new and changed modules; Shift+F5: everything again; **Stop the scan** in the File menu or the tool bar): the scan runs in separate processes,
   with its progress in the status bar; the list changes only when it is complete.
 - **Plug-in folders** (Ctrl+Shift+F): one list of folders, each searched for VST3 and VST 2 plug-ins; standard
@@ -267,7 +269,7 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
     the driver by itself;
   - MIDI input port, MIDI output port.
 
-  The status bar shows the device, its sample rate and its buffer; the meter at the right of the filter bar shows the
+  The status bar shows the device, its sample rate and its buffer; the meter at the right of the graph's bar shows the
   output level.
 
 ![Audio and MIDI](images/pluginhost-audio.png)
@@ -276,24 +278,64 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 
 ![Plug-in folders](images/pluginhost-folders.png)
 
-Each open plug-in has its own window: the plug-in's editor, sized as the plug-in asks (and resizable when the plug-in
-allows it), or the **generic parameter table** when it has none (**Parameters** button otherwise). Values can be typed
-in the table as the plug-in displays them (`-6 dB`, `Warm`) or as normalized values. **Load preset** / **Save preset**
-read and write `.vstpreset` files (`.fxp` / `.fxb` for VST 2 plug-ins). While its window is open the plug-in plays on the audio device; every open plug-in is
-heard (their outputs are added). The bar at the bottom of the window holds:
+### The graph
 
-- for effects, the **source** of the input: silence, the **audio input** of the device, a **test signal** (sine,
-  square, sawtooth, triangle, white or pink noise, 20 Hz – 20 kHz sweep, impulses every second; frequency and level in
-  dBFS), or an **audio file** (WAV, looped, resampled to the device rate, with a pause button);
-- for instruments, an **on-screen keyboard** (mouse, or the computer keyboard when it has the focus); the MIDI input
-  port reaches every open plug-in with a MIDI input, and its notes light up the keys;
-- for plug-ins that produce MIDI, where it goes: **nowhere**, the **MIDI output port** (a hardware synthesizer, or
-  another application through a loopback port), or the **other open plug-ins** that have a MIDI input;
-- **Bypass** (the source goes straight to the output), **Mute**, and the meter of the plug-in's output.
+![The graph](images/pluginhost-graph.png)
 
-The plug-in's main output channels go to the device channels in order (a mono output to the first two): a multichannel
-plug-in is heard on a multichannel device. Without a device, the plug-in runs on a clock at 48 kHz with silent output,
-so that its editor and parameters still behave as in a DAW.
+What plays is a **graph of modules** joined by **cables**. A double-click (or Enter) on a plug-in of the list loads it
+as a module of the graph: its MIDI input is connected to the MIDI input module, its main output to an audio output
+module that has no cable yet; the rest is cabled by hand. A plug-in plays as long as its module is in the graph, its
+window open or not.
+
+- **Modules**: the plug-ins (one connector per bus — main, side chain… — with its channel count, plus MIDI in and
+  out), **Audio input** and **Audio output** (channels of the device: first channel and count), **Test signal** (sine,
+  square, sawtooth, triangle, white or pink noise, sweep, impulses), **Audio file** (WAV in a loop, resampled to the
+  device rate), **MIDI input** (the MIDI input port, all channels or one), **Keyboard** (an on-screen keyboard, in its
+  properties), **MIDI output** (to the MIDI output port), **Gain** (dB, polarity, mute), **Audio sum**, **MIDI merge**,
+  **Muxer** (mono cables joined into one of several channels: L and R into a stereo cable) and **Demuxer** (the
+  reverse). Add them with **Add a module** (bar, Graph menu, or right click on an empty place: the module goes there).
+- **Cables**: drag from a connector to another one (from an output or from an input); only the compatible connectors
+  light up (audio to audio, MIDI to MIDI). An output feeds as many cables as wanted; **an input takes one cable**: a
+  new one replaces it, and signals are added only by an **Audio sum** or a **MIDI merge** module. Drag the end of a
+  cable away from its input to move it or to remove it; click a cable then Delete removes it too. A mono signal
+  entering a stereo input feeds both channels; two channels entering a mono input are averaged.
+- **Loops** are allowed: the cable that closes a loop is drawn dashed and delivers its signal **one block late** — a
+  plug-in processes whole blocks. **Loops** in the bar (or Graph > Loop delay) runs the modules of loops in shorter
+  sub-blocks of 16 to 128 samples: the delay becomes that sub-block, at the cost of more calls to their plug-ins.
+  **Break the loop here** (menu of a cable) chooses which cable is late.
+- **Latency**: a sum delays its inputs so that paths through plug-ins of different latency arrive aligned (the delay
+  added shows on the cable, `+64`); it can be turned off in its properties. The bar shows the latency up to the
+  outputs.
+- **Opening a module** (double-click, Enter): a plug-in opens its window, the others their **properties**, which apply
+  at once (gain, channels, signal, file, number of inputs, gains of a sum…). **Rename** (F2) gives a module another
+  name.
+- **Menu of a module** (right click, Shift+F10): open or properties, bypass and mute (plug-ins), rename, **Connect**
+  (every compatible input, for the keyboard and screen readers), **Disconnect**, remove (Delete; the settings of a
+  plug-in are lost, so the host asks first).
+- **View**: the wheel zooms around the mouse, the middle button (or Alt+drag) pans, **Show all** (Home) fits the graph.
+  Modules move on a grid (Shift = free); drag on an empty place to select several, Ctrl+click to add one. Ctrl+Left /
+  Ctrl+Right select the previous or next module, the arrows move the selection.
+- **Graph files** (File menu): **New graph** (Ctrl+N: an audio input, a MIDI input and an audio output), **Open a
+  graph** (Ctrl+Shift+O), **Save the graph** (Ctrl+S), **Save the graph as** (Ctrl+Shift+S). A `.pluginui-graph` file
+  keeps the modules, their places, the cables and the state of each plug-in. A plug-in that cannot be found when a
+  graph is opened stays as a **missing** module: silent, with its cables and its state, saved back unchanged. The graph
+  as it was when the host closed comes back at the next start.
+
+![Menu of a module](images/pluginhost-graph-menu.png)
+
+![Properties of a module](images/pluginhost-module.png)
+
+### Plug-in windows
+
+The window of a plug-in shows the plug-in's editor, sized as the plug-in asks (and resizable when the plug-in allows
+it), or the **generic parameter table** when it has none (**Parameters** button otherwise). Values can be typed in
+the table as the plug-in displays them (`-6 dB`, `Warm`) or as normalized values. **Load preset** / **Save preset**
+read and write `.vstpreset` files (`.fxp` / `.fxb` for VST 2 plug-ins). The bar at the bottom holds **Bypass** (the
+main input goes straight to the main output), **Mute**, the meter of the plug-in's output and, for instruments, an
+**on-screen keyboard** (mouse, or the computer keyboard when it has the focus) whose notes go to this plug-in; the
+notes of the MIDI input port light up its keys. Closing the window closes the editor only: the plug-in keeps playing
+in the graph. Without an audio device, the graph runs on a clock at 48 kHz with silent output, so that editors and
+parameters still behave as in a DAW.
 
 **Full screen** (the button of the top bar, or F11) shows the plug-in window on the whole screen, for a stage or a
 second monitor: a resizable editor fills it, a fixed-size one is centred. Esc or the button leaves it; when the
@@ -301,7 +343,7 @@ plug-in's own editor has the keyboard, click the top bar first.
 
 `PluginHost.exe` also serves as the scanner's child process (`PluginHost.exe scan-module …`), like `pluginhost`.
 `PluginHost.exe --config <folder>` uses another settings folder; the interface settings are in `gui.json` next to
-`settings.json`.
+`settings.json`, the graph of the last session in `session.pluginui-graph`.
 
 ## The library
 

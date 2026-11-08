@@ -1,17 +1,18 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 12:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
 using System.Globalization;
 using PluginUI.Host.Audio;
+using PluginUI.Host.Graph;
 using PluginUI.Host.Windows;
 
 namespace PluginUI.Host.Desktop;
 
 /// <summary>
-/// The audio of the host: one <see cref="PluginRack"/> played by the chosen device (ASIO, WASAPI, or a clock without
-/// device when none is available), the MIDI input port, whose messages go to every open plug-in with a MIDI input, and
-/// the MIDI output port.
+/// The audio of the host: one <see cref="PluginGraph"/> played by the chosen device (ASIO, WASAPI, or a clock without
+/// device when none is available), the MIDI input port, whose messages go to the graph's MIDI input modules, and the
+/// MIDI output port, which receives what reaches its MIDI output modules.
 /// </summary>
 internal sealed class AudioEngine : IDisposable
 {
@@ -22,7 +23,7 @@ internal sealed class AudioEngine : IDisposable
 
     public AudioEngine(UIHost host) => _host = host;
 
-    public PluginRack Rack { get; } = new();
+    public PluginGraph Graph { get; } = new();
 
     public AudioDriver Driver { get; private set; } = new NullAudioDriver();
 
@@ -77,14 +78,14 @@ internal sealed class AudioEngine : IDisposable
                     driver = new NullAudioDriver();
                     break;
             }
-            driver.Start(Rack);
+            driver.Start(Graph);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or System.Runtime.InteropServices.COMException or DllNotFoundException or EntryPointNotFoundException)
         {
             driver?.Dispose();
             Message?.Invoke(L.T("The audio device could not be opened: ", "Le périphérique audio n'a pas pu être ouvert : ") + ex.Message);
             driver = new NullAudioDriver();
-            driver.Start(Rack);
+            driver.Start(Graph);
         }
         driver.ResetRequested += d => _host.Post(() =>
         {
@@ -100,7 +101,7 @@ internal sealed class AudioEngine : IDisposable
             Message?.Invoke(L.T("The audio device stopped: ", "Le périphérique audio s'est arrêté : ") + message);
             Driver.Dispose();
             Driver = new NullAudioDriver();
-            Driver.Start(Rack);
+            Driver.Start(Graph);
             Changed?.Invoke();
         });
         Driver = driver;
@@ -147,7 +148,8 @@ internal sealed class AudioEngine : IDisposable
         if (_midiOut?.Name == name && name is not null) return;
         var previous = _midiOut;
         _midiOut = null;
-        MidiOutputChanged?.Invoke(); // the windows stop sending to the old port first
+        Graph.MidiOutput = null; // the graph stops sending to the old port first
+        MidiOutputChanged?.Invoke();
         previous?.Dispose();
         if (string.IsNullOrEmpty(name)) return;
         try
@@ -159,6 +161,7 @@ internal sealed class AudioEngine : IDisposable
                 return;
             }
             _midiOut = MidiOutput.Open(port);
+            Graph.MidiOutput = _midiOut;
             MidiOutputChanged?.Invoke();
         }
         catch (Exception ex) when (ex is InvalidOperationException or DllNotFoundException or EntryPointNotFoundException)
@@ -167,25 +170,10 @@ internal sealed class AudioEngine : IDisposable
         }
     }
 
-    /// <summary>Sends to every open plug-in with a MIDI input except one (audio thread, no allocation).</summary>
-    public sealed class OtherPluginsSink(PluginRack rack, RackSlot except) : IMidiSink
-    {
-        public void Send(in MidiEvent e)
-        {
-            foreach (var slot in rack.Slots)
-            {
-                if (!ReferenceEquals(slot, except) && slot.Plugin.EventInputCount > 0) slot.SendMidi(e);
-            }
-        }
-    }
-
-    /// <summary>MIDI driver thread: the message goes to every plug-in with a MIDI input.</summary>
+    /// <summary>MIDI driver thread: the message goes to the graph's MIDI input modules.</summary>
     private void Route(MidiEvent e)
     {
-        foreach (var slot in Rack.Slots)
-        {
-            if (slot.Plugin.EventInputCount > 0) slot.SendMidi(e);
-        }
+        Graph.PostMidiInput(e);
         MidiReceived?.Invoke(e);
     }
 
@@ -209,8 +197,10 @@ internal sealed class AudioEngine : IDisposable
     {
         _midi?.Dispose();
         _midi = null;
+        Graph.MidiOutput = null;
         _midiOut?.Dispose();
         _midiOut = null;
         Driver.Dispose();
+        Graph.Dispose();
     }
 }

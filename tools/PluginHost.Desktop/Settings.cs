@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 12:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -62,6 +62,12 @@ internal sealed class GuiSettings
 
     /// <summary>MIDI output port name (null = none): where plug-ins can send their MIDI.</summary>
     public string? MidiOutput { get; set; }
+
+    /// <summary>The graph file being edited (null = never saved under a name; the session graph is restored anyway).</summary>
+    public string? GraphFile { get; set; }
+
+    /// <summary>Tab shown at start: 0 the plug-in list, 1 the graph.</summary>
+    public int Tab { get; set; }
 }
 
 [JsonSerializable(typeof(GuiSettings))]

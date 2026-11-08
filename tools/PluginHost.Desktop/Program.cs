@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 12:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -7,6 +7,7 @@ using PluginUI.Desktop;
 using PluginUI.Host;
 using PluginUI.Host.Catalog;
 using PluginUI.Host.Desktop;
+using PluginUI.Host.Graph;
 using PluginUI.Host.Windows;
 
 /// <summary>Entry point.</summary>
@@ -152,8 +153,136 @@ internal static class Snapshots
         host.RenderToPng(Path.Combine(dir, "pluginhost-columns" + suffix + ".png"), 1f);
         host.CloseAllPopups();
 
+        // The graph tab with a small patch of sample plug-ins (stand-ins: nothing is loaded).
+        BuildSampleGraph(main.Graph.Graph);
+        main.Tabs.SelectedIndex = 1;
+        Settle(host);
+        main.Graph.Sync();
+        main.Graph.Editor.ZoomToFit();
+        var compressor = main.Graph.Graph.Nodes.First(n => n.DisplayTitle == "Glass Compressor");
+        main.Graph.Editor.Select(main.Graph.Editor.Nodes.Where(n => ReferenceEquals(n.Tag, compressor)));
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-graph" + suffix + ".png"), 1f);
+
+        var view = main.Graph.Editor.Nodes.First(n => ReferenceEquals(n.Tag, compressor));
+        var at = main.Graph.Editor.FromGraph(new Point(view.X + 40f, view.Y + 10f));
+        host.DispatchMouseDown(at, MouseButton.Right, 1, ModifierKeys.None);
+        host.DispatchMouseUp(at, MouseButton.Right, ModifierKeys.None);
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-graph-menu" + suffix + ".png"), 1f);
+        host.CloseAllPopups();
+
+        main.Graph.Open(main.Graph.Graph.Nodes.OfType<TestSignalNode>().First());
+        Settle(host);
+        host.RenderToPng(Path.Combine(dir, "pluginhost-module" + suffix + ".png"), 1f);
+        host.CloseAllPopups();
+
         Console.WriteLine($"Snapshots written to {Path.GetFullPath(dir)}");
         return 0;
+    }
+
+    private static void BuildSampleGraph(PluginGraph graph)
+    {
+        graph.Clear();
+        T Add<T>(T node, float x, float y) where T : GraphNode
+        {
+            node.X = x;
+            node.Y = y;
+            return graph.Add(node);
+        }
+        var input = Add(new AudioInputNode(), 32, 48);
+        var tone = Add(new TestSignalNode { Generator = { Signal = PluginUI.Host.Audio.TestSignal.PinkNoise, LevelDb = -18 } }, 32, 160);
+        var compressor = Add(new PluginNode(new SnapshotPlugin("Glass Compressor", "Example Audio", latency: 64, sideChain: true)), 272, 32);
+        var delay = Add(new PluginNode(new SnapshotPlugin("Glass Delay", "Example Audio")), 272, 192);
+        var feedback = Add(new GainNode { GainDb = -6 }, 512, 272);
+        var loop = Add(new AudioSumNode { Title = L.T("Delay feedback", "Retour de l'écho") }, 272, 320);
+        var midi = Add(new MidiInputNode(), 32, 432);
+        var piano = Add(new PluginNode(new SnapshotPlugin("Felt Piano", "Woodworks", instrument: true)), 272, 448);
+        var sum = Add(new AudioSumNode { InputCount = 4 }, 752, 48);
+        var output = Add(new AudioOutputNode(), 992, 96);
+        void Connect(GraphNode from, string outKey, GraphNode to, string inKey) => graph.Connect(from.FindOutput(outKey)!, to.FindInput(inKey)!);
+        Connect(input, "out", compressor, "in0");
+        Connect(tone, "out", compressor, "in1");
+        Connect(compressor, "out0", sum, "in1");
+        Connect(input, "out", sum, "in2");
+        Connect(input, "out", loop, "in1");
+        Connect(loop, "out", delay, "in0");
+        Connect(delay, "out0", feedback, "in");
+        Connect(feedback, "out", loop, "in2");
+        Connect(delay, "out0", sum, "in3");
+        Connect(midi, "midi", piano, "midi-in");
+        Connect(piano, "out0", sum, "in4");
+        Connect(sum, "out", output, "in");
+        ((PluginNode)delay).Bypass = false;
+        ((PluginNode)piano).Mute = false;
+    }
+
+    /// <summary>A stand-in plug-in for the snapshots: buses and a name, silent.</summary>
+    private sealed class SnapshotPlugin(string name, string vendor, int latency = 0, bool sideChain = false, bool instrument = false) : PluginInstance
+    {
+        public override string Name => name;
+
+        public override string Vendor => vendor;
+
+        public override PluginFormat Format => PluginFormat.Vst3;
+
+        public override bool IsInstrument => instrument;
+
+        public override IReadOnlyList<PluginBus> InputBuses { get; } = instrument ? [] : sideChain
+            ? [new("Input", 2, false, true), new("Sidechain", 2, true, true)] : [new("Input", 2, false, true)];
+
+        public override IReadOnlyList<PluginBus> OutputBuses { get; } = [new("Output", 2, false, true)];
+
+        public override int EventInputCount => instrument ? 1 : 0;
+
+        public override IReadOnlyList<PluginParameter> Parameters => [];
+
+        public override int LatencySamples => latency;
+
+        public override int TailSamples => 0;
+
+        public override bool HasEditor => false;
+
+        public override void AddMidiEvent(in MidiEvent e)
+        {
+        }
+
+        public override double GetParameter(uint id) => 0;
+
+        protected override void OnSetParameterUi(uint id, double normalized)
+        {
+        }
+
+        public override string FormatParameter(uint id, double normalized) => string.Empty;
+
+        public override bool TryParseParameter(uint id, string text, out double normalized)
+        {
+            normalized = 0;
+            return false;
+        }
+
+        public override byte[] GetState() => [];
+
+        public override void SetState(ReadOnlySpan<byte> state)
+        {
+        }
+
+        protected override void OnPrepare(double sampleRate, int maxBlockSize, bool realtime)
+        {
+        }
+
+        protected override void OnStop()
+        {
+        }
+
+        protected override void OnProcess(int frames, ParameterQueue pending)
+        {
+            for (int c = 0; c < OutputChannelCount; c++) GetOutput(c)[..frames].Clear();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+        }
     }
 
     private static void Settle(UIHost host)

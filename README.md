@@ -77,8 +77,8 @@ PluginUI/
 │   ├── PluginUI.Host.Vst2/         VST 2.4 hosting for the host: modules and shells, plug-ins, editors, .fxp / .fxb presets
 │   └── PluginUI.Host.Windows/      Windows devices for the host: ASIO, WASAPI output and input, MIDI input and output
 ├── tools/PluginUIEditor/           WinForms visual designer (toolbox, properties, preview, code, new projects)
-├── tools/PluginHost.Cli/           pluginhost: command line plug-in host (scan, list, process, render, measure, presets)
-├── tools/PluginHost.Desktop/       Plug-in Host: graphical host built with PluginUI (sortable plug-in list, editors, presets)
+├── tools/PluginHost.Cli/           pluginhost: command line plug-in host (scan, list, process, render, measure, presets, graphs)
+├── tools/PluginHost.Desktop/       Plug-in Host: graphical host built with PluginUI (sortable plug-in list, modular graph, editors, presets)
 ├── samples/PluginUI.Gallery/       Demo application (standalone window + PNG capture mode)
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer: desktop application (IL or NativeAOT) built with PluginUI.Desktop
@@ -244,16 +244,18 @@ pluginhost list --sort vendor
 pluginhost process -i dry.wav -o wet.wav -p "Pro-Q 3" --preset bright.vstpreset -p "Pro-L 2" --set "Gain=+3 dB"
 pluginhost render -p "Diva" --midi chords.mid -o pad.wav
 pluginhost measure -p "Pro-Q 3" -o response.csv --db 6log2
+pluginhost graph mastering.pluginui-graph -i mix.wav -o master.wav
 ```
 
 **Plug-in Host** (`tools/PluginHost.Desktop`) is the graphical host, built with PluginUI and shipped as one NativeAOT
 executable: the plug-in list with a search, filters and sortable, configurable columns (vendor, category, format,
 channels, latency, installation date, recent and frequent use, favorites…), the details of each plug-in, scans with
-their progress, the plug-in folders, and one window per open plug-in with its own editor or a generic parameter table,
-presets, its source (audio input, test signal, audio file) or an on-screen keyboard, played live through ASIO or WASAPI
-with MIDI input and output (also the MIDI the plug-ins produce). It shares the folders and the plug-in list with `pluginhost`.
+their progress, the plug-in folders, and a **modular graph**: plug-ins, audio and MIDI inputs and outputs, test
+signals, files, keyboards, gains, sums, muxers joined by cables (loops allowed, latency-aligned sums), played live
+through ASIO or WASAPI and saved as graph files that `pluginhost graph` renders offline. Each plug-in module opens its
+own editor or a generic parameter table, with presets. It shares the folders and the plug-in list with `pluginhost`.
 
-![Plug-in Host](docs/images/pluginhost-main.png)
+![Plug-in Host](docs/images/pluginhost-graph.png)
 
 Both hosts load VST3 and VST 2 plug-ins. Guide: [docs/PLUGIN_HOST.md](docs/PLUGIN_HOST.md).
 

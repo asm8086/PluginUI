@@ -23,7 +23,7 @@ Ce qui existe et ce qui vient ensuite :
 | ASIO (tous les canaux de la carte, ses fréquences, son panneau de configuration) | fait |
 | Hôte graphique : liste de plug-ins avec ordres de tri et colonnes, fenêtres d'éditeur, presets | fait |
 | Moteur de graphe modulaire : modules et câbles, boucles, compensation de latence, fichiers de graphe (`PluginGraph`, `pluginhost graph`) | fait |
-| Vue du graphe dans l'hôte graphique | en cours |
+| Vue du graphe dans l'hôte graphique : modules, câbles, fenêtres des plug-ins, fichiers de graphe | fait |
 
 ## Sommaire
 
@@ -240,8 +240,9 @@ installation de Python.
 ## L'hôte graphique
 
 **Plug-in Host** (`tools/PluginHost.Desktop`, `PluginHost.exe`) est le même hôte avec une fenêtre, construit avec
-PluginUI. Il partage les dossiers et la liste des plug-ins avec `pluginhost` : une recherche faite par l'un est vue par
-l'autre.
+PluginUI. Il partage les dossiers, la liste des plug-ins et les fichiers de graphe avec `pluginhost` : une recherche
+faite par l'un est vue par l'autre, un graphe enregistré ici se rend là-bas (`pluginhost graph`). Il a deux onglets :
+**Plug-ins**, la liste des plug-ins installés, et **Graphe**, les modules qui jouent et leurs câbles (Ctrl+1, Ctrl+2).
 
 ```
 dotnet run --project tools/PluginHost.Desktop                                    # IL, avec le débogueur
@@ -262,9 +263,9 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 - **Plein écran** (F11, menu Affichage ; Échap pour en sortir) : la fenêtre couvre tout l'écran, sans barre de titre.
 
 ![Menu Affichage](images/fr/pluginhost-view.png)
-- **Menu Plug-in** (aussi le clic droit sur une ligne, ou la touche Menu) : ouvrir (Entrée, double-clic), favori
-  (Ctrl+D), afficher dans l'Explorateur, copier le chemin, ignorer le module (il est laissé de côté aux recherches
-  suivantes).
+- **Menu Plug-in** (aussi le clic droit sur une ligne, ou la touche Menu) : ajouter au graphe (Entrée, double-clic),
+  favori (Ctrl+D), afficher dans l'Explorateur, copier le chemin, ignorer le module (il est laissé de côté aux
+  recherches suivantes).
 - **Recherche** (F5 : modules nouveaux ou modifiés ; Maj+F5 : tout à nouveau ; **Arrêter la recherche** dans le menu Fichier ou la barre d'outils) : elle se fait dans des
   processus séparés, avec sa progression dans la barre d'état ; la liste ne change qu'une fois la recherche terminée.
 - **Dossiers de plug-ins** (Ctrl+Maj+F) : une seule liste de dossiers, chacun parcouru pour les plug-ins VST3 et VST 2 ;
@@ -281,7 +282,7 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   - ports d'entrée et de sortie MIDI.
 
   La barre d'état indique le périphérique, sa fréquence d'échantillonnage et son tampon ; l'indicateur à droite de la
-  barre des filtres montre le niveau de sortie.
+  barre du graphe montre le niveau de sortie.
 
 ![Audio et MIDI](images/fr/pluginhost-audio.png)
 
@@ -289,28 +290,69 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
 
 ![Dossiers de plug-ins](images/fr/pluginhost-folders.png)
 
-Chaque plug-in ouvert a sa fenêtre : l'éditeur du plug-in, à la taille qu'il demande (et redimensionnable quand il le
+### Le graphe
+
+![Le graphe](images/fr/pluginhost-graph.png)
+
+Ce qui joue est un **graphe de modules** reliés par des **câbles**. Un double-clic (ou Entrée) sur un plug-in de la
+liste le charge comme module du graphe : son entrée MIDI est reliée au module d'entrée MIDI, sa sortie principale à un
+module de sortie audio qui n'a pas encore de câble ; le reste se câble à la main. Un plug-in joue tant que son module
+est dans le graphe, que sa fenêtre soit ouverte ou non.
+
+- **Modules** : les plug-ins (un connecteur par bus — principal, sidechain… — avec son nombre de canaux, plus l'entrée
+  et la sortie MIDI), **Entrée audio** et **Sortie audio** (canaux du périphérique : premier canal et nombre),
+  **Signal de test** (sinus, carré, dent de scie, triangle, bruit blanc ou rose, balayage, impulsions), **Fichier
+  audio** (WAV en boucle, rééchantillonné à la fréquence du périphérique), **Entrée MIDI** (le port d'entrée MIDI, tous
+  les canaux ou un seul), **Clavier** (un clavier à l'écran, dans ses propriétés), **Sortie MIDI** (vers le port de
+  sortie MIDI), **Gain** (dB, polarité, muet), **Somme audio**, **Fusion MIDI**, **Muxer** (câbles mono réunis en un
+  câble de plusieurs canaux : G et D en un câble stéréo) et **Demuxer** (l'inverse). Ajoutez-les avec **Ajouter un
+  module** (barre, menu Graphe, ou clic droit sur un endroit vide : le module s'y place).
+- **Câbles** : glissez d'un connecteur à un autre (depuis une sortie ou depuis une entrée) ; seuls les connecteurs
+  compatibles s'allument (audio vers audio, MIDI vers MIDI). Une sortie alimente autant de câbles que voulu ; **une
+  entrée ne prend qu'un câble** : un nouveau le remplace, et les signaux ne s'additionnent que dans un module **Somme
+  audio** ou **Fusion MIDI**. Écartez le bout d'un câble de son entrée pour le déplacer ou l'enlever ; un clic sur un
+  câble puis Suppr l'enlève aussi. Un signal mono qui entre dans une entrée stéréo alimente les deux canaux ; deux
+  canaux qui entrent dans une entrée mono sont moyennés.
+- **Boucles** : elles sont permises. Le câble qui ferme une boucle est dessiné en pointillés et livre son signal **avec
+  un bloc de retard** — un plug-in traite des blocs entiers. **Boucles** dans la barre (ou Graphe > Retard des boucles)
+  fait tourner les modules des boucles par sous-blocs plus courts, de 16 à 128 échantillons : le retard devient ce
+  sous-bloc, au prix de plus d'appels à leurs plug-ins. **Couper la boucle ici** (menu d'un câble) choisit le câble
+  retardé.
+- **Latence** : une somme retarde ses entrées pour que des chemins passant par des plug-ins de latences différentes
+  arrivent alignés (le retard ajouté s'affiche sur le câble, `+64`) ; cela se désactive dans ses propriétés. La barre
+  indique la latence jusqu'aux sorties.
+- **Ouvrir un module** (double-clic, Entrée) : un plug-in ouvre sa fenêtre, les autres leurs **propriétés**, qui
+  s'appliquent aussitôt (gain, canaux, signal, fichier, nombre d'entrées, gains d'une somme…). **Renommer** (F2) donne
+  un autre nom à un module.
+- **Menu d'un module** (clic droit, Maj+F10) : ouvrir ou propriétés, contourner et muet (plug-ins), renommer,
+  **Relier** (toutes les entrées compatibles, pour le clavier et les lecteurs d'écran), **Débrancher**, supprimer
+  (Suppr ; les réglages d'un plug-in sont perdus, l'hôte demande donc confirmation).
+- **Vue** : la molette zoome autour de la souris, le bouton du milieu (ou Alt+glisser) déplace la vue, **Tout
+  afficher** (Origine) ajuste le graphe. Les modules se déplacent sur une grille (Maj = librement) ; glissez sur un
+  endroit vide pour en sélectionner plusieurs, Ctrl+clic pour en ajouter un. Ctrl+Gauche / Ctrl+Droite sélectionnent le
+  module précédent ou suivant, les flèches déplacent la sélection.
+- **Fichiers de graphe** (menu Fichier) : **Nouveau graphe** (Ctrl+N : une entrée audio, une entrée MIDI et une sortie
+  audio), **Ouvrir un graphe** (Ctrl+Maj+O), **Enregistrer le graphe** (Ctrl+S), **Enregistrer le graphe sous**
+  (Ctrl+Maj+S). Un fichier `.pluginui-graph` garde les modules, leur place, les câbles et l'état de chaque plug-in. Un
+  plug-in introuvable à l'ouverture d'un graphe reste comme module **absent** : muet, avec ses câbles et son état,
+  réenregistré tel quel. Le graphe tel qu'il était à la fermeture de l'hôte revient au lancement suivant.
+
+![Menu d'un module](images/fr/pluginhost-graph-menu.png)
+
+![Propriétés d'un module](images/fr/pluginhost-module.png)
+
+### Fenêtres des plug-ins
+
+La fenêtre d'un plug-in affiche l'éditeur du plug-in, à la taille qu'il demande (et redimensionnable quand il le
 permet), ou la **table générique des paramètres** quand il n'en a pas (bouton **Paramètres** sinon). Les valeurs se
 saisissent dans la table comme le plug-in les affiche (`-6 dB`, `Warm`) ou en valeurs normalisées. **Charger un
 preset** / **Enregistrer le preset** lisent et écrivent des fichiers `.vstpreset` (`.fxp` / `.fxb` pour les plug-ins
-VST 2). Tant que sa fenêtre est ouverte, le
-plug-in joue sur le périphérique audio ; tous les plug-ins ouverts s'entendent (leurs sorties s'additionnent). La barre
-du bas de la fenêtre contient :
-
-- pour les effets, la **source** de l'entrée : silence, l'**entrée audio** du périphérique, un **signal de test**
-  (sinus, carré, dent de scie, triangle, bruit blanc ou rose, balayage 20 Hz – 20 kHz, impulsions chaque seconde ;
-  fréquence et niveau en dBFS), ou un **fichier audio** (WAV, en boucle, rééchantillonné à la fréquence du
-  périphérique, avec un bouton pause) ;
-- pour les instruments, un **clavier à l'écran** (souris, ou clavier de l'ordinateur quand il a le focus) ; le port
-  d'entrée MIDI atteint tous les plug-ins ouverts qui ont une entrée MIDI, et ses notes allument les touches ;
-- pour les plug-ins qui produisent du MIDI, sa destination : **nulle part**, le **port de sortie MIDI** (un
-  synthétiseur matériel, ou une autre application par un port de bouclage), ou les **autres plug-ins ouverts** qui ont
-  une entrée MIDI ;
-- **Contourner** (la source va directement à la sortie), **Muet**, et l'indicateur de niveau de la sortie du plug-in.
-
-Les canaux de sortie principaux du plug-in vont aux canaux du périphérique dans l'ordre (une sortie mono sur les deux
-premiers) : un plug-in multicanal s'entend sur un périphérique multicanal. Sans périphérique, le plug-in tourne sur une
-horloge à 48 kHz avec une sortie muette, pour que son éditeur et ses paramètres se comportent comme dans une STAN.
+VST 2). La barre du bas contient **Contourner** (l'entrée principale va directement à la sortie principale), **Muet**,
+l'indicateur de niveau de la sortie du plug-in et, pour les instruments, un **clavier à l'écran** (souris, ou clavier
+de l'ordinateur quand il a le focus) dont les notes vont à ce plug-in ; les notes du port d'entrée MIDI allument ses
+touches. Fermer la fenêtre ne ferme que l'éditeur : le plug-in continue de jouer dans le graphe. Sans périphérique
+audio, le graphe tourne sur une horloge à 48 kHz avec une sortie muette, pour que les éditeurs et les paramètres se
+comportent comme dans une STAN.
 
 **Plein écran** (le bouton de la barre du haut, ou F11) affiche la fenêtre du plug-in sur tout l'écran, pour la scène
 ou un second écran : un éditeur redimensionnable la remplit, un éditeur de taille fixe est centré. Échap ou le bouton
@@ -318,7 +360,7 @@ en sortent ; quand l'éditeur du plug-in a le clavier, cliquez d'abord sur la ba
 
 `PluginHost.exe` sert aussi de processus enfant de la recherche (`PluginHost.exe scan-module …`), comme `pluginhost`.
 `PluginHost.exe --config <dossier>` utilise un autre dossier de réglages ; les réglages de l'interface sont dans
-`gui.json`, à côté de `settings.json`.
+`gui.json`, à côté de `settings.json`, le graphe de la dernière session dans `session.pluginui-graph`.
 
 ## La bibliothèque
 

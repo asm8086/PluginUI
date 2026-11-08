@@ -46,6 +46,15 @@ Before 1.0, minor versions may contain breaking changes.
   editor is laid out.
 - Graph files: a plug-in that loads but refuses its saved state stays in the graph with its default settings (with a
   warning) instead of becoming a missing module.
+- **Plug-in Host plays a graph of modules.** The window has two tabs: the plug-in list and the **Graph**, a
+  `NodeEditor` view of a `PluginGraph`. Double-clicking a plug-in of the list adds it as a module (connected to the
+  MIDI input and to a free audio output) instead of opening its window; double-clicking a module opens the plug-in's
+  window (editor, generic parameters, presets, bypass, mute, keyboard), or the properties of the other modules. Audio
+  and MIDI inputs and outputs, test signals, files, keyboards, gains, sums, merges, muxers and demuxers are modules;
+  cables follow the engine's rules (one cable per input, loops delayed by one block or a sub-block, aligned sums).
+  Graph files (New, Open, Save, Save as), the session's graph restored at start, a Graph menu (add a module, rename,
+  loop delay), module menus with Connect / Disconnect for the keyboard and screen readers. A plug-in window no longer
+  chooses a source or a MIDI destination: cables do. Closing a plug-in window keeps the plug-in playing.
 - `PluginUI.NPlug` now requires `NPlug` 0.7.0 (VST 3 SDK 3.8.1: host transport requests, MIDI 2.0 orchestral
   articulation information and note expression identifiers, "randomize around current" parameter function), with
   `NPlug.Validator` 1.4.2 for the tests and the validation tool.
