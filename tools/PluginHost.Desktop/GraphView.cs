@@ -1,4 +1,4 @@
-// 2026/11/08 13:46:00 UTC - PluginUI
+// 2026/11/08 13:55:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -539,7 +539,7 @@ internal sealed class GraphView : ITickable
         PluginWindow window;
         try
         {
-            window = new PluginWindow(node, _audio, _window, _lightTheme(), () => LevelsOf(node));
+            window = new PluginWindow(node, _audio, _window, _lightTheme(), () => LevelsOf(node)) { Log = Log };
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {

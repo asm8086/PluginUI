@@ -46,7 +46,7 @@ Before 1.0, minor versions may contain breaking changes.
   editor is laid out.
 - Graph files: a plug-in that loads but refuses its saved state stays in the graph with its default settings (with a
   warning) instead of becoming a missing module.
-- **Plug-in Host plays a graph of modules.** The window has two tabs: the plug-in list and the **Graph**, a
+- **Plug-in Host plays a graph of modules.** Next to the plug-in list, the window has a **Graph** tab, a
   `NodeEditor` view of a `PluginGraph`. Double-clicking a plug-in of the list adds it as a module (connected to the
   MIDI input and to a free audio output) instead of opening its window; double-clicking a module opens the plug-in's
   window (editor, generic parameters, presets, bypass, mute, keyboard), or the window of the other modules' settings

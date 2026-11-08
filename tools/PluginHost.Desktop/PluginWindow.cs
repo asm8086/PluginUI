@@ -199,6 +199,9 @@ internal sealed class PluginWindow : ITickable
     /// <summary>Bypass or mute changed (UI thread).</summary>
     public event Action? StateChanged;
 
+    /// <summary>The log of the session (preset files that could not be read or written).</summary>
+    public HostLog? Log { get; set; }
+
     /// <summary>Shows the bypass and mute of the module again (changed from the graph).</summary>
     public void RefreshState()
     {
@@ -365,11 +368,14 @@ internal sealed class PluginWindow : ITickable
         if (FileDialogs.OpenFile(Host, L.T("Load a preset", "Charger un preset"), PresetFilter) is not { } path) return;
         try
         {
-            _plugin.SetState(File.ReadAllBytes(path));
+            // A VST 3 plug-in is told the file name, as DAWs do.
+            if (_plugin is PluginUI.Host.Vst3.Vst3Plugin vst3) vst3.LoadPreset(path);
+            else _plugin.SetState(File.ReadAllBytes(path));
             _parameters.InvalidateVisual();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or PluginException or InvalidDataException or ArgumentException)
         {
+            Log?.Error(_plugin.Name, L.T($"The preset could not be loaded ({path}): ", $"Le preset n'a pas pu être chargé ({path}) : ") + ex.Message);
             MessageDialog.Show(Window, Window.Title, L.T("The preset could not be loaded:\n", "Le preset n'a pas pu être chargé :\n") + ex.Message);
         }
     }
@@ -385,6 +391,7 @@ internal sealed class PluginWindow : ITickable
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            Log?.Error(_plugin.Name, L.T($"The preset could not be saved ({path}): ", $"Le preset n'a pas pu être enregistré ({path}) : ") + ex.Message);
             MessageDialog.Show(Window, Window.Title, L.T("The preset could not be saved:\n", "Le preset n'a pas pu être enregistré :\n") + ex.Message);
         }
     }
