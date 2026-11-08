@@ -180,7 +180,7 @@ pluginhost graph drone.pluginui-graph --length 30 -o drone.wav
 
 A graph file (`.pluginui-graph`, saved by Plug-in Host, or written by a program with `PluginGraph`, see
 [the library](#modular-graphs)) holds modules joined by cables: plug-ins with their state, audio and MIDI inputs and
-outputs, files, test signals, sums, gains. `-i` plays the role of the audio device's input (its channels feed the
+outputs, files, test signals, sums, gains, muxers. `-i` plays the role of the audio device's input (its channels feed the
 audio input modules), `--midi` feeds the MIDI input modules, and the output file has every channel an audio output
 module writes to. `--midi-out` collects what reaches the MIDI output modules. Without `-i` or `--midi`, give the
 length with `--length`. The latency of the longest path to an output is removed (unless
@@ -380,7 +380,8 @@ graph.Save("parallel.pluginui-graph");
 - **Modules**: `PluginNode` (one port per bus of the plug-in — main, side chain… — and its MIDI input and output),
   `AudioInputNode` / `AudioOutputNode` (channels of the device), `TestSignalNode`, `AudioFileNode` (WAV in a loop),
   `MidiInputNode` (fed by `graph.PostMidiInput`), `KeyboardNode`, `MidiOutputNode` (to `graph.MidiOutput`), `GainNode`
-  (gain, polarity, mute), `AudioSumNode` (inputs with their gains), `MidiMergeNode`. Your own: derive from `GraphNode`
+  (gain, polarity, mute), `AudioSumNode` (inputs with their gains), `MidiMergeNode`, `MuxNode` / `DemuxNode` (mono
+  cables joined into one of several channels — two into a stereo one — and the reverse). Your own: derive from `GraphNode`
   (ports with `SetPorts`, processing in `Process` with a `NodeContext`) and register the type with
   `PluginGraph.RegisterNodeType` so files can create it.
 - **Cables**: an output feeds any number of inputs; an input takes one cable (`Connect` replaces it): signals are only

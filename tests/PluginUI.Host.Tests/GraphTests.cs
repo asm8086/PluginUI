@@ -262,6 +262,45 @@ namespace PluginUI.Host.Tests
         }
 
         [Test]
+        public void DemuxerAndMuxerSplitAndJoinChannels()
+        {
+            using var graph = Prepared();
+            var left = graph.Add(new TestSignalNode { Channels = 1, Generator = { Signal = TestSignal.Impulses, Period = 100, LevelDb = 0 } });
+            var right = graph.Add(new TestSignalNode { Channels = 1, Generator = { Signal = TestSignal.Impulses, Period = 100, LevelDb = -6.0206 } });
+            var mux = graph.Add(new MuxNode());
+            var demux = graph.Add(new DemuxNode());
+            var swap = graph.Add(new MuxNode());
+            var quiet = graph.Add(new GainNode { Channels = 1, GainDb = -6.0206 });
+            var output = graph.Add(new AudioOutputNode());
+            graph.Connect(left.Outputs[0], mux.Inputs[0]);
+            graph.Connect(right.Outputs[0], mux.Inputs[1]);
+            graph.Connect(mux.Outputs[0], demux.Inputs[0]);
+            graph.Connect(demux.Outputs[0], quiet.Inputs[0]);
+            graph.Connect(quiet.Outputs[0], swap.Inputs[1]);
+            graph.Connect(demux.Outputs[1], swap.Inputs[0]);
+            graph.Connect(swap.Outputs[0], output.Inputs[0]);
+            var x = Run(graph, 1);
+            var peaks = new float[2];
+            demux.Meter.Read(peaks);
+            Assert.Multiple(() =>
+            {
+                Assert.That(mux.Inputs.Select(p => (p.Name, p.Channels)), Is.EqualTo(new[] { ("L", 1), ("R", 1) }));
+                Assert.That(mux.Outputs[0].Channels, Is.EqualTo(2));
+                Assert.That(demux.Outputs.Select(p => p.Key), Is.EqualTo(new[] { "out1", "out2" }));
+                Assert.That(x[0][0], Is.EqualTo(0.5f).Within(1e-4f), "the right channel now on the left");
+                Assert.That(x[1][0], Is.EqualTo(0.5f).Within(1e-4f), "the left channel, 6 dB lower, on the right");
+                Assert.That(peaks, Is.EqualTo(new[] { 1f, 0.5f }).Within(1e-4f), "the demuxer meters its input");
+            });
+            mux.Channels = 4;
+            Assert.That(mux.Inputs, Has.Count.EqualTo(4));
+            Assert.That(mux.Inputs[2].Name, Is.EqualTo("Ch 3"));
+            string json = graph.ToJson();
+            using var copy = new PluginGraph();
+            Assert.That(copy.LoadJson(json, _ => throw new InvalidOperationException()), Is.Empty);
+            Assert.That(copy.Nodes.OfType<MuxNode>().Select(m => m.Channels), Is.EqualTo(new[] { 4, 2 }));
+        }
+
+        [Test]
         public void ALoopIsBrokenByItsMostRecentCableWithOneBlockOfDelay()
         {
             using var graph = Prepared();

@@ -186,7 +186,7 @@ pluginhost graph bourdon.pluginui-graph --length 30 -o bourdon.wav
 
 Un fichier de graphe (`.pluginui-graph`, enregistré par Plug-in Host, ou écrit par un programme avec `PluginGraph`,
 voir [la bibliothèque](#graphes-modulaires)) contient des modules reliés par des câbles : plug-ins avec leur état,
-entrées et sorties audio et MIDI, fichiers, signaux de test, sommes, gains. `-i` joue le rôle de l'entrée du
+entrées et sorties audio et MIDI, fichiers, signaux de test, sommes, gains, muxers. `-i` joue le rôle de l'entrée du
 périphérique audio (ses canaux alimentent les modules d'entrée audio), `--midi` alimente les modules d'entrée MIDI, et
 le fichier de sortie a tous les canaux sur lesquels écrit un module de sortie audio. `--midi-out` recueille ce qui
 arrive aux modules de sortie MIDI. Sans `-i` ni `--midi`, donnez la durée avec `--length`. La latence du plus long
@@ -397,7 +397,8 @@ graph.Save("parallele.pluginui-graph");
 - **Modules** : `PluginNode` (un connecteur par bus du plug-in — principal, sidechain… — et son entrée et sa sortie
   MIDI), `AudioInputNode` / `AudioOutputNode` (canaux du périphérique), `TestSignalNode`, `AudioFileNode` (WAV en
   boucle), `MidiInputNode` (alimenté par `graph.PostMidiInput`), `KeyboardNode`, `MidiOutputNode` (vers
-  `graph.MidiOutput`), `GainNode` (gain, polarité, muet), `AudioSumNode` (entrées avec leur gain), `MidiMergeNode`.
+  `graph.MidiOutput`), `GainNode` (gain, polarité, muet), `AudioSumNode` (entrées avec leur gain), `MidiMergeNode`,
+  `MuxNode` / `DemuxNode` (câbles mono réunis en un câble de plusieurs canaux — deux en un stéréo — et l'inverse).
   Les vôtres : dérivez de `GraphNode` (connecteurs avec `SetPorts`, traitement dans `Process` avec un `NodeContext`)
   et enregistrez le type avec `PluginGraph.RegisterNodeType` pour que les fichiers puissent le créer.
 - **Câbles** : une sortie alimente autant d'entrées que voulu ; une entrée ne prend qu'un câble (`Connect` le

@@ -697,3 +697,124 @@ public sealed class MidiMergeNode : GraphNode
         UpdatePorts();
     }
 }
+
+/// <summary>Muxer: joins mono signals into one signal of several channels (two mono cables into a stereo one…).</summary>
+public sealed class MuxNode : GraphNode
+{
+    private int _channels = 2;
+
+    /// <summary>Creates the module (two mono inputs, a stereo output).</summary>
+    public MuxNode() => UpdatePorts();
+
+    /// <inheritdoc />
+    public override string TypeKey => "mux";
+
+    /// <inheritdoc />
+    public override string DefaultTitle => "Muxer";
+
+    /// <summary>Number of mono inputs, and of channels of the output (2 to 32); changing it rebuilds the graph.</summary>
+    public int Channels
+    {
+        get => _channels;
+        set
+        {
+            value = Math.Clamp(value, 2, 32);
+            if (value == _channels) return;
+            _channels = value;
+            UpdatePorts();
+            PortsChanged();
+        }
+    }
+
+    private void UpdatePorts() => SetPorts(
+        Enumerable.Range(1, _channels).Select(i => new PortDefinition($"in{i}", ChannelName(i, _channels), PortKind.Audio, 1)),
+        [new PortDefinition("out", "Out", PortKind.Audio, _channels)]);
+
+    internal static string ChannelName(int channel, int channels) => channels == 2 ? (channel == 1 ? "L" : "R") : $"Ch {channel}";
+
+    /// <inheritdoc />
+    protected internal override void Process(in NodeContext context)
+    {
+        var output = context.Output(0);
+        for (int c = 0; c < output.ChannelCount; c++)
+        {
+            var one = context.Scratch(1);
+            context.ReadAudio(c, one);
+            one[0].CopyTo(output[c]);
+        }
+    }
+
+    /// <inheritdoc />
+    protected internal override void WriteSettings(JsonObject json) => json["channels"] = _channels;
+
+    /// <inheritdoc />
+    protected internal override void ReadSettings(JsonObject json)
+    {
+        _channels = Math.Clamp(GraphJson.Int(json, "channels", 2), 2, 32);
+        UpdatePorts();
+    }
+}
+
+/// <summary>Demuxer: splits a signal of several channels into mono signals (a stereo cable into two mono ones…).</summary>
+public sealed class DemuxNode : GraphNode
+{
+    private int _channels = 2;
+
+    /// <summary>Creates the module (a stereo input, two mono outputs).</summary>
+    public DemuxNode() => UpdatePorts();
+
+    /// <inheritdoc />
+    public override string TypeKey => "demux";
+
+    /// <inheritdoc />
+    public override string DefaultTitle => "Demuxer";
+
+    /// <summary>Number of channels of the input, and of mono outputs (2 to 32); changing it rebuilds the graph.</summary>
+    public int Channels
+    {
+        get => _channels;
+        set
+        {
+            value = Math.Clamp(value, 2, 32);
+            if (value == _channels) return;
+            _channels = value;
+            UpdatePorts();
+            PortsChanged();
+        }
+    }
+
+    /// <inheritdoc />
+    protected internal override bool MetersFirstOutput => false;
+
+    private void UpdatePorts()
+    {
+        SetPorts([new PortDefinition("in", "In", PortKind.Audio, _channels)],
+            Enumerable.Range(1, _channels).Select(i => new PortDefinition($"out{i}", MuxNode.ChannelName(i, _channels), PortKind.Audio, 1)));
+        Meter.Resize(Math.Min(_channels, 16)); // the meter shows the input
+    }
+
+    /// <inheritdoc />
+    protected internal override void Process(in NodeContext context)
+    {
+        var signal = context.Scratch(_channels);
+        context.ReadAudio(0, signal);
+        Meter.Update(signal);
+        for (int c = 0; c < Outputs.Count; c++)
+        {
+            var output = context.Output(c);
+            if (output.ChannelCount == 0) continue;
+            if (c < signal.ChannelCount) signal[c].CopyTo(output[0]);
+            else output[0].Clear();
+        }
+    }
+
+    /// <inheritdoc />
+    protected internal override void WriteSettings(JsonObject json) => json["channels"] = _channels;
+
+    /// <inheritdoc />
+    protected internal override void ReadSettings(JsonObject json)
+    {
+        _channels = Math.Clamp(GraphJson.Int(json, "channels", 2), 2, 32);
+        UpdatePorts();
+    }
+}

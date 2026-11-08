@@ -45,6 +45,8 @@ public sealed unsafe class PluginGraph : IAudioRenderer, IDisposable
         ["gain"] = () => new GainNode(),
         ["audio-sum"] = () => new AudioSumNode(),
         ["midi-merge"] = () => new MidiMergeNode(),
+        ["mux"] = () => new MuxNode(),
+        ["demux"] = () => new DemuxNode(),
     };
 
     private readonly Lock _gate = new();

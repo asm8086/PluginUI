@@ -13,7 +13,8 @@ Before 1.0, minor versions may contain breaking changes.
 - **Modular graph engine** (`PluginUI.Host.Graph`): `PluginGraph` plays modules joined by cables, live (an
   `IAudioRenderer`) or offline (`OfflineRenderer.Render(graph, …)`). Modules: `PluginNode` (a port per bus — main,
   side chain… — plus MIDI in and out), `AudioInputNode` / `AudioOutputNode` (device channels), `TestSignalNode`,
-  `AudioFileNode`, `MidiInputNode`, `KeyboardNode`, `MidiOutputNode`, `GainNode`, `AudioSumNode`, `MidiMergeNode`;
+  `AudioFileNode`, `MidiInputNode`, `KeyboardNode`, `MidiOutputNode`, `GainNode`, `AudioSumNode`, `MidiMergeNode`,
+  `MuxNode` / `DemuxNode` (mono cables into one of several channels and back);
   custom modules derive from `GraphNode`. An output feeds any number of cables, an input takes one: signals are added
   only by the sum modules. Loops are allowed — the most recent cable of a loop delivers one block late, or one
   `LoopBlockSize` sub-block (the loop's modules then run in sub-blocks) — and sums align their inputs on the latency of
