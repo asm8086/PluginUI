@@ -1,4 +1,4 @@
-// 2026/11/08 13:04:00 UTC - PluginUI
+// 2026/11/08 13:07:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -115,8 +115,9 @@ public class NodeEditorTests
         Drag(Header(_gain), Header(_gain) with { X = Header(_gain).X + 37f, Y = Header(_gain).Y + 9f });
         Assert.Multiple(() =>
         {
-            Assert.That((_gain.X, _gain.Y), Is.EqualTo((288f, 48f)), "on the 16-unit grid");
-            Assert.That((_source.X, _source.Y), Is.EqualTo((64f, 48f)), "the selection moves together");
+            Assert.That((_gain.X, _gain.Y), Is.EqualTo((288f, 34f)), "on the 16-unit grid by its first connector (22 + 8 below the top)");
+            Assert.That(_editor.PortPosition(_gain.Inputs[0]).Y % 16f, Is.Zero);
+            Assert.That((_source.X, _source.Y), Is.EqualTo((64f, 34f)), "the selection moves together");
             Assert.That(moved, Is.EquivalentTo(new[] { _gain, _source }));
             Assert.That(_editor.Nodes[^1], Is.SameAs(_gain), "the dragged node comes to the front");
         });
@@ -211,6 +212,24 @@ public class NodeEditorTests
             var bottomRight = _editor.FromGraph(new Point(b.Right, b.Bottom));
             Assert.That(_editor.Bounds.Contains(topLeft) && _editor.Bounds.Contains(bottomRight), Is.True, node.Title);
         }
+    }
+
+    [Test]
+    public void SnappedNodesFaceEachOtherByTheirConnectors()
+    {
+        // Different headers (a subtitle, a meter): the first connectors still land on the same grid line.
+        var a = Node("With subtitle", 32, 290, [], [new("out", "Out"), new("out2", "Out 2")]);
+        a.Subtitle = "vendor";
+        a.Level = () => 0.5f;
+        var b = Node("Plain", 300, 301, [new("in", "In"), new("in2", "In 2")], []);
+        _editor.Snap(a);
+        _editor.Snap(b);
+        Assert.Multiple(() =>
+        {
+            Assert.That(_editor.PortPosition(a.Outputs[0]).Y, Is.EqualTo(_editor.PortPosition(b.Inputs[0]).Y), "a straight cable");
+            Assert.That(_editor.PortPosition(a.Outputs[1]).Y, Is.EqualTo(_editor.PortPosition(b.Inputs[1]).Y), "the rows are one grid step high");
+            Assert.That(_editor.PortPosition(a.Outputs[0]).Y % 16f, Is.Zero);
+        });
     }
 
     [Test]

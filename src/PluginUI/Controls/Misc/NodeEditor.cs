@@ -1,4 +1,4 @@
-// 2026/11/08 13:04:00 UTC - PluginUI
+// 2026/11/08 13:07:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -220,7 +220,7 @@ public sealed class NodeEditorMenuEventArgs : EventArgs
 /// </example>
 public class NodeEditor : Control
 {
-    private const float HeaderHeight = 22f, SubtitleHeight = 13f, MeterHeight = 4f, RowHeight = 18f, BottomPadding = 6f;
+    private const float HeaderHeight = 22f, SubtitleHeight = 13f, MeterHeight = 4f, RowHeight = 16f, BottomPadding = 7f;
     private const float PortRadius = 4.5f, NarrowestNode = 150f, WidestNode = 320f;
     private const float MinZoom = 0.25f, MaxZoom = 2.5f;
     private static readonly StrokeStyle FeedbackStroke = new(LineCap.Flat, LineCap.Flat, LineJoin.Round, [3f, 2.5f]);
@@ -282,7 +282,10 @@ public class NodeEditor : Control
     [Category("Behavior")]
     public bool SnapToGrid { get; set; } = true;
 
-    /// <summary>Grid step in graph units (default 16).</summary>
+    /// <summary>
+    /// Grid step in graph units (default 16, the height of a row of connectors). Nodes snap so that their first connector
+    /// lies on the grid: connectors of aligned nodes face each other and their cables are straight.
+    /// </summary>
     [Category("Behavior")]
     public float GridSize { get; set; } = 16f;
 
@@ -409,6 +412,24 @@ public class NodeEditor : Control
     {
         var v = View;
         return new Point(v.X + (g.X - _offset.X) * _zoom, v.Y + (g.Y - _offset.Y) * _zoom);
+    }
+
+    /// <summary>Distance from the top of a node to the center of its first connector (first input and first output share it).</summary>
+    private static float FirstConnector(NodeEditorNode n) => TopOfRows(n) + RowHeight / 2f;
+
+    private (float X, float Y) Snapped(NodeEditorNode n, float x, float y)
+    {
+        if (GridSize <= 0f) return (x, y);
+        float anchor = FirstConnector(n);
+        return (MathF.Round(x / GridSize) * GridSize, MathF.Round((y + anchor) / GridSize) * GridSize - anchor);
+    }
+
+    /// <summary>Moves <paramref name="node"/> to the nearest grid position (its first connector on the grid).</summary>
+    public void Snap(NodeEditorNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        (node.X, node.Y) = Snapped(node, node.X, node.Y);
+        InvalidateVisual();
     }
 
     private static float TopOfRows(NodeEditorNode n) => HeaderHeight + (n.Subtitle is null ? 0f : SubtitleHeight) + (n.Level is null ? 0f : MeterHeight + 2f);
@@ -977,8 +998,7 @@ public class NodeEditor : Control
                     float nx = x + dx, ny = y + dy;
                     if (SnapToGrid && GridSize > 0f && !e.Shift)
                     {
-                        nx = MathF.Round(nx / GridSize) * GridSize;
-                        ny = MathF.Round(ny / GridSize) * GridSize;
+                        (nx, ny) = Snapped(n, nx, ny);
                     }
                     if (nx != n.X || ny != n.Y) _moved = true;
                     n.X = nx;

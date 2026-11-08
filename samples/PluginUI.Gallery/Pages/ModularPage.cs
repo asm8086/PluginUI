@@ -1,4 +1,4 @@
-// 2026/11/08 13:04:00 UTC - PluginUI
+// 2026/11/08 13:07:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -44,6 +44,7 @@ internal static class ModularPage
             [Audio("in1", L.T("In 1", "Entrée 1")), Audio("in2", L.T("In 2", "Entrée 2")), Audio("in3", L.T("In 3", "Entrée 3")), Audio("in4", L.T("In 4", "Entrée 4"))],
             [Audio("out", L.T("Out", "Sortie"))], level: () => Wobble(1.3, 0.45f, 0.45f));
         var output = Node(L.T("Audio output 1-2", "Sortie audio 1-2"), 880, 96, [Audio("in", L.T("In", "Entrée"))], [], level: () => Wobble(1.3, 0.45f, 0.45f));
+        foreach (var n in editor.Nodes) editor.Snap(n); // first connectors on the grid: aligned nodes get straight cables
         editor.Zoom = 0.8f;
 
         void Cable(NodeEditorNode from, string output, NodeEditorNode to, string input, string? label = null, bool isFeedback = false)

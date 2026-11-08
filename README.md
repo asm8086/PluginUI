@@ -1,4 +1,4 @@
-<!-- 2026/11/08 13:04:00 UTC - PluginUI -->
+<!-- 2026/11/08 13:07:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -83,7 +83,7 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer: desktop application (IL or NativeAOT) built with PluginUI.Desktop
 ├── samples/Designs/                Sample designs (.pluginui), including the DemoSynth layout
-├── tests/PluginUI.Tests/           238 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers, accessibility, tables, native windows, full screen)
+├── tests/PluginUI.Tests/           239 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers, accessibility, tables, native windows, full screen)
 ├── tests/PluginUI.NPlug.Tests/     29 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
 ├── tests/PluginUI.Design.Tests/    26 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
 ├── tests/PluginUI.Host.Tests/      81 NUnit tests (VST 2 hosting of an in-process test plug-in, .fxp / .fxb, ASIO through an in-process test driver, sample formats, VST3 hosting of DemoSynth and test plug-ins, parameters, MIDI mapping, presets, rendering, measurement, WAV, MIDI files, MIDI produced by plug-ins, plug-in list, out-of-process scanning, live rack and signal sources)
