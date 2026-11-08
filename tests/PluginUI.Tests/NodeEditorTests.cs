@@ -1,4 +1,4 @@
-// 2026/11/08 13:07:00 UTC - PluginUI
+// 2026/11/08 13:25:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -229,6 +229,29 @@ public class NodeEditorTests
             Assert.That(_editor.PortPosition(a.Outputs[0]).Y, Is.EqualTo(_editor.PortPosition(b.Inputs[0]).Y), "a straight cable");
             Assert.That(_editor.PortPosition(a.Outputs[1]).Y, Is.EqualTo(_editor.PortPosition(b.Inputs[1]).Y), "the rows are one grid step high");
             Assert.That(_editor.PortPosition(a.Outputs[0]).Y % 16f, Is.Zero);
+        });
+    }
+
+    [Test]
+    public void FitBeforeTheFirstRenderIsDoneAgainAtTheRealSize()
+    {
+        // A graph restored at start: the editor sits in a page that is not laid out yet.
+        var page = new Canvas();
+        var late = new NodeEditor();
+        page.Children.Add(late);
+        var node = new NodeEditorNode("Far") { X = 900, Y = -200 };
+        node.SetPorts([new("in", "In")], []);
+        late.Nodes.Add(node);
+        late.ZoomToFit();
+        late.SetBounds(0f, 0f, 700f, 500f);
+        _root.Children.Remove(_editor);
+        _root.Children.Add(page);
+        _host.UpdateLayout();
+        var b = late.NodeBounds(node);
+        Assert.Multiple(() =>
+        {
+            Assert.That(late.Bounds.Contains(late.FromGraph(new Point(b.X, b.Y))), Is.True, "top left visible");
+            Assert.That(late.Bounds.Contains(late.FromGraph(new Point(b.Right, b.Bottom))), Is.True, "bottom right visible");
         });
     }
 

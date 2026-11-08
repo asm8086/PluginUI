@@ -1,4 +1,4 @@
-// 2026/11/08 13:07:00 UTC - PluginUI
+// 2026/11/08 13:25:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -232,6 +232,7 @@ public class NodeEditor : Control
     private float _zoom = 1f;
     private Point _offset;
     private Rect _view;
+    private bool _fitPending;
 
     private readonly SlimScrollBar _vbar = new(Orientation.Vertical);
     private readonly SlimScrollBar _hbar = new(Orientation.Horizontal);
@@ -613,8 +614,10 @@ public class NodeEditor : Control
     }
 
     /// <summary>Zooms and scrolls so that every node is visible.</summary>
+    /// <remarks>Called before the editor is first shown (its size is not known yet), the fit is done again when it is.</remarks>
     public void ZoomToFit()
     {
+        _fitPending = _view.IsEmpty;
         Layout();
         var v = View;
         if (_nodes.Count == 0 || v.Width <= 0f || v.Height <= 0f)
@@ -628,6 +631,18 @@ public class NodeEditor : Control
         _zoom = Math.Clamp(MathF.Min(v.Width / all.Width, v.Height / all.Height), MinZoom, 1.25f);
         _offset = new Point(all.Center.X - v.Width / 2f / _zoom, all.Center.Y - v.Height / 2f / _zoom);
         InvalidateVisual();
+    }
+
+    /// <inheritdoc />
+    protected override void ArrangeOverride(Rect bounds)
+    {
+        base.ArrangeOverride(bounds);
+        // A fit asked before the editor had its size (a graph restored at start) is done again now.
+        if (_fitPending && bounds.Width > 0f && bounds.Height > 0f)
+        {
+            ZoomToFit();
+            _fitPending = false;
+        }
     }
 
     /// <summary>Scrolls so that <paramref name="node"/> is visible.</summary>
@@ -692,6 +707,11 @@ public class NodeEditor : Control
     protected override void RenderVector(DrawingContext dc, Rect widget, VectorStyle style)
     {
         _view = widget;
+        if (_fitPending)
+        {
+            _fitPending = false;
+            ZoomToFit();
+        }
         Layout();
         var p = Theme.Palette;
         dc.FillRect(widget, p.Background);
