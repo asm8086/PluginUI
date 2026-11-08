@@ -1,4 +1,4 @@
-<!-- 2026/11/08 12:00:00 UTC - PluginUI -->
+<!-- 2026/11/08 13:04:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -329,8 +329,9 @@ est dans le graphe, que sa fenêtre soit ouverte ou non.
 - **Menu d'un module** (clic droit, Maj+F10) : ouvrir, contourner et muet (plug-ins), renommer,
   **Relier** (toutes les entrées compatibles, pour le clavier et les lecteurs d'écran), **Débrancher**, supprimer
   (Suppr ; les réglages d'un plug-in sont perdus, l'hôte demande donc confirmation).
-- **Vue** : la molette zoome autour de la souris, le bouton du milieu (ou Alt+glisser) déplace la vue, **Tout
-  afficher** (Origine) ajuste le graphe. Les modules se déplacent sur une grille (Maj = librement) ; glissez sur un
+- **Vue** : barres de défilement quand le graphe dépasse la vue ; la molette fait défiler (Maj+molette de côté),
+  Ctrl+molette zoome autour de la souris, le bouton du milieu (ou Alt+glisser) déplace la vue, **Tout afficher**
+  (Origine) ajuste le graphe. Les modules se déplacent sur une grille (Maj = librement) ; glissez sur un
   endroit vide pour en sélectionner plusieurs, Ctrl+clic pour en ajouter un. Ctrl+Gauche / Ctrl+Droite sélectionnent le
   module précédent ou suivant, les flèches déplacent la sélection.
 - **Fichiers de graphe** (menu Fichier) : **Nouveau graphe** (Ctrl+N : une entrée audio, une entrée MIDI et une sortie

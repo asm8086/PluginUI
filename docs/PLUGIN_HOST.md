@@ -1,4 +1,4 @@
-<!-- 2026/11/08 12:00:00 UTC - PluginUI -->
+<!-- 2026/11/08 13:04:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -314,7 +314,8 @@ window open or not.
 - **Menu of a module** (right click, Shift+F10): open, bypass and mute (plug-ins), rename, **Connect**
   (every compatible input, for the keyboard and screen readers), **Disconnect**, remove (Delete; the settings of a
   plug-in are lost, so the host asks first).
-- **View**: the wheel zooms around the mouse, the middle button (or Alt+drag) pans, **Show all** (Home) fits the graph.
+- **View**: scroll bars when the graph is larger than the view; the wheel scrolls (Shift+wheel sideways), Ctrl+wheel
+  zooms around the mouse, the middle button (or Alt+drag) pans, **Show all** (Home) fits the graph.
   Modules move on a grid (Shift = free); drag on an empty place to select several, Ctrl+click to add one. Ctrl+Left /
   Ctrl+Right select the previous or next module, the arrows move the selection.
 - **Graph files** (File menu): **New graph** (Ctrl+N: an audio input, a MIDI input and an audio output), **Open a
