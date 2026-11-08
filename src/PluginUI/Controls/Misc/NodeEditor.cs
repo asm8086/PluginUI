@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:04:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -202,8 +202,9 @@ public sealed class NodeEditorMenuEventArgs : EventArgs
 /// update the lists and call <see cref="UIElement.InvalidateVisual"/>.</para>
 /// <para><b>Mouse.</b> Drag a node to move it (its selection with it); drag from a connector to draw a cable to a
 /// compatible connector (they light up); drag the end of a cable away from its input to move or remove it. Click a cable
-/// to select it. Drag on an empty area to select with a rectangle (Ctrl adds). The wheel zooms around the mouse; the
-/// middle button (or Alt with the left one) pans. Double-click a node to open it; right-click for its menu.</para>
+/// to select it. Drag on an empty area to select with a rectangle (Ctrl adds). The wheel scrolls (Shift: sideways),
+/// Ctrl+wheel zooms around the mouse; the middle button (or Alt with the left one) pans; scroll bars appear when the
+/// graph does not fit. Double-click a node to open it; right-click for its menu.</para>
 /// <para><b>Keyboard.</b> Ctrl+Left / Ctrl+Right select the previous or next node (left to right), Ctrl+A all; arrows
 /// move the selection (Shift = farther); Enter opens the node; Delete removes the selection; Home fits the graph in the
 /// view, + and − zoom; Shift+F10 or the Menu key opens the menu of the selection.</para>
@@ -231,6 +232,11 @@ public class NodeEditor : Control
     private float _zoom = 1f;
     private Point _offset;
     private Rect _view;
+
+    private readonly SlimScrollBar _vbar = new(Orientation.Vertical);
+    private readonly SlimScrollBar _hbar = new(Orientation.Horizontal);
+    private SlimScrollBar? _barDrag;
+    private Rect _barContent;
 
     private enum DragMode { None, Move, Pan, Band, Cable }
 
@@ -550,6 +556,41 @@ public class NodeEditor : Control
 
     // ---------------------------------------------------------------- view
 
+    /// <summary>What the scroll bars cover, in graph units: the nodes (with a margin) and the visible area.</summary>
+    private Rect ScrollContent()
+    {
+        var v = View;
+        var visible = new Rect(_offset.X, _offset.Y, v.Width / _zoom, v.Height / _zoom);
+        if (_nodes.Count == 0) return visible;
+        return _nodes.Select(NodeBounds).Aggregate((a, b) => a.Union(b)).Inflate(16f).Union(visible);
+    }
+
+    /// <summary>Places the scroll bars along the right and bottom edges (window pixels).</summary>
+    private void UpdateBars()
+    {
+        var v = View;
+        var content = _barDrag is not null ? _barContent : ScrollContent();
+        _hbar.Extent = content.Width * _zoom;
+        _hbar.Viewport = v.Width;
+        _hbar.Offset = Math.Clamp((_offset.X - content.X) * _zoom, 0f, _hbar.MaxOffset);
+        _vbar.Extent = content.Height * _zoom;
+        _vbar.Viewport = v.Height;
+        _vbar.Offset = Math.Clamp((_offset.Y - content.Y) * _zoom, 0f, _vbar.MaxOffset);
+        _vbar.Track = new Rect(v.Right - 10f, v.Y + 2f, 9f, MathF.Max(0f, v.Height - 4f - (_hbar.IsNeeded ? 10f : 0f)));
+        _hbar.Track = new Rect(v.X + 2f, v.Bottom - 10f, MathF.Max(0f, v.Width - 4f - (_vbar.IsNeeded ? 10f : 0f)), 9f);
+    }
+
+    /// <summary><c>true</c> when the graph does not fit in the view (scroll bars shown): horizontally, vertically.</summary>
+    [Browsable(false)]
+    public (bool Horizontal, bool Vertical) IsScrollable
+    {
+        get
+        {
+            UpdateBars();
+            return (_hbar.IsNeeded, _vbar.IsNeeded);
+        }
+    }
+
     /// <summary>Zooms and scrolls so that every node is visible.</summary>
     public void ZoomToFit()
     {
@@ -658,6 +699,13 @@ public class NodeEditor : Control
         dc.PopTransform();
 
         if (_drag == DragMode.Band) DrawBand(dc, p);
+        UpdateBars();
+        var mouse = Host?.MousePosition ?? default;
+        _vbar.IsHovered = _barDrag == _vbar || (IsMouseOver && _vbar.HitTest(mouse));
+        _hbar.IsHovered = _barDrag == _hbar || (IsMouseOver && _hbar.HitTest(mouse));
+        float alpha = IsMouseOver || _barDrag is not null ? 1f : 0.6f;
+        _vbar.Render(dc, p, alpha);
+        _hbar.Render(dc, p, alpha);
         if (_nodes.Count == 0 && !string.IsNullOrEmpty(EmptyText))
         {
             dc.DrawText(EmptyText, widget.Deflate(24f), Theme.Typography.Normal with { Align = HorizontalAlignment.Center, Wrap = true }, p.TextDim);
@@ -790,6 +838,21 @@ public class NodeEditor : Control
         _mouse = e.Position;
         Focus();
 
+        if (e.Button == MouseButton.Left)
+        {
+            UpdateBars();
+            var bar = _vbar.HitTest(e.Position) ? _vbar : _hbar.HitTest(e.Position) ? _hbar : null;
+            if (bar is not null)
+            {
+                // The content is fixed for the whole drag, so that the thumb follows the mouse.
+                _barContent = ScrollContent();
+                _barDrag = bar;
+                ScrollTo(bar, bar.Press(e.Position));
+                CaptureMouse();
+                e.Handled = true;
+                return;
+            }
+        }
         if (e.Button == MouseButton.Middle || (e.Button == MouseButton.Left && e.Alt))
         {
             _drag = DragMode.Pan;
@@ -896,6 +959,11 @@ public class NodeEditor : Control
     {
         base.OnMouseMove(e);
         _mouse = e.Position;
+        if (_barDrag is not null)
+        {
+            ScrollTo(_barDrag, _barDrag.Drag(e.Position));
+            return;
+        }
         switch (_drag)
         {
             case DragMode.Pan:
@@ -944,13 +1012,23 @@ public class NodeEditor : Control
             }
         }
         var g = ToGraph(e.Position);
-        Cursor = PortAt(g) is not null ? StandardCursor.Hand : NodeAt(g) is not null ? StandardCursor.SizeAll : StandardCursor.Arrow;
+        bool overBar = _vbar.HitTest(e.Position) || _hbar.HitTest(e.Position);
+        if (overBar != (_vbar.IsHovered || _hbar.IsHovered)) InvalidateVisual();
+        Cursor = overBar ? StandardCursor.Arrow : PortAt(g) is not null ? StandardCursor.Hand : NodeAt(g) is not null ? StandardCursor.SizeAll : StandardCursor.Arrow;
     }
 
     /// <inheritdoc />
     protected internal override void OnMouseUp(MouseEventArgs e)
     {
         base.OnMouseUp(e);
+        if (_barDrag is not null)
+        {
+            _barDrag.Release();
+            _barDrag = null;
+            ReleaseMouseCapture();
+            InvalidateVisual();
+            return;
+        }
         if (_drag == DragMode.None) return;
         var drag = _drag;
         _drag = DragMode.None;
@@ -998,8 +1076,16 @@ public class NodeEditor : Control
         CancelDrag();
     }
 
+    private void ScrollTo(SlimScrollBar bar, float offset)
+    {
+        _offset = bar == _hbar ? new Point(_barContent.X + offset / _zoom, _offset.Y) : new Point(_offset.X, _barContent.Y + offset / _zoom);
+        InvalidateVisual();
+    }
+
     private void CancelDrag()
     {
+        _barDrag?.Release();
+        _barDrag = null;
         if (_drag == DragMode.Move)
         {
             foreach (var (n, x, y) in _origin)
@@ -1021,13 +1107,21 @@ public class NodeEditor : Control
     {
         base.OnMouseWheel(e);
         if (e.Handled || e.WheelDelta == 0f) return;
-        if (e.IsHorizontalWheel)
+        if (e.Control)
+        {
+            ZoomAround(e.Position, MathF.Pow(1.15f, e.WheelDelta));
+        }
+        else if (e.IsHorizontalWheel)
         {
             ViewOffset = new Point(_offset.X + e.WheelDelta * 40f / _zoom, _offset.Y);
         }
+        else if (e.Shift)
+        {
+            ViewOffset = new Point(_offset.X - e.WheelDelta * 40f / _zoom, _offset.Y);
+        }
         else
         {
-            ZoomAround(e.Position, MathF.Pow(1.15f, e.WheelDelta));
+            ViewOffset = new Point(_offset.X, _offset.Y - e.WheelDelta * 40f / _zoom);
         }
         e.Handled = true;
     }

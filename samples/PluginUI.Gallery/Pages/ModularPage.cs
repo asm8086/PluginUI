@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:04:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -10,8 +10,8 @@ internal static class ModularPage
     public static UIElement Build(DemoAudio audio)
     {
         var c = new Canvas();
-        c.Caption(L.T("NODE EDITOR (DRAG FROM A CONNECTOR TO CABLE, PULL A CABLE END OFF TO REMOVE IT, WHEEL: ZOOM, MIDDLE BUTTON: PAN)",
-                      "ÉDITEUR DE MODULES (GLISSER D'UN CONNECTEUR : CÂBLER, ÉCARTER UN BOUT DE CÂBLE : L'ENLEVER, MOLETTE : ZOOM)"), 20, 12, 850);
+        c.Caption(L.T("NODE EDITOR (DRAG FROM A CONNECTOR TO CABLE, PULL A CABLE END OFF TO REMOVE IT, CTRL+WHEEL: ZOOM, MIDDLE BUTTON: PAN)",
+                      "ÉDITEUR DE MODULES (GLISSER D'UN CONNECTEUR : CÂBLER, ÉCARTER UN BOUT DE CÂBLE : L'ENLEVER, CTRL+MOLETTE : ZOOM)"), 20, 12, 850);
         var editor = c.At(new NodeEditor
         {
             AutomationName = L.T("Patch", "Patch"),

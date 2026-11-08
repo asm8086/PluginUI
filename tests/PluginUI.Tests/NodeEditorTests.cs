@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:04:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -187,7 +187,7 @@ public class NodeEditorTests
     {
         var mouse = new Point(300f, 200f);
         var before = _editor.ToGraph(mouse);
-        _host.DispatchWheel(mouse, 2f, false, ModifierKeys.None);
+        _host.DispatchWheel(mouse, 2f, false, ModifierKeys.Control);
         Assert.Multiple(() =>
         {
             Assert.That(_editor.Zoom, Is.EqualTo(1.15f * 1.15f).Within(1e-4f));
@@ -211,6 +211,27 @@ public class NodeEditorTests
             var bottomRight = _editor.FromGraph(new Point(b.Right, b.Bottom));
             Assert.That(_editor.Bounds.Contains(topLeft) && _editor.Bounds.Contains(bottomRight), Is.True, node.Title);
         }
+    }
+
+    [Test]
+    public void ScrollBarsAppearWhenTheGraphDoesNotFit()
+    {
+        Assert.That(_editor.IsScrollable, Is.EqualTo((false, false)), "everything fits at first");
+        var far = Node("Far", 1600, 900, [new("in", "In")], []);
+        Assert.That(_editor.IsScrollable, Is.EqualTo((true, true)));
+
+        var start = _editor.ViewOffset;
+        _host.DispatchWheel(new Point(300f, 200f), -1f, false, ModifierKeys.None);
+        Assert.That(_editor.ViewOffset.Y, Is.EqualTo(start.Y + 40f).Within(1e-3f), "the wheel scrolls down");
+        _host.DispatchWheel(new Point(300f, 200f), -1f, false, ModifierKeys.Shift);
+        Assert.That(_editor.ViewOffset.X, Is.EqualTo(start.X + 40f).Within(1e-3f), "Shift+wheel scrolls sideways");
+        Assert.That(_editor.Zoom, Is.EqualTo(1f), "without Ctrl, no zoom");
+
+        // Dragging the horizontal thumb to the end shows the far node.
+        _editor.ViewOffset = default;
+        Drag(new Point(20f, 495f), new Point(700f, 495f));
+        var right = _editor.ToGraph(new Point(700f, 0f)).X;
+        Assert.That(right, Is.GreaterThanOrEqualTo(_editor.NodeBounds(far).Right), "the end of the bar reaches the last node");
     }
 
     [Test]
