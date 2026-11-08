@@ -1,4 +1,4 @@
-// 2026/11/06 12:53:00 UTC - PluginUI
+// 2026/11/08 12:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -120,6 +120,14 @@ public sealed record UIStrings
         TunerInTune = "juste",
         TunerNoPitch = "aucune note",
         AutomationTuner = "accordeur",
+        AutomationNodeEditor = "éditeur de modules",
+        NodeInputsFormat = "entrées : {0}",
+        NodeOutputsFormat = "sorties : {0}",
+        NodeNotConnected = "non reliées",
+        NodesSelectedFormat = "{0} modules sur {1} sélectionnés",
+        NodeCountFormat = "{0} modules, {1} câbles, aucune sélection",
+        CableFormat = "câble de {0} vers {1}",
+        FeedbackCable = "câble de retour, retardé",
         KeyNames = KeyNameTables.French,
         Untitled = "Sans titre",
         SaveChangesQuestion = "Voulez-vous enregistrer les modifications de « {0} » ?",
@@ -394,6 +402,30 @@ public sealed record UIStrings
 
     /// <summary>Role of a <see cref="Tuner"/> spoken by screen readers.</summary>
     public string AutomationTuner { get; init; } = "tuner";
+
+    /// <summary>Role of a <see cref="NodeEditor"/> spoken by screen readers.</summary>
+    public string AutomationNodeEditor { get; init; } = "node editor";
+
+    /// <summary>Inputs of the selected <see cref="NodeEditor"/> node and their cables ({0}: the list).</summary>
+    public string NodeInputsFormat { get; init; } = "inputs: {0}";
+
+    /// <summary>Outputs of the selected <see cref="NodeEditor"/> node and their cables ({0}: the list).</summary>
+    public string NodeOutputsFormat { get; init; } = "outputs: {0}";
+
+    /// <summary>Connectors of a <see cref="NodeEditor"/> node with no cable.</summary>
+    public string NodeNotConnected { get; init; } = "not connected";
+
+    /// <summary>Several selected <see cref="NodeEditor"/> nodes ({0}: selected, {1}: all).</summary>
+    public string NodesSelectedFormat { get; init; } = "{0} of {1} modules selected";
+
+    /// <summary>A <see cref="NodeEditor"/> with nothing selected ({0}: nodes, {1}: cables).</summary>
+    public string NodeCountFormat { get; init; } = "{0} modules, {1} cables, nothing selected";
+
+    /// <summary>The selected <see cref="NodeEditor"/> cable ({0}: output, {1}: input).</summary>
+    public string CableFormat { get; init; } = "cable from {0} to {1}";
+
+    /// <summary>A <see cref="NodeEditor"/> cable that closes a loop.</summary>
+    public string FeedbackCable { get; init; } = "feedback cable, delayed";
 
     /// <summary>
     /// Names of keys in shortcut texts (modifiers <see cref="Key.Control"/>, <see cref="Key.Shift"/>,

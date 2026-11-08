@@ -1,4 +1,4 @@
-// 2026/11/05 15:08:00 UTC - PluginUI
+// 2026/11/08 12:00:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -398,6 +398,7 @@ public static class BuiltInDesignTypes
         registry.Register<DrumPads>(Instrument);
         registry.Register<ModulationMatrix>(Instrument);
         registry.Register<RoutingMatrix>(Buttons);
+        registry.Register<NodeEditor>(Buttons);
         registry.Register<TimelineRuler>(Instrument);
         registry.Register<WavetableView>(Instrument);
         registry.Register<Tuner>(Analysis);

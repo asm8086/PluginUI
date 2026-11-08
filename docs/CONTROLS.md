@@ -1,4 +1,4 @@
-<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
+<!-- 2026/11/08 12:00:00 UTC - PluginUI -->
 
 # Element catalog
 
@@ -43,6 +43,7 @@ Reference versions for the equivalents: **VSTGUI 4.15.1** (VST 3 SDK 3.8.1) and 
 | `StepSequencer` | Per-step values (interpolated drawing) + gates, active length, beat groups, playing step, binding to one parameter per step (one gesture per parameter touched) | — (bonus) |
 | `ModulationMatrix`, `ModulationSlot`, `ModulationTarget` | Modulation matrix: one row per slot with on / off, source and target menus (targets grouped in sub-menus), bipolar amount dragged with the mouse (Shift fine, double-click 0), delete; sources dropped from a `ModulationSourceButton` add a slot or replace a source; amount and on / off bindable to parameters; keyboard (arrows by cell, Enter / Space, Page Up / Down or + / −, Insert, Delete) | — (bonus) |
 | `RoutingMatrix` | Routing grid of inputs × outputs (channel router, pin connector, patch bay): click or drag across crossings, `RoutingMode` Free / OneInputPerOutput / OneOutputPerInput, column labels turned when narrow, crossings bindable to parameters (`ParameterOf`); arrows and Space; one check box per crossing for screen readers | — (bonus) |
+| `NodeEditor`, `NodeEditorNode`, `NodeEditorPort`, `NodeEditorCable` | Modular graph editor (modular host, patch bay, signal flow): nodes with titled headers, inputs on the left and outputs on the right (type colors, channel counts), cables drawn as curves (dashed for loop feedback, with a label), badges, dimmed and failed nodes, live level meters; cables drawn from either end, ends pulled off to move or remove them, only compatible connectors light up (`CanConnect`); moves on a grid, rectangle and Ctrl+click selection, zoom around the mouse, pan with the middle button, `ZoomToFit`; every change is a request to the application (`CableRequested`, `CableRemoveRequested`, `DeleteRequested`, `NodeOpened`, `ContextMenuOpening`); keyboard (Ctrl+arrows to select, arrows to move, Enter, Delete, Home, + / −, Shift+F10); screen readers hear the selected node and its cables | — (bonus) |
 | `ModulationSourceButton` | Modulation source chip to drag onto a control that accepts modulation (`AcceptsModulation`, `ModulationDropped` event) | — (bonus, Serum / Vital style) |
 
 ## Menus

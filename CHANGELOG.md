@@ -22,6 +22,15 @@ Before 1.0, minor versions may contain breaking changes.
   states; a plug-in that cannot be found becomes a `MissingPluginNode` that keeps its place, cables and state.
 - `pluginhost graph <file> -o out.wav [-i in.wav] [--midi file.mid] [--length s]`: renders a graph file.
 - `PluginLoader.Load(PluginReference)`: loads the plug-in a graph file refers to (catalog entry, else its path).
+- **`NodeEditor`** (with `NodeEditorNode`, `NodeEditorPort`, `NodeEditorCable`): modular graph editor — nodes with
+  inputs on the left and outputs on the right, cables drawn as curves (dashed with a label for loop feedback), badges,
+  dimmed or failed nodes, live level meters; cables drawn from either end, ends pulled off to move or remove them,
+  compatible connectors lit (`CanConnect`); moves on a grid, rectangle selection, zoom around the mouse, middle-button
+  pan, `ZoomToFit`; every change is a request (`CableRequested`, `CableRemoveRequested`, `DeleteRequested`,
+  `NodeOpened`, `ContextMenuOpening`); full keyboard control and a screen reader peer. Registered in the designer and
+  shown on the new Modular page of the gallery. Texts `UIStrings.AutomationNodeEditor`, `NodeInputsFormat`,
+  `NodeOutputsFormat`, `NodeNotConnected`, `NodesSelectedFormat`, `NodeCountFormat`, `CableFormat`, `FeedbackCable`
+  (English, French).
 
 ### Changed
 

@@ -1,4 +1,4 @@
-<!-- 2026/11/06 23:57:00 UTC - PluginUI -->
+<!-- 2026/11/08 12:00:00 UTC - PluginUI -->
 
 # Catalogue des éléments
 
@@ -43,6 +43,7 @@ Versions de référence des équivalents : **VSTGUI 4.15.1** (SDK VST 3 3.8.1) e
 | `StepSequencer` | Valeurs par pas (dessin interpolé) + portes, longueur active, groupes de temps, pas joué, liaison à un paramètre par pas (un geste par paramètre touché) | — (bonus) |
 | `ModulationMatrix`, `ModulationSlot`, `ModulationTarget` | Matrice de modulation : une ligne par emplacement avec marche / arrêt, menus de source et de destination (destinations groupées en sous-menus), intensité bipolaire glissée à la souris (Maj fin, double-clic 0), suppression ; les sources déposées depuis un `ModulationSourceButton` ajoutent un emplacement ou remplacent une source ; intensité et marche / arrêt liables à des paramètres ; clavier (flèches par cellule, Entrée / Espace, Page préc. / suiv. ou + / −, Inser, Suppr) | — (bonus) |
 | `RoutingMatrix` | Grille de routage entrées × sorties (routeur de canaux, connecteur de broches, baie de brassage) : clic ou glisser sur les croisements, `RoutingMode` Free / OneInputPerOutput / OneOutputPerInput, libellés de colonnes tournés quand ils sont étroits, croisements liables à des paramètres (`ParameterOf`) ; flèches et Espace ; une case à cocher par croisement pour les lecteurs d'écran | — (bonus) |
+| `NodeEditor`, `NodeEditorNode`, `NodeEditorPort`, `NodeEditorCable` | Éditeur de graphe modulaire (hôte modulaire, baie de brassage, flux du signal) : modules à en-tête titré, entrées à gauche et sorties à droite (couleurs par type, nombre de canaux), câbles en courbes (en pointillés pour le retour d'une boucle, avec une étiquette), badges, modules estompés ou en échec, indicateurs de niveau en direct ; câbles tirés depuis l'un ou l'autre bout, bouts écartés pour les déplacer ou les enlever, seuls les connecteurs compatibles s'allument (`CanConnect`) ; déplacements sur une grille, sélection au rectangle et Ctrl+clic, zoom autour de la souris, déplacement de la vue au bouton du milieu, `ZoomToFit` ; chaque modification est une demande à l'application (`CableRequested`, `CableRemoveRequested`, `DeleteRequested`, `NodeOpened`, `ContextMenuOpening`) ; clavier (Ctrl+flèches pour sélectionner, flèches pour déplacer, Entrée, Suppr, Origine, + / −, Maj+F10) ; les lecteurs d'écran annoncent le module sélectionné et ses câbles | — (bonus) |
 | `ModulationSourceButton` | Pastille de source de modulation à glisser sur un contrôle qui accepte la modulation (`AcceptsModulation`, événement `ModulationDropped`) | — (bonus, façon Serum / Vital) |
 
 ## Menus

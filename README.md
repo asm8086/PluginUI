@@ -1,4 +1,4 @@
-<!-- 2026/11/08 00:38:00 UTC - PluginUI -->
+<!-- 2026/11/08 12:00:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -6,7 +6,7 @@
 
 PluginUI is a user interface toolkit for VST3 plug-in editors written in C# / .NET 10. It draws everything with **Direct2D / DirectWrite** in **a single Win32 window, a child of the DAW's window**, has no dependency on WinForms, WPF or any UI runtime, and stays **NativeAOT-compatible** (the compiled plug-in is a native DLL that needs no installed .NET).
 
-It brings together the element catalogs of **VSTGUI** and **iPlug2**, complemented by elements for instruments and for analysis (equalizer, multiband crossover, frequency-response display, EBU R128 loudness, spectrogram, waveform, tuner, wavetable, MSEG, step sequencer, piano roll, drum pads, modulation matrix with drag-and-drop sources, preset browser, MIDI learn, A/B): nearly a hundred elements, each available as stylable vector drawing, as bitmap / film strip and as SVG. It also provides the extension points to create more.
+It brings together the element catalogs of **VSTGUI** and **iPlug2**, complemented by elements for instruments and for analysis (equalizer, multiband crossover, frequency-response display, EBU R128 loudness, spectrogram, waveform, tuner, wavetable, MSEG, step sequencer, piano roll, drum pads, modulation matrix with drag-and-drop sources, node editor for modular graphs, preset browser, MIDI learn, A/B): nearly a hundred elements, each available as stylable vector drawing, as bitmap / film strip and as SVG. It also provides the extension points to create more.
 
 ![Gallery — rotary and linear](docs/images/1-rotary-linear.png)
 
@@ -19,7 +19,7 @@ It brings together the element catalogs of **VSTGUI** and **iPlug2**, complement
 | ![Frequency response](docs/images/15-response.png) | ![Multiband crossover](docs/images/16-multiband.png) |
 | ![Pattern editor and drum pads](docs/images/17-sequencer.png) | ![Preset browser and tree view](docs/images/18-browser.png) |
 | ![Modulation and routing matrices](docs/images/19-matrix.png) | ![Timeline, spin boxes and toasts](docs/images/20-tools.png) |
-| ![Wavetable and tuners](docs/images/21-synth.png) | |
+| ![Wavetable and tuners](docs/images/21-synth.png) | ![Node editor](docs/images/22-modular.png) |
 
 *Screenshots produced by `PluginUI.Gallery --snapshot` (off-screen rendering). The crossed-out frames on the "Skins" and "Containers" pages are the SVGs, which the capture engine (Wine) cannot draw; Windows displays them natively.*
 
@@ -83,7 +83,7 @@ PluginUI/
 ├── samples/PluginUI.DemoSynth/     Sample VST3 instrument: polyphonic synth with a sidechain input
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer: desktop application (IL or NativeAOT) built with PluginUI.Desktop
 ├── samples/Designs/                Sample designs (.pluginui), including the DemoSynth layout
-├── tests/PluginUI.Tests/           230 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers, accessibility, tables, native windows, full screen)
+├── tests/PluginUI.Tests/           237 NUnit tests (layout, input, gestures, popups, controls, DSP and SIMD, cultures and languages, design conventions, menu bar, commands, desktop helpers, accessibility, tables, native windows, full screen)
 ├── tests/PluginUI.NPlug.Tests/     29 NUnit tests (editor ↔ processor bridge, host keys, MIDI learn, synth DSP, Steinberg validator)
 ├── tests/PluginUI.Design.Tests/    26 NUnit tests (.pluginui format, loader, generated code compiled by Roslyn, live bridge, projects, editor commands, extensions)
 ├── tests/PluginUI.Host.Tests/      81 NUnit tests (VST 2 hosting of an in-process test plug-in, .fxp / .fxb, ASIO through an in-process test driver, sample formats, VST3 hosting of DemoSynth and test plug-ins, parameters, MIDI mapping, presets, rendering, measurement, WAV, MIDI files, MIDI produced by plug-ins, plug-in list, out-of-process scanning, live rack and signal sources)
