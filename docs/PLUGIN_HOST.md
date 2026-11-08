@@ -1,4 +1,4 @@
-<!-- 2026/11/08 18:01:00 UTC - PluginUI -->
+<!-- 2026/11/08 18:51:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -254,8 +254,8 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   only, failures shown or not. Click a column header to sort (again for the reverse order), or choose an order in the
   **Sort** list: name, vendor, category, format, input or output channels, latency, installation date, recently used,
   most used, favorites first, folder, status. Right click on the header (or **View > Columns**) shows or hides columns:
-  favorite, name, vendor, type, categories, format, inputs, outputs, sidechain, MIDI, latency, parameters, editor,
-  version, installed, last used, uses, folder, architecture, status. Widths, columns, sort and filters are kept between runs.
+  favorite, name, vendor, type, categories, format, architecture (x64 64-bit, x86 32-bit, ARM64…), inputs, outputs,
+  sidechain, MIDI, latency, parameters, editor, version, installed, last used, uses, folder, status. Widths, columns, sort and filters are kept between runs.
 - **Details** (Ctrl+I): format and SDK, version, categories, buses, MIDI input, latency in samples and milliseconds,
   parameters, editor, module path, dates, use count, and the reason of a failure.
 - **Full screen** (F11, View menu; Esc to leave): the window covers the whole screen, without title bar.

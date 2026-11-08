@@ -1,4 +1,4 @@
-// 2026/11/08 15:53:00 UTC - PluginUI
+// 2026/11/08 18:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -139,6 +139,31 @@ public class CatalogTests
         Assert.That(ModuleArchitectures.ReadMachine(file), Is.EqualTo(expected));
         File.WriteAllText(file, "not a module");
         Assert.That(ModuleArchitectures.ReadMachine(file), Is.EqualTo(ModuleArchitecture.Unknown));
+    }
+
+    [Test]
+    public void PluginsWithoutAnArchitectureGetItFromTheirModules()
+    {
+        string old32 = Path.Combine(_root, "Old32.dll"), new64 = Path.Combine(_root, "New64.dll");
+        File.WriteAllBytes(old32, PeHeader(0x014C));
+        File.WriteAllBytes(new64, PeHeader(0x8664));
+        var catalog = new PluginCatalog
+        {
+            Plugins =
+            [
+                new PluginDescription { Format = PluginFormat.Vst2, Path = old32, Name = "Old" },
+                new PluginDescription { Format = PluginFormat.Vst2, Path = new64, Name = "Shell A" },
+                new PluginDescription { Format = PluginFormat.Vst2, Path = new64, Name = "Shell B" },
+                new PluginDescription { Format = PluginFormat.Vst2, Path = Path.Combine(_root, "Gone.dll"), Name = "Gone" },
+                new PluginDescription { Format = PluginFormat.Vst2, Path = new64, Name = "Known", Architecture = ModuleArchitecture.Arm64 },
+            ],
+        };
+        Assert.That(catalog.CompleteArchitectures(), Is.EqualTo(3));
+        Assert.That(catalog.Plugins.Select(p => p.Architecture), Is.EqualTo(new[]
+        {
+            ModuleArchitecture.X86, ModuleArchitecture.X64, ModuleArchitecture.X64, ModuleArchitecture.Unknown, ModuleArchitecture.Arm64,
+        }));
+        Assert.That(catalog.CompleteArchitectures(), Is.Zero, "a missing module stays unknown, without counting");
     }
 
     [Test]

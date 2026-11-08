@@ -1,4 +1,4 @@
-// 2026/11/08 15:53:00 UTC - PluginUI
+// 2026/11/08 18:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -178,6 +178,26 @@ public sealed class PluginCatalog
         {
             return new PluginCatalog();
         }
+    }
+
+    /// <summary>
+    /// Reads the architecture of the plug-ins that have none (scanned by a version that did not record it) from their
+    /// module files, without starting them. Returns the number of plug-ins completed.
+    /// </summary>
+    public int CompleteArchitectures()
+    {
+        int completed = 0;
+        foreach (var module in Plugins.Where(p => p.Architecture == ModuleArchitecture.Unknown).GroupBy(p => (p.Path, p.Format)))
+        {
+            var architecture = ModuleArchitectures.Of(module.Key.Path, module.Key.Format);
+            if (architecture == ModuleArchitecture.Unknown) continue;
+            foreach (var plugin in module)
+            {
+                plugin.Architecture = architecture;
+                completed++;
+            }
+        }
+        return completed;
     }
 
     /// <summary>Saves the catalog (atomically: written next to it, then moved).</summary>

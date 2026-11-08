@@ -1,4 +1,4 @@
-// 2026/11/08 17:47:00 UTC - PluginUI
+// 2026/11/08 18:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -177,6 +177,12 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
             bool same = previous is { Count: > 0 } && previous.All(p => p.ModuleSize == size && p.ModuleTimeUtc == time);
             if (same && !rescanAll && !NowBridged(previous!, path, format))
             {
+                // Entries of a version that did not record the architecture get it from the file.
+                if (previous!.Any(p => p.Architecture == ModuleArchitecture.Unknown))
+                {
+                    var known = ModuleArchitectures.Of(path, format);
+                    foreach (var p in previous!) if (p.Architecture == ModuleArchitecture.Unknown) p.Architecture = known;
+                }
                 unchanged++;
                 continue;
             }

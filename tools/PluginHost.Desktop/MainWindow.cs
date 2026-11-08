@@ -1,4 +1,4 @@
-// 2026/11/08 17:00:00 UTC - PluginUI
+// 2026/11/08 18:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -50,6 +50,8 @@ internal sealed class MainWindow
         _catalog = catalog;
         _hostSettings = hostSettings;
         _saveChanges = saveChanges;
+        // Plug-ins scanned before the architecture was recorded get it from their files (once: the catalog is saved).
+        if (_catalog.CompleteArchitectures() > 0) SaveCatalog();
         _loader = new PluginLoader(_catalog, "PluginUI Plug-in Host");
         var t = UIStrings.ForLanguage(UIHost.DefaultLanguage);
         var s = settings.Value;
@@ -420,6 +422,7 @@ internal sealed class MainWindow
         Column("category", L.T("Type", "Type"), p => p.IsInstrument ? L.T("Instrument", "Instrument") : p.Status == PluginStatus.Ok ? L.T("Effect", "Effet") : string.Empty, 80f);
         Column("subcategories", L.T("Categories", "Catégories"), p => p.SubCategories.Replace("|", ", ", StringComparison.Ordinal), float.NaN).MinWidth = 120f;
         Column("format", L.T("Format", "Format"), p => p.Format == PluginFormat.Vst3 ? "VST3" : "VST2", 56f);
+        Column("architecture", L.T("Architecture", "Architecture"), p => ArchitectureText(p.Architecture), 96f, (a, b) => a.Architecture.CompareTo(b.Architecture));
         Column("inputs", L.T("Inputs", "Entrées"), p => Count(p.InputChannels), 58f, (a, b) => a.InputChannels.CompareTo(b.InputChannels), HorizontalAlignment.Right);
         Column("outputs", L.T("Outputs", "Sorties"), p => Count(p.OutputChannels), 62f, (a, b) => a.OutputChannels.CompareTo(b.OutputChannels), HorizontalAlignment.Right);
         Column("sidechain", L.T("Sidechain", "Sidechain"), p => Count(p.AuxInputChannels), 76f, (a, b) => a.AuxInputChannels.CompareTo(b.AuxInputChannels), HorizontalAlignment.Right, visible: false);
@@ -433,7 +436,6 @@ internal sealed class MainWindow
         Column("lastused", L.T("Last used", "Utilisé le"), p => Date(p.LastUsedUtc), 92f, (a, b) => Nullable.Compare(a.LastUsedUtc, b.LastUsedUtc), visible: false);
         Column("uses", L.T("Uses", "Utilisations"), p => Count(p.UseCount), 84f, (a, b) => a.UseCount.CompareTo(b.UseCount), HorizontalAlignment.Right, visible: false);
         Column("folder", L.T("Folder", "Dossier"), p => p.Folder, 220f, visible: false);
-        Column("architecture", L.T("Architecture", "Architecture"), p => ArchitectureText(p.Architecture), 96f, (a, b) => a.Architecture.CompareTo(b.Architecture), visible: false);
         Column("status", L.T("Status", "État"), StatusText, 70f, (a, b) => a.Status.CompareTo(b.Status), visible: false);
         Table.Columns.Find(c => c.Key == "status")!.CellColor = o => StatusColor((PluginDescription)o);
     }

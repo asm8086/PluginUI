@@ -1,4 +1,4 @@
-<!-- 2026/11/08 18:01:00 UTC - PluginUI -->
+<!-- 2026/11/08 18:51:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -265,8 +265,8 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   ou choisissez un ordre dans la liste **Tri** : nom, marque, catégorie, format, canaux d'entrée ou de sortie, latence,
   date d'installation, utilisés récemment, les plus utilisés, favoris d'abord, dossier, état. Un clic droit sur
   l'en-tête (ou **Affichage > Colonnes**) affiche ou masque les colonnes : favori, nom, marque, type, catégories,
-  format, entrées, sorties, sidechain, MIDI, latence, paramètres, éditeur, version, installé, utilisé le,
-  utilisations, dossier, architecture, état. Largeurs, colonnes, tri et filtres sont conservés d'un lancement à l'autre.
+  format, architecture (x64 64 bits, x86 32 bits, ARM64…), entrées, sorties, sidechain, MIDI, latence, paramètres,
+  éditeur, version, installé, utilisé le, utilisations, dossier, état. Largeurs, colonnes, tri et filtres sont conservés d'un lancement à l'autre.
 - **Détails** (Ctrl+I) : format et SDK, version, catégories, bus, entrée MIDI, latence en échantillons et en
   millisecondes, paramètres, éditeur, chemin du module, dates, nombre d'utilisations, et la raison d'un échec.
 - **Plein écran** (F11, menu Affichage ; Échap pour en sortir) : la fenêtre couvre tout l'écran, sans barre de titre.

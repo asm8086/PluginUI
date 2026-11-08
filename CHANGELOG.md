@@ -1,4 +1,4 @@
-<!-- 2026/11/08 18:01:00 UTC - PluginUI -->
+<!-- 2026/11/08 18:51:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -58,6 +58,9 @@ Before 1.0, minor versions may contain breaking changes.
   plug-in's own window as a child of the host's window, runs its message loop and idle time (also inside the plug-in's
   dialog boxes), and sends the sizes it asks for with `Idle()`. While waiting for the bridge, the host handles the
   messages that window sends. Plug-in Host shows the editors of 32-bit plug-ins like the others.
+- `PluginCatalog.CompleteArchitectures()` reads the architecture of plug-ins recorded without one (by an earlier
+  version) from their module files; ordinary scans, Plug-in Host and `pluginhost list` use it. Plug-in Host shows the
+  **Architecture** column by default, after Format; `pluginhost list` has a "Bits" column (64, 32, ARM64).
 
 ### Changed
 

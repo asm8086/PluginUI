@@ -1,4 +1,4 @@
-// 2026/11/08 15:53:00 UTC - PluginUI
+// 2026/11/08 18:51:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -188,6 +188,17 @@ public static class Program
     private static int List(Arguments a)
     {
         var catalog = PluginCatalog.Load(HostPaths.CatalogFile);
+        if (catalog.CompleteArchitectures() > 0)
+        {
+            try
+            {
+                catalog.Save(HostPaths.CatalogFile);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Read again from the files next time.
+            }
+        }
         string sortText = a.Option("--sort") ?? "name";
         bool desc = a.Flag("--desc");
         PluginFormat? format = a.Flag("--vst2") ? PluginFormat.Vst2 : a.Flag("--vst3") ? PluginFormat.Vst3 : null;
@@ -226,14 +237,23 @@ public static class Program
         }
         var rows = items.Select(p => new[]
         {
-            (p.IsFavorite ? "* " : "  ") + p.Name, p.Vendor, p.Format == PluginFormat.Vst3 ? "VST3" : "VST2",
+            (p.IsFavorite ? "* " : "  ") + p.Name, p.Vendor, p.Format == PluginFormat.Vst3 ? "VST3" : "VST2", Bits(p.Architecture),
             string.IsNullOrEmpty(p.SubCategories) ? p.Category : p.SubCategories,
             $"{p.InputChannels}{(p.AuxInputChannels > 0 ? "+" + p.AuxInputChannels : "")}/{p.OutputChannels}",
             p.LatencySamples.ToString(CultureInfo.InvariantCulture), p.Version, p.Status == PluginStatus.Ok ? "" : p.Status.ToString(),
         }).ToList();
-        PrintTable(["Name", "Vendor", "Format", "Category", "In/Out", "Latency", "Version", "Status"], rows);
+        PrintTable(["Name", "Vendor", "Format", "Bits", "Category", "In/Out", "Latency", "Version", "Status"], rows);
         Console.WriteLine($"{items.Count} plug-ins.");
         return 0;
+
+        static string Bits(ModuleArchitecture architecture) => architecture switch
+        {
+            ModuleArchitecture.X64 => "64",
+            ModuleArchitecture.X86 => "32",
+            ModuleArchitecture.Arm64 => "ARM64",
+            ModuleArchitecture.Arm => "ARM32",
+            _ => "?",
+        };
     }
 
     private static int Favorite(Arguments a)
