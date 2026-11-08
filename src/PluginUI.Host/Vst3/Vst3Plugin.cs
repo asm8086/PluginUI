@@ -1,4 +1,4 @@
-// 2026/11/07 00:51:00 UTC - PluginUI
+// 2026/11/08 13:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -533,12 +533,18 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
         }
     }
 
-    private static bool WriteState(void* obj, int slot, ReadOnlySpan<byte> state)
+    private static bool WriteState(void* obj, int slot, ReadOnlySpan<byte> state, string? fileName = null) => WriteState(obj, slot, state, fileName, out _);
+
+    // A project state (graph files) says so in its attributes, as DAWs do; a preset gives its file name.
+    private static bool WriteState(void* obj, int slot, ReadOnlySpan<byte> state, string? fileName, out string details)
     {
-        var stream = new BStream(state);
+        var stream = new BStream(state) { FileName = fileName is null ? string.Empty : Path.GetFileNameWithoutExtension(fileName), StateType = fileName is null ? "Project" : null };
         try
         {
-            return ((delegate* unmanaged[MemberFunction]<void*, void*, int>)Com.Slot(obj, slot))(obj, stream.Pointer) == Vst3Result.Ok;
+            int hr = ((delegate* unmanaged[MemberFunction]<void*, void*, int>)Com.Slot(obj, slot))(obj, stream.Pointer);
+            details = $"result 0x{hr:X8}, {stream.BytesRead} of {stream.Length} bytes read"
+                + (stream.MissingInterfaces.Count > 0 ? ", asked for " + string.Join(", ", stream.MissingInterfaces) : string.Empty);
+            return hr == Vst3Result.Ok;
         }
         finally
         {
@@ -553,14 +559,17 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
     public byte[] GetControllerState() => _controller is null || _singleComponent ? [] : ReadState(_controller, 7);
 
     /// <summary>Restores the processor and controller states (as in a .vstpreset).</summary>
-    public void SetComponentAndControllerState(ReadOnlySpan<byte> component, ReadOnlySpan<byte> controller)
+    /// <param name="component">State of the processor component.</param>
+    /// <param name="controller">State of the edit controller.</param>
+    /// <param name="fileName">The preset file the states come from; null for a project state (graph files).</param>
+    public void SetComponentAndControllerState(ReadOnlySpan<byte> component, ReadOnlySpan<byte> controller, string? fileName = null)
     {
         if (!component.IsEmpty)
         {
-            if (!WriteState(_component, 12, component)) throw new Vst3Exception($"'{Name}' refused the state.");
-            if (_controller is not null) WriteState(_controller, 5, component);
+            if (!WriteState(_component, 12, component, fileName, out string details)) throw new Vst3Exception($"'{Name}' refused the state ({details}).");
+            if (_controller is not null) WriteState(_controller, 5, component, fileName);
         }
-        if (!controller.IsEmpty && _controller is not null && !_singleComponent) WriteState(_controller, 6, controller);
+        if (!controller.IsEmpty && _controller is not null && !_singleComponent) WriteState(_controller, 6, controller, fileName);
     }
 
     /// <inheritdoc />
@@ -571,18 +580,20 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
     public override byte[] GetState() => VstPreset.Write(Info.ClassId, GetComponentState(), GetControllerState());
 
     /// <inheritdoc />
-    public override void SetState(ReadOnlySpan<byte> state)
+    public override void SetState(ReadOnlySpan<byte> state) => SetState(state, null);
+
+    private void SetState(ReadOnlySpan<byte> state, string? fileName)
     {
         var preset = VstPreset.Read(state);
         if (preset.ClassId != Info.ClassId) throw new Vst3Exception("The preset belongs to another plug-in.");
-        SetComponentAndControllerState(preset.ComponentState, preset.ControllerState);
+        SetComponentAndControllerState(preset.ComponentState, preset.ControllerState, fileName);
     }
 
     /// <summary>Saves a .vstpreset file (readable by DAWs).</summary>
     public void SavePreset(string path) => File.WriteAllBytes(path, GetState());
 
     /// <summary>Loads a .vstpreset file.</summary>
-    public void LoadPreset(string path) => SetState(File.ReadAllBytes(path));
+    public void LoadPreset(string path) => SetState(File.ReadAllBytes(path), path);
 
     // ---------------------------------------------------------------- editor
 

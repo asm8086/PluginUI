@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/08 13:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -149,6 +149,9 @@ internal sealed unsafe class AttributeList : NativeComObject
         return Vst3Result.Ok;
     }
 
+    /// <summary>Sets a string attribute from the host side.</summary>
+    public void SetText(byte* id, char* text) => _values[Key(id)] = text is null ? string.Empty : new string(text);
+
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvMemberFunction)])]
     private static int SetString(void* self, byte* id, char* text)
     {
@@ -189,7 +192,11 @@ internal sealed unsafe class AttributeList : NativeComObject
     }
 }
 
-/// <summary><c>IBStream</c> over a growable byte buffer (plug-in and controller state, presets).</summary>
+/// <summary>
+/// <c>IBStream</c> over a growable byte buffer (plug-in and controller state, presets), with <c>ISizeableStream</c> and
+/// <c>IStreamAttributes</c> as hosts offer them (some plug-ins ask for the size or for the kind of state). It counts what
+/// the plug-in read and the interfaces it asked for, to explain a refused state.
+/// </summary>
 internal sealed unsafe class BStream : NativeComObject
 {
     private static readonly nint Vtable = MakeVtable(
@@ -198,15 +205,25 @@ internal sealed unsafe class BStream : NativeComObject
         (nint)(delegate* unmanaged[MemberFunction]<void*, long, int, long*, int>)&Seek,
         (nint)(delegate* unmanaged[MemberFunction]<void*, long*, int>)&Tell);
 
+    private static readonly nint SizeableVtable = MakeVtable(
+        (nint)(delegate* unmanaged[MemberFunction]<void*, long*, int>)&GetStreamSize,
+        (nint)(delegate* unmanaged[MemberFunction]<void*, long, int>)&SetStreamSize);
+
+    private static readonly nint AttributesVtable = MakeVtable(
+        (nint)(delegate* unmanaged[MemberFunction]<void*, char*, int>)&GetFileName,
+        (nint)(delegate* unmanaged[MemberFunction]<void*, void*>)&GetAttributes);
+
     private readonly MemoryStream _stream;
+    private readonly AttributeList _attributes = new();
+    private readonly List<Guid> _missing = [];
 
     /// <summary>Empty stream to write into.</summary>
-    public BStream() : base((Tuid.IBStream, Vtable)) => _stream = new MemoryStream();
+    public BStream() : base((Tuid.IBStream, Vtable), (Tuid.ISizeableStream, SizeableVtable), (Tuid.IStreamAttributes, AttributesVtable))
+        => _stream = new MemoryStream();
 
     /// <summary>Stream reading <paramref name="data"/>.</summary>
-    public BStream(ReadOnlySpan<byte> data) : base((Tuid.IBStream, Vtable))
+    public BStream(ReadOnlySpan<byte> data) : this()
     {
-        _stream = new MemoryStream();
         _stream.Write(data);
         _stream.Position = 0;
     }
@@ -214,11 +231,48 @@ internal sealed unsafe class BStream : NativeComObject
     /// <summary>Content written so far.</summary>
     public byte[] ToArray() => _stream.ToArray();
 
+    /// <summary>Length of the content.</summary>
+    public long Length => _stream.Length;
+
+    /// <summary>Bytes the plug-in read.</summary>
+    public long BytesRead { get; private set; }
+
+    /// <summary>File name given by <c>IStreamAttributes::getFileName</c> (a preset file; empty for a project state).</summary>
+    public string FileName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Sets the <c>StateType</c> attribute (<c>"Project"</c> when a host restores a project, as DAWs do; null for none).
+    /// </summary>
+    public string? StateType
+    {
+        set
+        {
+            if (value is null) return;
+            fixed (byte* key = "StateType\0"u8)
+            fixed (char* text = value + "\0")
+            {
+                _attributes.SetText(key, text);
+            }
+        }
+    }
+
+    /// <summary>The interfaces the plug-in asked for and the stream does not implement (by name when known).</summary>
+    public IReadOnlyList<string> MissingInterfaces => [.. _missing.Select(Tuid.NameOf)];
+
+    protected override void OnQueryInterface(in Guid iid, bool found)
+    {
+        if (!found && !_missing.Contains(iid)) _missing.Add(iid);
+    }
+
+    protected override void OnFinalRelease() => _attributes.Release();
+
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvMemberFunction)])]
     private static int Read(void* self, void* buffer, int count, int* read)
     {
         if (buffer is null || count < 0) return Vst3Result.InvalidArgument;
-        int n = Get<BStream>(self)._stream.Read(new Span<byte>(buffer, count));
+        var stream = Get<BStream>(self);
+        int n = stream._stream.Read(new Span<byte>(buffer, count));
+        stream.BytesRead += n;
         if (read is not null) *read = n;
         return Vst3Result.Ok;
     }
@@ -256,6 +310,35 @@ internal sealed unsafe class BStream : NativeComObject
         *position = Get<BStream>(self)._stream.Position;
         return Vst3Result.Ok;
     }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvMemberFunction)])]
+    private static int GetStreamSize(void* self, long* size)
+    {
+        if (size is null) return Vst3Result.InvalidArgument;
+        *size = Get<BStream>(self)._stream.Length;
+        return Vst3Result.Ok;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvMemberFunction)])]
+    private static int SetStreamSize(void* self, long size)
+    {
+        if (size < 0) return Vst3Result.InvalidArgument;
+        Get<BStream>(self)._stream.SetLength(size);
+        return Vst3Result.Ok;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvMemberFunction)])]
+    private static int GetFileName(void* self, char* name)
+    {
+        if (name is null) return Vst3Result.InvalidArgument;
+        var stream = Get<BStream>(self);
+        if (stream.FileName.Length == 0) return Vst3Result.False;
+        FixedText.WriteUtf16(name, 128, stream.FileName);
+        return Vst3Result.Ok;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvMemberFunction)])]
+    private static void* GetAttributes(void* self) => Get<BStream>(self)._attributes.Pointer;
 }
 
 /// <summary>What a plug-in instance reports to its host (edits, restarts, editor size).</summary>

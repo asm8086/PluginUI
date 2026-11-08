@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/08 13:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -66,6 +66,23 @@ internal static class Tuid
         return MemoryMarshal.Read<Guid>(b);
     }
 
+    /// <summary>The name of a known interface, else its 32 hexadecimal digits.</summary>
+    public static string NameOf(Guid iid)
+    {
+        foreach (var field in KnownInterfaces)
+        {
+            if (field.Iid == iid) return field.Name;
+        }
+        return ToHex(iid);
+    }
+
+    private static (string Name, Guid Iid)[] KnownInterfaces =>
+    [
+        ("FUnknown", FUnknown), ("IBStream", IBStream), ("ISizeableStream", ISizeableStream), ("IStreamAttributes", IStreamAttributes),
+        ("IAttributeList", IAttributeList), ("IMessage", IMessage), ("IHostApplication", IHostApplication),
+        ("IComponentHandler", IComponentHandler), ("IComponentHandler2", IComponentHandler2), ("IPlugFrame", IPlugFrame),
+    ];
+
     public static readonly Guid FUnknown = From(0x00000000, 0x00000000, 0xC0000000, 0x00000046);
     public static readonly Guid IPluginBase = From(0x22888DDB, 0x156E45AE, 0x8358B348, 0x08190625);
     public static readonly Guid IPluginFactory = From(0x7A4D811C, 0x52114A1F, 0xAED9D2EE, 0x0B43BF9F);
@@ -82,6 +99,8 @@ internal static class Tuid
     public static readonly Guid IComponentHandler = From(0x93A0BEA3, 0x0BD045DB, 0x8E890B0C, 0xC1E46AC6);
     public static readonly Guid IComponentHandler2 = From(0xF040B4B3, 0xA36045EC, 0xABCDC045, 0xB4D5A2CC);
     public static readonly Guid IBStream = From(0xC3BF6EA2, 0x30994752, 0x9B6BF990, 0x1EE33E9B);
+    public static readonly Guid ISizeableStream = From(0x04F9549E, 0xE02F4E6E, 0x87E86A87, 0x47F4E17F);
+    public static readonly Guid IStreamAttributes = From(0xD6CE2FFC, 0xEFAF4B8C, 0x9E74F1BB, 0x12DA44B4);
     public static readonly Guid IParameterChanges = From(0xA4779663, 0x0BB64A56, 0xB44384A8, 0x466FEB9D);
     public static readonly Guid IParamValueQueue = From(0x01263A18, 0xED074F6F, 0x98C9D356, 0x4686F9BA);
     public static readonly Guid IEventList = From(0x3A2C4214, 0x346349FE, 0xB2C4F397, 0xB9695A44);

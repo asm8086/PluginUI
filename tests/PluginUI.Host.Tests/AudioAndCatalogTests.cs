@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/08 13:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -196,6 +196,55 @@ public class CatalogTests
         var id = Tuid.From(0x12345678, 0x9ABCDEF0, 0x0F1E2D3C, 0x4B5A6978);
         Assert.That(Vst3Identifiers.ToFuidString(id), Is.EqualTo("123456789ABCDEF00F1E2D3C4B5A6978"), "the four words, whatever the platform");
         Assert.That(Vst3Identifiers.FromFuidString("123456789abcdef00f1e2d3c4b5a6978"), Is.EqualTo(id));
+    }
+
+    [Test]
+    public unsafe void StateStreamsGiveTheirSizeAndKindAsDawsDo()
+    {
+        // What a plug-in does with the stream of a project state: asks for the size and the attributes, then reads.
+        var stream = new BStream([1, 2, 3, 4, 5]) { StateType = "Project" };
+        try
+        {
+            void* self = stream.Pointer;
+            var query = (delegate* unmanaged[MemberFunction]<void*, Guid*, void**, int>)(*(nint**)self)[0];
+            var release = (delegate* unmanaged[MemberFunction]<void*, uint>)(*(nint**)self)[2];
+            void* sizeable;
+            var iid = Tuid.ISizeableStream;
+            Assert.That(query(self, &iid, &sizeable), Is.EqualTo(Vst3Result.Ok));
+            long size;
+            ((delegate* unmanaged[MemberFunction]<void*, long*, int>)(*(nint**)sizeable)[3])(sizeable, &size);
+            release(sizeable);
+            Assert.That(size, Is.EqualTo(5));
+
+            void* attributesStream;
+            iid = Tuid.IStreamAttributes;
+            Assert.That(query(self, &iid, &attributesStream), Is.EqualTo(Vst3Result.Ok));
+            void* list = ((delegate* unmanaged[MemberFunction]<void*, void*>)(*(nint**)attributesStream)[4])(attributesStream);
+            char* text = stackalloc char[32];
+            int found;
+            fixed (byte* key = "StateType\0"u8) found = ((delegate* unmanaged[MemberFunction]<void*, byte*, char*, uint, int>)(*(nint**)list)[8])(list, key, text, 64);
+            release(attributesStream);
+            Assert.That((found, new string(text)), Is.EqualTo((Vst3Result.Ok, "Project")));
+
+            var unknown = Tuid.From(1, 2, 3, 4);
+            void* none;
+            Assert.That(query(self, &unknown, &none), Is.EqualTo(Vst3Result.NoInterface));
+            byte* buffer = stackalloc byte[8];
+            int read;
+            ((delegate* unmanaged[MemberFunction]<void*, void*, int, int*, int>)(*(nint**)self)[3])(self, buffer, 8, &read);
+            int readCount = read;
+            string unknownHex = Tuid.ToHex(unknown);
+            Assert.Multiple(() =>
+            {
+                Assert.That(readCount, Is.EqualTo(5));
+                Assert.That(stream.BytesRead, Is.EqualTo(5), "counted, to explain a refused state");
+                Assert.That(stream.MissingInterfaces, Is.EqualTo(new[] { unknownHex }), "and what the plug-in looked for");
+            });
+        }
+        finally
+        {
+            stream.Release();
+        }
     }
 }
 

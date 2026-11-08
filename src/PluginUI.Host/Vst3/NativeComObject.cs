@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/08 13:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -70,6 +70,11 @@ internal abstract unsafe class NativeComObject
         return (uint)Math.Max(0, count);
     }
 
+    /// <summary>Called for every <c>queryInterface</c> of the plug-in (diagnostics: which interfaces it looks for).</summary>
+    protected virtual void OnQueryInterface(in Guid iid, bool found)
+    {
+    }
+
     /// <summary>Called when the last reference goes away (free native resources here).</summary>
     protected virtual void OnFinalRelease()
     {
@@ -99,6 +104,7 @@ internal abstract unsafe class NativeComObject
         {
             var target = Get<NativeComObject>(self);
             void* found = *iid == Tuid.FUnknown ? target.Pointer : target.GetInterface(*iid);
+            target.OnQueryInterface(*iid, found is not null);
             if (found is null)
             {
                 *obj = null;
