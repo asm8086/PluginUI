@@ -1,4 +1,4 @@
-// 2026/11/08 13:40:00 UTC - PluginUI
+// 2026/11/08 13:42:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -125,8 +125,8 @@ public class NodeEditorTests
         Click(Header(_output), count: 2);
         Assert.That(opened, Is.SameAs(_output));
 
-        Drag(_editor.FromGraph(new Point(10f, 150f)), _editor.FromGraph(new Point(700f, 400f)));
-        Assert.That(_editor.SelectedNodes, Is.EqualTo(new[] { _keys }), "the rectangle selects what it touches");
+        Drag(_editor.FromGraph(new Point(10f, 150f)), _editor.FromGraph(new Point(700f, 400f)), ModifierKeys.Shift);
+        Assert.That(_editor.SelectedNodes, Is.EqualTo(new[] { _keys }), "Shift + drag: the rectangle selects what it touches");
         Assert.That(selections, Is.GreaterThan(3));
     }
 
@@ -256,10 +256,9 @@ public class NodeEditorTests
     }
 
     [Test]
-    public void DraggingAnEmptyPlaceMovesTheViewWhenTheGraphDoesNotFit()
+    public void DraggingAnEmptyPlaceMovesTheView()
     {
-        Node("Far", 1600, 900, [new("in", "In")], []);
-        Assert.That(_editor.IsScrollable, Is.EqualTo((true, true)));
+        Assert.That(_editor.IsScrollable, Is.EqualTo((false, false)), "whether the graph fits or not");
         var empty = new Point(400f, 400f);
         var grabbed = _editor.ToGraph(empty);
         Drag(empty, new Point(300f, 350f));

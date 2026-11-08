@@ -1,4 +1,4 @@
-// 2026/11/08 13:40:00 UTC - PluginUI
+// 2026/11/08 13:42:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -202,9 +202,9 @@ public sealed class NodeEditorMenuEventArgs : EventArgs
 /// update the lists and call <see cref="UIElement.InvalidateVisual"/>.</para>
 /// <para><b>Mouse.</b> Drag a node to move it (its selection with it); drag from a connector to draw a cable to a
 /// compatible connector (they light up); drag the end of a cable away from its input to move or remove it. Click a cable
-/// to select it. Drag on an empty area to select with a rectangle (Ctrl adds); when the graph does not fit (scroll bars
-/// shown), that drag moves the view instead and Shift or Ctrl + drag selects. The wheel scrolls (Shift: sideways),
-/// Ctrl+wheel zooms around the mouse; the middle button (or Alt with the left one) pans. Double-click a node to open it; right-click for its menu.</para>
+/// to select it. Drag on an empty area to move the view; Shift + drag selects with a rectangle (Ctrl + drag adds to the
+/// selection). Scroll bars appear when the graph does not fit. The wheel scrolls (Shift: sideways),
+/// Ctrl+wheel zooms around the mouse; the middle button (or Alt with the left one) also pans. Double-click a node to open it; right-click for its menu.</para>
 /// <para><b>Keyboard.</b> Ctrl+Left / Ctrl+Right select the previous or next node (left to right), Ctrl+A all; arrows
 /// move the selection (Shift = farther); Enter opens the node; Delete removes the selection; Home fits the graph in the
 /// view, + and − zoom; Shift+F10 or the Menu key opens the menu of the selection.</para>
@@ -971,10 +971,9 @@ public class NodeEditor : Control
             _selectedCable = null;
             OnSelectionChanged();
         }
-        UpdateBars();
-        if ((_hbar.IsNeeded || _vbar.IsNeeded) && !e.Shift && !e.Control)
+        if (!e.Shift && !e.Control)
         {
-            // The graph does not fit: dragging an empty place moves the view (Shift or Ctrl + drag selects).
+            // Dragging an empty place moves the view; Shift or Ctrl + drag selects with a rectangle.
             _drag = DragMode.Pan;
             _panOffset = _offset;
             Cursor = StandardCursor.SizeAll;

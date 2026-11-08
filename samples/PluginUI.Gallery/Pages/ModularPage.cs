@@ -1,4 +1,4 @@
-// 2026/11/08 13:07:00 UTC - PluginUI
+// 2026/11/08 13:42:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ internal static class ModularPage
     public static UIElement Build(DemoAudio audio)
     {
         var c = new Canvas();
-        c.Caption(L.T("NODE EDITOR (DRAG FROM A CONNECTOR TO CABLE, PULL A CABLE END OFF TO REMOVE IT, CTRL+WHEEL: ZOOM, MIDDLE BUTTON: PAN)",
+        c.Caption(L.T("NODE EDITOR (DRAG FROM A CONNECTOR TO CABLE, PULL A CABLE END OFF TO REMOVE IT, CTRL+WHEEL: ZOOM, DRAG THE BACKGROUND: PAN)",
                       "ÉDITEUR DE MODULES (GLISSER D'UN CONNECTEUR : CÂBLER, ÉCARTER UN BOUT DE CÂBLE : L'ENLEVER, CTRL+MOLETTE : ZOOM)"), 20, 12, 850);
         var editor = c.At(new NodeEditor
         {
@@ -110,9 +110,9 @@ internal static class ModularPage
         };
 
         c.At(new Label(L.T("The editor shows modules and cables and asks the application for every change (CableRequested, CableRemoveRequested, " +
-                           "DeleteRequested): this page keeps one cable per input. Dashed: the cable that closes a loop. Middle button: pan; right-click: menu.",
+                           "DeleteRequested): this page keeps one cable per input. Dashed: the cable that closes a loop. Drag the background: pan; Shift+drag: select; right-click: menu.",
                            "L'éditeur affiche modules et câbles et demande chaque modification à l'application (CableRequested, CableRemoveRequested, " +
-                           "DeleteRequested) : cette page garde un câble par entrée. En pointillés : le câble qui ferme une boucle. Bouton du milieu : déplacer la vue ; clic droit : menu."))
+                           "DeleteRequested) : cette page garde un câble par entrée. En pointillés : le câble qui ferme une boucle. Glisser le fond : déplacer la vue ; Maj+glisser : sélectionner ; clic droit : menu."))
         { Wrap = true, IsDim = true }, 20, 484, 850, 40);
         _ = audio;
         return c;
