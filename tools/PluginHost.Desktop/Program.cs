@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:07:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -158,6 +158,7 @@ internal static class Snapshots
         main.Tabs.SelectedIndex = 1;
         Settle(host);
         main.Graph.Sync();
+        main.Graph.SnapToConnectors();
         main.Graph.Editor.ZoomToFit();
         var compressor = main.Graph.Graph.Nodes.First(n => n.DisplayTitle == "Glass Compressor");
         main.Graph.Editor.Select(main.Graph.Editor.Nodes.Where(n => ReferenceEquals(n.Tag, compressor)));
@@ -202,10 +203,10 @@ internal static class Snapshots
         var delay = Add(new PluginNode(new SnapshotPlugin("Glass Delay", "Example Audio")), 272, 192);
         var feedback = Add(new GainNode { GainDb = -6 }, 512, 272);
         var loop = Add(new AudioSumNode { Title = L.T("Delay feedback", "Retour de l'écho") }, 272, 320);
-        var midi = Add(new MidiInputNode(), 32, 432);
-        var piano = Add(new PluginNode(new SnapshotPlugin("Felt Piano", "Woodworks", instrument: true)), 272, 448);
+        var midi = Add(new MidiInputNode(), 32, 448);
+        var piano = Add(new PluginNode(new SnapshotPlugin("Felt Piano", "Woodworks", instrument: true)), 272, 432);
         var sum = Add(new AudioSumNode { InputCount = 4 }, 752, 48);
-        var output = Add(new AudioOutputNode(), 992, 96);
+        var output = Add(new AudioOutputNode(), 992, 48);
         void Connect(GraphNode from, string outKey, GraphNode to, string inKey) => graph.Connect(from.FindOutput(outKey)!, to.FindInput(inKey)!);
         Connect(input, "out", compressor, "in0");
         Connect(tone, "out", compressor, "in1");

@@ -1,4 +1,4 @@
-// 2026/11/08 12:57:00 UTC - PluginUI
+// 2026/11/08 13:07:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -373,6 +373,7 @@ internal sealed class GraphView : ITickable
         if (mainOut is not null && freeOutput is not null) Graph.Connect(mainOut, freeOutput.Inputs[0]);
         IsModified = true;
         Sync();
+        SnapToConnectors(node);
         if (_views.TryGetValue(node, out var view))
         {
             Editor.Select([view]);
@@ -389,7 +390,20 @@ internal sealed class GraphView : ITickable
         Graph.Add(node);
         IsModified = true;
         Sync();
+        SnapToConnectors(node);
         if (_views.TryGetValue(node, out var view)) Editor.Select([view]);
+    }
+
+    /// <summary>Snaps modules on the grid by their first connector (all modules when none is given), so that the cables between aligned modules are straight.</summary>
+    public void SnapToConnectors(params GraphNode[] nodes)
+    {
+        foreach (var node in nodes.Length == 0 ? Graph.Nodes : nodes)
+        {
+            if (!_views.TryGetValue(node, out var view)) continue;
+            Editor.Snap(view);
+            node.X = view.X;
+            node.Y = view.Y;
+        }
     }
 
     private void Place(GraphNode node, Point? at)
@@ -653,6 +667,7 @@ internal sealed class GraphView : ITickable
         FilePath = null;
         IsModified = false;
         Sync();
+        SnapToConnectors();
         Editor.ZoomToFit();
     }
 
