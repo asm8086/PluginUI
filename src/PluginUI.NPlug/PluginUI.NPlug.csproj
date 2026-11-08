@@ -1,4 +1,4 @@
-<!-- 2026/11/04 20:40:00 UTC - PluginUI -->
+<!-- 2026/11/08 00:38:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -31,7 +31,7 @@
       PrivateAssets none: NPlug's build files (factory export, debug proxy, NativeAOT defaults, .vst3 output) also reach
       the plug-ins that reference PluginUI.NPlug, so one reference is enough. A plug-in may still reference a newer NPlug.
     -->
-    <PackageReference Include="NPlug" Version="0.6.2.380" PrivateAssets="none" />
+    <PackageReference Include="NPlug" Version="0.7.0.381" PrivateAssets="none" />
   </ItemGroup>
 
   <ItemGroup>

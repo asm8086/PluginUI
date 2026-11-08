@@ -1,4 +1,4 @@
-<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
+<!-- 2026/11/08 00:38:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -7,6 +7,12 @@ All notable changes to this project are documented in this file. The format foll
 Before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
+
+### Changed
+
+- `PluginUI.NPlug` now requires `NPlug` 0.7.0 (VST 3 SDK 3.8.1: host transport requests, MIDI 2.0 orchestral
+  articulation information and note expression identifiers, "randomize around current" parameter function), with
+  `NPlug.Validator` 1.4.2 for the tests and the validation tool.
 
 ## [0.4.0] - 2026-11-07
 

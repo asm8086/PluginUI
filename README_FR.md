@@ -1,4 +1,4 @@
-<!-- 2026/11/07 00:51:00 UTC - PluginUI -->
+<!-- 2026/11/08 00:38:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -99,7 +99,7 @@ Environ 34 000 lignes de C# pour les bibliothèques. Tous les membres publics on
 - Publication NativeAOT par défaut : processeur avec AVX2 et FMA (voir « Performances et SIMD »).
 - Visual Studio 2026, SDK .NET **10.0.403 ou ultérieur** (imposé par `global.json` : les SDK antérieurs apportent un compilateur NativeAOT et des packs du runtime touchés par l'avis GHSA-p3jp-9v83-76w9).
 - `TerraFX.Interop.Windows` 10.0.26100.6 (NuGet), pour des liaisons Win32 / Direct2D / DirectWrite / WIC sans marshalling, compatibles NativeAOT.
-- `PluginUI.NPlug` uniquement : [NPlug](https://github.com/xoofx/NPlug) 0.6.2 ou ultérieur (paquet NuGet `NPlug`, apporté par `PluginUI.NPlug`).
+- `PluginUI.NPlug` uniquement : [NPlug](https://github.com/xoofx/NPlug) 0.7.0 ou ultérieur (paquet NuGet `NPlug`, apporté par `PluginUI.NPlug`).
 - Paquets NuGet : `PluginUI`, `PluginUI.Design`, `PluginUI.NPlug` et `PluginUI.Desktop`.
 
 ## Téléchargements

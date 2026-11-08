@@ -1,4 +1,4 @@
-<!-- 2026/11/06 22:50:00 UTC - PluginUI -->
+<!-- 2026/11/08 00:38:00 UTC - PluginUI -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Minimal NPlug effect used by the host tests: hosted in-process through its factory, or published as a real module
@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NPlug" Version="0.6.2.380" />
+    <PackageReference Include="NPlug" Version="0.7.0.381" />
   </ItemGroup>
 
 </Project>

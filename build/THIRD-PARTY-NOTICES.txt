@@ -1,4 +1,4 @@
-2026/10/19 13:37:00 UTC - PluginUI
+2026/11/08 00:38:00 UTC - PluginUI
 
 THIRD-PARTY NOTICES
 
@@ -82,12 +82,12 @@ VST is a registered trademark of Steinberg Media Technologies GmbH.
 
 ===============================================================================================================
 VST 3 SDK interfaces (pluginterfaces) - https://github.com/steinbergmedia/vst3sdk
-Version 3.8.0: NPlug's interop code (LibVst.generated.cs) is generated from these headers.
+Version 3.8.1: NPlug's interop code (LibVst.generated.cs) is generated from these headers.
 License: MIT (since VST 3 SDK 3.8)
 ---------------------------------------------------------------------------------------------------------------
 MIT License
 
-Copyright (c) 2025, Steinberg Media Technologies GmbH
+Copyright (c) 2026, Steinberg Media Technologies GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
