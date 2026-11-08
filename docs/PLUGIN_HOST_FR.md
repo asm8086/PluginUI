@@ -1,4 +1,4 @@
-<!-- 2026/11/08 13:42:00 UTC - PluginUI -->
+<!-- 2026/11/08 13:46:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -332,7 +332,8 @@ est dans le graphe, que sa fenêtre soit ouverte ou non.
   (Suppr ; les réglages d'un plug-in sont perdus, l'hôte demande donc confirmation).
 - **Vue** : glissez sur un endroit vide pour déplacer la vue (le bouton du milieu ou Alt+glisser aussi) ; barres de
   défilement quand le graphe dépasse la vue ; la molette fait défiler (Maj+molette de côté), Ctrl+molette zoome autour
-  de la souris, **Tout afficher** (Origine) ajuste le graphe. Les modules se déplacent sur une grille qui tient leur
+  de la souris, **Tout afficher** (Origine) ajuste le graphe, et les boutons de zoom de la barre (**−**, le zoom en
+  pourcentage — cliquez-le pour la taille réelle, Ctrl+0 —, **+**) zooment de 10 % à 250 %. Les modules se déplacent sur une grille qui tient leur
   premier connecteur (Maj = librement), si bien que les câbles entre modules alignés sont droits ; Maj+glisser sur un
   endroit vide sélectionne plusieurs modules, Ctrl+clic en ajoute un. Ctrl+Gauche / Ctrl+Droite sélectionnent le
   module précédent ou suivant, les flèches déplacent la sélection.

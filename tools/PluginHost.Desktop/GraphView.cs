@@ -1,4 +1,4 @@
-// 2026/11/08 13:55:00 UTC - PluginUI
+// 2026/11/08 13:46:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -27,6 +27,7 @@ internal sealed class GraphView : ITickable
     private readonly List<ModuleWindow> _moduleWindows = [];
     private readonly DropDown _loop;
     private readonly Label _info;
+    private readonly Button _zoomOut, _zoomIn, _zoomReset;
     private bool _syncing;
 
     private static readonly int[] LoopSizes = [0, 16, 32, 64, 128];
@@ -80,7 +81,12 @@ internal sealed class GraphView : ITickable
         };
         var add = new MenuButton(MenuButtonStyle.TextWithChevron) { Text = L.T("Add a module", "Ajouter un module"), Width = 170f, Height = 26f };
         add.Items = AddModuleItems(null);
-        var fit = new Button(L.T("Show all", "Tout afficher"), Editor.ZoomToFit) { Width = 120f, Height = 26f, ToolTip = L.T("Fits the graph in the view (Home)", "Ajuste le graphe à la vue (Origine)") };
+        var fit = new Button(L.T("Show all", "Tout afficher"), Editor.ZoomToFit) { Width = 110f, Height = 26f, ToolTip = L.T("Fits the graph in the view (Home)", "Ajuste le graphe à la vue (Origine)") };
+        _zoomOut = new Button("−", Editor.ZoomOut) { Width = 28f, Height = 26f, ToolTip = L.T("Zoom out (−, Ctrl+wheel)", "Dézoomer (−, Ctrl+molette)") };
+        _zoomReset = new Button("100 %", Editor.ResetZoom) { Width = 58f, Height = 26f, ToolTip = L.T("The zoom; click for the actual size (Ctrl+0)", "Le zoom ; clic pour la taille réelle (Ctrl+0)") };
+        _zoomIn = new Button("+", Editor.ZoomIn) { Width = 28f, Height = 26f, ToolTip = L.T("Zoom in (+, Ctrl+wheel)", "Zoomer (+, Ctrl+molette)") };
+        var zoom = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2f };
+        zoom.Add(_zoomOut, _zoomReset, _zoomIn);
         _info = new Label { TextSource = InfoText, IsDim = true, VerticalAlignment = VerticalAlignment.Center };
         OutputMeter = new LevelMeter
         {
@@ -89,7 +95,7 @@ internal sealed class GraphView : ITickable
         };
         var bar = new DockPanel { Dock = Side.Top, Height = 40f, Padding = new Thickness(10f, 7f, 10f, 7f) };
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8f, Dock = Side.Left };
-        buttons.Add(add, fit, _loop);
+        buttons.Add(add, fit, zoom, _loop);
         bar.Children.Add(buttons);
         bar.Children.Add(OutputMeter);
         bar.Children.Add(_info);
@@ -328,6 +334,10 @@ internal sealed class GraphView : ITickable
     /// <summary>Reads the meters, and lets the plug-ins deliver their own changes (UI thread, every frame).</summary>
     bool ITickable.Tick(double elapsedSeconds)
     {
+        string zoomText = MathF.Round(Editor.Zoom * 100f).ToString(CultureInfo.InvariantCulture) + " %";
+        if (_zoomReset.Text != zoomText) _zoomReset.Text = zoomText;
+        if (_zoomIn.IsEnabled != Editor.CanZoomIn) _zoomIn.IsEnabled = Editor.CanZoomIn;
+        if (_zoomOut.IsEnabled != Editor.CanZoomOut) _zoomOut.IsEnabled = Editor.CanZoomOut;
         foreach (var node in Graph.Nodes)
         {
             if (node is PluginNode p) p.Plugin.Idle();

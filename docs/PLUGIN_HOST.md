@@ -1,4 +1,4 @@
-<!-- 2026/11/08 13:42:00 UTC - PluginUI -->
+<!-- 2026/11/08 13:46:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -317,7 +317,8 @@ window open or not.
   plug-in are lost, so the host asks first).
 - **View**: drag an empty place to move the view (the middle button or Alt+drag too); scroll bars when the graph is
   larger than the view; the wheel scrolls (Shift+wheel sideways), Ctrl+wheel zooms around the mouse, **Show all**
-  (Home) fits the graph. Modules move on a grid that holds their first connector (Shift = free), so the cables between
+  (Home) fits the graph, and the zoom buttons of the bar (**−**, the zoom in percent — click it for the actual size,
+  Ctrl+0 —, **+**) zoom from 10 % to 250 %. Modules move on a grid that holds their first connector (Shift = free), so the cables between
   aligned modules are straight; Shift+drag on an empty place selects several modules, Ctrl+click adds one.
   Ctrl+Left / Ctrl+Right select the previous or next module, the arrows move the selection.
 - **Graph files** (File menu): **New graph** (Ctrl+N: an audio input, a MIDI input and an audio output), **Open a
