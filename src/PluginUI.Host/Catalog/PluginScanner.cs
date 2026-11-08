@@ -1,4 +1,4 @@
-// 2026/11/08 17:00:00 UTC - PluginUI
+// 2026/11/08 17:47:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -175,7 +175,7 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
             var (size, time) = FileStamp(ModuleBinary(path, format));
             byModule.TryGetValue(path, out var previous);
             bool same = previous is { Count: > 0 } && previous.All(p => p.ModuleSize == size && p.ModuleTimeUtc == time);
-            if (same && !rescanAll)
+            if (same && !rescanAll && !NowBridged(previous!, path, format))
             {
                 unchanged++;
                 continue;
@@ -241,6 +241,18 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
         catalog.LastScanUtc = DateTime.UtcNow;
         progress?.Report(new ScanProgress(string.Empty, modules.Count, modules.Count));
         return new ScanSummary(modules.Count, scanned, unchanged, removed, failed, incompatible);
+    }
+
+    /// <summary>
+    /// <c>true</c> when an unchanged module was recorded as not loadable (by a version without a bridge, or before
+    /// its bridge was available) and a bridge can now scan it: it is scanned again without a full rescan.
+    /// </summary>
+    private static bool NowBridged(List<PluginDescription> previous, string path, PluginFormat format)
+    {
+        if (format != PluginFormat.Vst2 || BridgeScanners.Count == 0 || previous.All(p => p.Status == PluginStatus.Ok)) return false;
+        var architecture = ModuleArchitectures.Of(path, format);
+        return !ModuleArchitectures.CanLoad(architecture) && BridgeScanners.ContainsKey(architecture)
+            && previous.Any(p => p.Architecture != architecture || p.Status == PluginStatus.Incompatible);
     }
 
     private static (long Size, DateTime Time) FileStamp(string path)

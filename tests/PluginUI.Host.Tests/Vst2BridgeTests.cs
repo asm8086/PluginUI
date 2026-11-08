@@ -1,4 +1,4 @@
-// 2026/11/08 17:00:00 UTC - PluginUI
+// 2026/11/08 17:47:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -202,18 +202,26 @@ public sealed class Vst2Bridge32Tests
             scanner.Scan(settings, catalog);
             Assert.That(catalog.Plugins.Single().Status, Is.EqualTo(PluginStatus.Incompatible));
 
-            // With a bridge: described by it, usable.
+            // With a bridge: the unchanged module is scanned again by an ordinary scan, described by the bridge, usable.
             var bridge = new RecordingScanner();
             PluginScanner.BridgeScanners[ModuleArchitecture.X86] = bridge;
-            catalog = new PluginCatalog();
             var summary = scanner.Scan(settings, catalog);
             var gain = catalog.Plugins.Single();
             Assert.Multiple(() =>
             {
                 Assert.That(bridge.Scanned, Is.EqualTo(new[] { "Gain32.dll" }));
-                Assert.That(summary.Incompatible, Is.Zero);
+                Assert.That((summary.Scanned, summary.Incompatible), Is.EqualTo((1, 0)));
                 Assert.That((gain.Status, gain.Architecture, gain.Name), Is.EqualTo((PluginStatus.Ok, ModuleArchitecture.X86, "Gain32")));
             });
+
+            // Then it is taken from the cache, even when the bridge failed on it.
+            gain.Status = PluginStatus.Failed;
+            Assert.That(scanner.Scan(settings, catalog).Unchanged, Is.EqualTo(1));
+
+            // An entry written by a version without architectures (failed, "Unknown") is scanned again too.
+            gain.Architecture = ModuleArchitecture.Unknown;
+            Assert.That(scanner.Scan(settings, catalog).Scanned, Is.EqualTo(1));
+            Assert.That(bridge.Scanned, Has.Count.EqualTo(2));
         }
         finally
         {

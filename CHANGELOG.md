@@ -1,4 +1,4 @@
-<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
+<!-- 2026/11/08 17:47:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -50,7 +50,8 @@ Before 1.0, minor versions may contain breaking changes.
   parameter changes, MIDI in and out, transport and latency, and a control channel carries descriptions, parameter
   texts, states and presets. `Vst2BridgedPlugin` is a `PluginInstance` like the others; `Vst2Hosting.LoadAnyArchitecture`
   (now `PluginLoader.Vst2Loader`) and `Vst2Bridge.Load` choose it from the module's machine type;
-  `PluginScanner.BridgeScanners` scans 32-bit VST 2 modules (shells included) in the bridge. A plug-in that crashes stops
+  `PluginScanner.BridgeScanners` scans 32-bit VST 2 modules (shells included) in the bridge. An ordinary scan
+  also scans again the unchanged 32-bit VST 2 modules that an earlier version recorded as not loadable. A plug-in that crashes stops
   only its bridge. Building or publishing Plug-in Host or `pluginhost` on Windows also builds the bridge into their
   `bridge32` folder (`-p:BuildBridge32=false` skips it). Plug-in Host marks these plug-ins "32-bit" in the graph and
   shows their generic parameter table (their own editors come later).
