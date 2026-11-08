@@ -1,4 +1,4 @@
-// 2026/11/08 13:46:00 UTC - PluginUI
+// 2026/11/08 19:03:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -202,9 +202,10 @@ public sealed class NodeEditorMenuEventArgs : EventArgs
 /// update the lists and call <see cref="UIElement.InvalidateVisual"/>.</para>
 /// <para><b>Mouse.</b> Drag a node to move it (its selection with it); drag from a connector to draw a cable to a
 /// compatible connector (they light up); drag the end of a cable away from its input to move or remove it. Click a cable
-/// to select it. Drag on an empty area to move the view; Shift + drag selects with a rectangle (Ctrl + drag adds to the
-/// selection). Scroll bars appear when the graph does not fit. The wheel scrolls (Shift: sideways),
-/// Ctrl+wheel zooms around the mouse; the middle button (or Alt with the left one) also pans. Double-click a node to open it; right-click for its menu.</para>
+/// to select it. Drag on an empty area to select with a rectangle; Shift + click adds a node to the selection (or removes
+/// it), Shift + drag adds a rectangle. The middle button (or Alt with the left one) moves the view. Scroll bars appear when
+/// the graph does not fit. The wheel scrolls (Shift: sideways), Ctrl+wheel zooms around the mouse. Double-click a node to
+/// open it; right-click for its menu.</para>
 /// <para><b>Keyboard.</b> Ctrl+Left / Ctrl+Right select the previous or next node (left to right), Ctrl+A all; arrows
 /// move the selection (Shift = farther); Enter opens the node; Delete removes the selection; Home fits the graph in the
 /// view, + and − zoom, Ctrl+0 shows the actual size (also <see cref="ZoomIn"/>, <see cref="ZoomOut"/>,
@@ -916,6 +917,7 @@ public class NodeEditor : Control
         {
             _drag = DragMode.Pan;
             _panOffset = _offset;
+            Cursor = StandardCursor.SizeAll;
             CaptureMouse();
             e.Handled = true;
             return;
@@ -955,7 +957,7 @@ public class NodeEditor : Control
                 NodeOpened?.Invoke(this, node);
                 return;
             }
-            if (e.Control)
+            if (e.Shift)
             {
                 if (!_selection.Remove(node)) _selection.Add(node);
                 _selectedCable = null;
@@ -983,20 +985,12 @@ public class NodeEditor : Control
             SelectCable(cable);
             return;
         }
-        if (!e.Control && (_selection.Count > 0 || _selectedCable is not null))
+        // Dragging an empty place selects with a rectangle; with Shift, the rectangle adds to the selection.
+        if (!e.Shift && (_selection.Count > 0 || _selectedCable is not null))
         {
             _selection.Clear();
             _selectedCable = null;
             OnSelectionChanged();
-        }
-        if (!e.Shift && !e.Control)
-        {
-            // Dragging an empty place moves the view; Shift or Ctrl + drag selects with a rectangle.
-            _drag = DragMode.Pan;
-            _panOffset = _offset;
-            Cursor = StandardCursor.SizeAll;
-            CaptureMouse();
-            return;
         }
         _drag = DragMode.Band;
         _band = new Rect(g.X, g.Y, 0f, 0f);
@@ -1100,6 +1094,7 @@ public class NodeEditor : Control
         var drag = _drag;
         _drag = DragMode.None;
         ReleaseMouseCapture();
+        if (drag == DragMode.Pan) Cursor = StandardCursor.Arrow;
         switch (drag)
         {
             case DragMode.Move:

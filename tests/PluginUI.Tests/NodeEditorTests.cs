@@ -1,4 +1,4 @@
-// 2026/11/08 13:46:00 UTC - PluginUI
+// 2026/11/08 19:03:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -109,8 +109,15 @@ public class NodeEditorTests
 
         Click(Header(_gain));
         Assert.That(_editor.SelectedNodes, Is.EqualTo(new[] { _gain }));
-        Click(Header(_source), modifiers: ModifierKeys.Control);
-        Assert.That(_editor.SelectedNodes.Select(n => n.Title), Is.EquivalentTo(new[] { "Gain", "Source" }));
+        Click(Header(_source), modifiers: ModifierKeys.Shift);
+        Assert.That(_editor.SelectedNodes.Select(n => n.Title), Is.EquivalentTo(new[] { "Gain", "Source" }), "Shift + click adds");
+        Click(Header(_output), modifiers: ModifierKeys.Shift);
+        Click(Header(_output), modifiers: ModifierKeys.Shift);
+        Assert.That(_editor.SelectedNodes.Select(n => n.Title), Is.EquivalentTo(new[] { "Gain", "Source" }), "and removes");
+        Click(Header(_output), modifiers: ModifierKeys.Control);
+        Assert.That(_editor.SelectedNodes, Is.EqualTo(new[] { _output }), "Ctrl + click is an ordinary click");
+        Click(Header(_gain));
+        Click(Header(_source), modifiers: ModifierKeys.Shift);
 
         Drag(Header(_gain), Header(_gain) with { X = Header(_gain).X + 37f, Y = Header(_gain).Y + 9f });
         Assert.Multiple(() =>
@@ -125,8 +132,12 @@ public class NodeEditorTests
         Click(Header(_output), count: 2);
         Assert.That(opened, Is.SameAs(_output));
 
+        Drag(_editor.FromGraph(new Point(10f, 150f)), _editor.FromGraph(new Point(700f, 400f)));
+        Assert.That(_editor.SelectedNodes, Is.EqualTo(new[] { _keys }), "dragging an empty place: the rectangle selects what it touches");
+        Click(Header(_gain), modifiers: ModifierKeys.Shift);
+        Assert.That(_editor.SelectedNodes.Select(n => n.Title), Is.EquivalentTo(new[] { "Keys", "Gain" }));
         Drag(_editor.FromGraph(new Point(10f, 150f)), _editor.FromGraph(new Point(700f, 400f)), ModifierKeys.Shift);
-        Assert.That(_editor.SelectedNodes, Is.EqualTo(new[] { _keys }), "Shift + drag: the rectangle selects what it touches");
+        Assert.That(_editor.SelectedNodes.Select(n => n.Title), Is.EquivalentTo(new[] { "Keys", "Gain" }), "Shift + drag adds to the selection");
         Assert.That(selections, Is.GreaterThan(3));
     }
 
@@ -278,12 +289,12 @@ public class NodeEditorTests
     }
 
     [Test]
-    public void DraggingAnEmptyPlaceMovesTheView()
+    public void TheMiddleButtonMovesTheViewAndTheLeftOneSelects()
     {
         Assert.That(_editor.IsScrollable, Is.EqualTo((false, false)), "whether the graph fits or not");
         var empty = new Point(400f, 400f);
         var grabbed = _editor.ToGraph(empty);
-        Drag(empty, new Point(300f, 350f));
+        Drag(empty, new Point(300f, 350f), button: MouseButton.Middle);
         Assert.Multiple(() =>
         {
             Assert.That(_editor.ToGraph(new Point(300f, 350f)).X, Is.EqualTo(grabbed.X).Within(1e-3f), "the graph follows the mouse");
@@ -293,12 +304,15 @@ public class NodeEditorTests
 
         _editor.ViewOffset = default;
         var keys = _editor.FromGraph(new Point(_keys.X + 20f, _keys.Y + 10f));
-        Drag(new Point(keys.X - 30f, keys.Y + 60f), new Point(keys.X + 10f, keys.Y), ModifierKeys.Shift);
+        Drag(new Point(keys.X - 30f, keys.Y + 60f), new Point(keys.X + 10f, keys.Y));
         Assert.Multiple(() =>
         {
-            Assert.That(_editor.ViewOffset, Is.EqualTo(default(Point)), "Shift + drag does not move the view");
+            Assert.That(_editor.ViewOffset, Is.EqualTo(default(Point)), "the left button does not move the view");
             Assert.That(_editor.SelectedNodes, Is.EqualTo(new[] { _keys }), "it selects with a rectangle");
         });
+
+        Drag(empty, new Point(300f, 350f), ModifierKeys.Alt);
+        Assert.That(_editor.ToGraph(new Point(300f, 350f)).X, Is.EqualTo(grabbed.X).Within(1e-3f), "Alt + drag moves the view too");
     }
 
     [Test]

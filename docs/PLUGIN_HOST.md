@@ -1,4 +1,4 @@
-<!-- 2026/11/08 18:51:00 UTC - PluginUI -->
+<!-- 2026/11/08 19:03:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -322,11 +322,12 @@ window open or not.
 - **Menu of a module** (right click, Shift+F10): open, bypass and mute (plug-ins), rename, **Connect**
   (every compatible input, for the keyboard and screen readers), **Disconnect**, remove (Delete; the settings of a
   plug-in are lost, so the host asks first).
-- **View**: drag an empty place to move the view (the middle button or Alt+drag too); scroll bars when the graph is
+- **View**: drag with the middle button to move the view (or Alt+drag); scroll bars when the graph is
   larger than the view; the wheel scrolls (Shift+wheel sideways), Ctrl+wheel zooms around the mouse, **Show all**
   (Home) fits the graph, and the zoom buttons of the bar (**−**, the zoom in percent — click it for the actual size,
   Ctrl+0 —, **+**) zoom from 10 % to 250 %. Modules move on a grid that holds their first connector (Shift = free), so the cables between
-  aligned modules are straight; Shift+drag on an empty place selects several modules, Ctrl+click adds one.
+  aligned modules are straight; dragging an empty place selects several modules with a rectangle, Shift+click adds a
+  module to the selection (or removes it), Shift+drag adds a rectangle.
   Ctrl+Left / Ctrl+Right select the previous or next module, the arrows move the selection.
 - **Graph files** (File menu): **New graph** (Ctrl+N: an audio input, a MIDI input and an audio output), **Open a
   graph** (Ctrl+Shift+O), **Save the graph** (Ctrl+S), **Save the graph as** (Ctrl+Shift+S). A `.pluginui-graph` file
