@@ -326,7 +326,7 @@ public sealed class Vst2Bridge32Tests
         using var plugin = Vst2BridgedPlugin.Start(bridge!, Gain32, null, "Bridge Tests", ModuleArchitecture.X86);
         Assert.That(plugin.HasEditor, Is.True);
         nint parent = CreateWindowExW(0, "STATIC", "Bridge test", 0x00CF0000 /* WS_OVERLAPPEDWINDOW */, 0, 0, 400, 300, 0, 0, 0, 0);
-        Assert.That(parent, Is.Not.Zero);
+        Assert.That(parent, Is.Not.EqualTo((nint)0));
         try
         {
             using (var editor = plugin.CreateEditor()!)
@@ -335,7 +335,7 @@ public sealed class Vst2Bridge32Tests
                 // The bridge creates the plug-in's window as a child of this one: this thread handles what it sends meanwhile.
                 Assert.That(editor.Attach(parent), Is.True);
                 nint child = GetWindow(parent, 5 /* GW_CHILD */);
-                Assert.That(child, Is.Not.Zero);
+                Assert.That(child, Is.Not.EqualTo((nint)0));
                 GetWindowThreadProcessId(child, out uint owner);
                 Assert.That(owner, Is.Not.EqualTo((uint)Environment.ProcessId), "the window belongs to the bridge");
                 (int, int)? asked = null;
@@ -347,7 +347,7 @@ public sealed class Vst2Bridge32Tests
                 }
                 Assert.That(asked, Is.EqualTo((240, 120)), "the bridge gives the editor its idle time");
             }
-            Assert.That(GetWindow(parent, 5), Is.Zero, "the editor's window is closed with the editor");
+            Assert.That(GetWindow(parent, 5), Is.EqualTo((nint)0), "the editor's window is closed with the editor");
             Assert.That(plugin.FormatParameter(0, 0.25), Does.StartWith("0.5"));
         }
         finally
