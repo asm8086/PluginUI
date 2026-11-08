@@ -1,4 +1,4 @@
-// 2026/11/05 22:35:00 UTC - PluginUI
+// 2026/11/08 13:40:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -39,7 +39,8 @@ public enum LevelUnit
 
 /// <summary>
 /// Multi-channel level meter: vertical or horizontal, dB scale with marks, gradient / LED segments / solid bars,
-/// peak-hold markers, latched clip indicators (click to reset), optional RMS + peak dual display, gain-reduction mode.
+/// peak-hold markers, latched clip indicators (click to reset), optional RMS + peak dual display, gain-reduction mode,
+/// optional readout of the highest peak in dB (<see cref="ShowPeakValue"/>).
 /// </summary>
 /// <remarks>
 /// <para>Feed it on the UI thread with <see cref="SetLevels"/> (and <see cref="SetRmsLevels"/>), or give it
@@ -55,6 +56,7 @@ public class LevelMeter : Control
     private float[] _peakInput = [];
     private float[] _rmsInput = [];
     private bool[] _clipped = [];
+    private float[] _max = [];
     private bool _hasRms;
     private MeterTicker? _ticker;
     private LinearGradientPaint? _gradient;
@@ -112,6 +114,8 @@ public class LevelMeter : Control
             Array.Fill(_peakInput, float.NegativeInfinity);
             Array.Fill(_rmsInput, float.NegativeInfinity);
             _clipped = new bool[value];
+            _max = new float[value];
+            Array.Fill(_max, float.NegativeInfinity);
             ApplyBallistics();
             InvalidateVisual();
         }
@@ -160,6 +164,11 @@ public class LevelMeter : Control
     /// <summary>Draws latched clip indicators above the bars (click to reset).</summary>
     [Category("Appearance")]
     public bool ShowClipIndicator { get; set; } = true;
+
+    /// <summary>Shows the highest peak since the last reset, in dB (one decimal), at the end of the bars (level mode).</summary>
+    /// <remarks>The readout is the maximum over the channels; a click on the meter resets it with the clip indicators.</remarks>
+    [Category("Appearance")]
+    public bool ShowPeakValue { get; set; }
 
     /// <summary>Draws the dB scale (marks and labels) beside the bars.</summary>
     [Category("Appearance")]
@@ -211,6 +220,34 @@ public class LevelMeter : Control
     /// <summary>Peak level (dB) currently displayed for a channel.</summary>
     public float GetDisplayedLevel(int channel) => _peak[channel].LevelDb;
 
+    /// <summary>Highest peak (dB) of a channel since the last reset (negative infinity before any signal).</summary>
+    public float GetMaxLevel(int channel) => _max[channel];
+
+    /// <summary>Highest peak (dB) of all channels since the last reset (negative infinity before any signal).</summary>
+    [Browsable(false)]
+    public float MaxLevel => _max.Length == 0 ? float.NegativeInfinity : _max.Max();
+
+    /// <summary>Text of the peak readout: the highest peak in dB with one decimal ('.' separator), "-inf" without signal.</summary>
+    [Browsable(false)]
+    public string PeakValueText
+    {
+        get
+        {
+            float max = MaxLevel;
+            if (float.IsNegativeInfinity(max) || max <= -199f) return "-inf dB";
+            string text = max.ToString("0.0", CultureInfo.InvariantCulture);
+            if (text == "-0.0") text = "0.0";
+            return (max > 0.05f ? "+" : string.Empty) + text + " dB";
+        }
+    }
+
+    /// <summary>Resets the peak readout (<see cref="ShowPeakValue"/>).</summary>
+    public void ResetPeakValue()
+    {
+        Array.Fill(_max, float.NegativeInfinity);
+        InvalidateVisual();
+    }
+
     /// <summary><c>true</c> if the channel's clip indicator is latched.</summary>
     public bool IsClipped(int channel) => _clipped[channel];
 
@@ -229,6 +266,7 @@ public class LevelMeter : Control
         foreach (var b in _rms) b.Reset();
         Array.Fill(_peakInput, float.NegativeInfinity);
         Array.Fill(_rmsInput, float.NegativeInfinity);
+        Array.Fill(_max, float.NegativeInfinity);
         Array.Clear(_clipped);
         InvalidateVisual();
     }
@@ -267,6 +305,7 @@ public class LevelMeter : Control
             float db = ToDb(levels[i]);
             inputs[i] = db;
             if (checkClip && Mode == MeterMode.Level && db >= ClipDb) _clipped[i] = true;
+            if (checkClip && db > _max[i]) _max[i] = db;
             // Instant attack even before the first frame tick (snapshots, detached meters).
             if (db > ballistics[i].LevelDb) ballistics[i].Update(db, 0.0);
         }
@@ -285,6 +324,11 @@ public class LevelMeter : Control
                 float db = ToDb(sources[i].ReadAndReset());
                 _peakInput[i] = db;
                 if (Mode == MeterMode.Level && db >= ClipDb && !_clipped[i]) { _clipped[i] = true; changed = true; }
+                if (db > _max[i])
+                {
+                    _max[i] = db;
+                    changed |= ShowPeakValue;
+                }
             }
         }
         if (RmsSources is { } rmsSources)
@@ -334,6 +378,34 @@ public class LevelMeter : Control
 
     // With a skin, the clip state goes to the skin (SkinState.StateIndex) instead of a drawn strip.
     private float ClipThickness => ShowClipIndicator && Mode == MeterMode.Level && Skin is null ? 5f : 0f;
+
+    private bool HasReadout => ShowPeakValue && Mode == MeterMode.Level;
+
+    // The peak readout takes the right end (horizontal) or the top (vertical) of the widget.
+    private Rect TakeReadout(Rect widget, out Rect readout)
+    {
+        if (!HasReadout)
+        {
+            readout = Rect.Empty;
+            return widget;
+        }
+        if (Vertical)
+        {
+            readout = widget.TakeTop(14f);
+            return Rect.FromEdges(widget.X, widget.Y + 16f, widget.Right, widget.Bottom);
+        }
+        // Beside the bars, not beside the scale under them.
+        readout = new Rect(widget.Right - 50f, widget.Y, 50f, MathF.Max(0f, widget.Height - ScaleThickness));
+        return Rect.FromEdges(widget.X, widget.Y, widget.Right - 54f, widget.Bottom);
+    }
+
+    private void RenderReadout(DrawingContext dc, Rect readout, Palette p)
+    {
+        float max = MaxLevel;
+        var color = float.IsNegativeInfinity(max) ? p.TextDim : max >= ClipDb ? Danger : p.Text;
+        var style = Theme.Typography.Small with { Size = MathF.Min(11f, MathF.Max(8f, readout.Height)), Align = Vertical ? HorizontalAlignment.Center : HorizontalAlignment.Right, Ellipsis = false };
+        dc.DrawText(PeakValueText, readout, style, color);
+    }
 
     private void Areas(Rect widget, out Rect bars, out Rect scale, out Rect clip)
     {
@@ -441,6 +513,8 @@ public class LevelMeter : Control
         var states = ChannelSkinStates(widget, out var scale);
         foreach (var state in states) Skin.Render(dc, this, state);
         if (!scale.IsEmpty) RenderScale(dc, scale, Theme.Palette);
+        TakeReadout(widget, out var readout);
+        if (!readout.IsEmpty) RenderReadout(dc, readout, Theme.Palette);
         if (!label.IsEmpty) RenderLabel(dc, label, style);
         if (!value.IsEmpty) RenderValue(dc, value, style);
     }
@@ -448,7 +522,7 @@ public class LevelMeter : Control
     /// <summary>Skin state of each channel: bar area, level in [0, 1], 1 when the clip indicator is latched.</summary>
     internal SkinState[] ChannelSkinStates(Rect widget, out Rect scale)
     {
-        Areas(widget, out var bars, out scale, out _);
+        Areas(TakeReadout(widget, out _), out var bars, out scale, out _);
         var states = new SkinState[ChannelCount];
         for (int ch = 0; ch < states.Length; ch++)
         {
@@ -461,6 +535,8 @@ public class LevelMeter : Control
     protected override void RenderVector(DrawingContext dc, Rect widget, VectorStyle style)
     {
         var p = Theme.Palette;
+        widget = TakeReadout(widget, out var readout);
+        if (!readout.IsEmpty) RenderReadout(dc, readout, p);
         Areas(widget, out var bars, out var scale, out var clip);
         var track = p.Background.Darken(0.35f);
         bool reduction = Mode == MeterMode.GainReduction;
@@ -596,9 +672,10 @@ public class LevelMeter : Control
         base.OnMouseDown(e);
         if (e.Handled || e.Button != MouseButton.Left || !IsEffectivelyEnabled) return;
         // Click anywhere on the meter resets the clip indicators and peak holds.
-        if (_clipped.Any(c => c) || ShowPeakHold)
+        if (_clipped.Any(c => c) || ShowPeakHold || HasReadout)
         {
             ResetClip();
+            Array.Fill(_max, float.NegativeInfinity);
             foreach (var b in _peak)
             {
                 float level = b.LevelDb;

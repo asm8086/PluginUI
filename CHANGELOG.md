@@ -26,12 +26,14 @@ Before 1.0, minor versions may contain breaking changes.
   inputs on the left and outputs on the right, cables drawn as curves (dashed with a label for loop feedback), badges,
   dimmed or failed nodes, live level meters; cables drawn from either end, ends pulled off to move or remove them,
   compatible connectors lit (`CanConnect`); moves on a grid that holds each node's first connector (straight cables between aligned nodes),
-  rectangle selection, scroll bars, wheel scrolling,
+  rectangle selection, scroll bars (dragging an empty place then moves the view), wheel scrolling,
   Ctrl+wheel zoom around the mouse, middle-button pan, `ZoomToFit`; every change is a request (`CableRequested`, `CableRemoveRequested`, `DeleteRequested`,
   `NodeOpened`, `ContextMenuOpening`); full keyboard control and a screen reader peer. Registered in the designer and
   shown on the new Modular page of the gallery. Texts `UIStrings.AutomationNodeEditor`, `NodeInputsFormat`,
   `NodeOutputsFormat`, `NodeNotConnected`, `NodesSelectedFormat`, `NodeCountFormat`, `CableFormat`, `FeedbackCable`
   (English, French).
+- `LevelMeter.ShowPeakValue`: readout of the highest peak in dB (one decimal) at the end of the bars, kept until a
+  click on the meter; `GetMaxLevel`, `MaxLevel`, `PeakValueText`, `ResetPeakValue`.
 
 ### Changed
 
@@ -39,6 +41,11 @@ Before 1.0, minor versions may contain breaking changes.
   `Project`, as DAWs do; a preset gives its file name), and a refused state now says what happened: the plug-in's
   result, the bytes it read and the interfaces it asked for. A plug-in that reads the whole state and answers
   `kResultFalse` (Waves shells do) is taken as having applied it, as DAWs do.
+  result, the bytes it read and the interfaces it asked for.
+- `NodeEditor.ZoomToFit` called before the editor has its size (a graph restored at start) is done again when the
+  editor is laid out.
+- Graph files: a plug-in that loads but refuses its saved state stays in the graph with its default settings (with a
+  warning) instead of becoming a missing module.
 - `PluginUI.NPlug` now requires `NPlug` 0.7.0 (VST 3 SDK 3.8.1: host transport requests, MIDI 2.0 orchestral
   articulation information and note expression identifiers, "randomize around current" parameter function), with
   `NPlug.Validator` 1.4.2 for the tests and the validation tool.

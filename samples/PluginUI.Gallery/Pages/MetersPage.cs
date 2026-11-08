@@ -1,4 +1,4 @@
-// 2026/10/19 17:23:00 UTC - PluginUI
+// 2026/11/08 13:40:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,7 @@ internal static class MetersPage
         c.Caption(L.T("LEVEL METERS", "VU-MÈTRES"), 20, 12);
         c.At(new LevelMeter { Sources = audio.NewPeakSources(), RmsSources = audio.NewRmsSources(), ToolTip = L.T("Peak + RMS, peak hold, click to clear the clip indicator", "Crête + RMS, maintien de crête, clic pour effacer l'écrêtage") }, 20, 36, 54, 240);
         c.At(new LevelMeter { MeterStyle = MeterStyle.Segments, Sources = audio.NewPeakSources() }, 84, 36, 54, 240);
-        c.At(new LevelMeter { Orientation = Orientation.Horizontal, Sources = audio.NewPeakSources(), RmsSources = audio.NewRmsSources() }, 160, 36, 260, 40);
+        c.At(new LevelMeter { Orientation = Orientation.Horizontal, Sources = audio.NewPeakSources(), RmsSources = audio.NewRmsSources(), ShowPeakValue = true, ToolTip = L.T("Highest peak in dB, click to clear", "Crête la plus haute en dB, clic pour effacer") }, 160, 36, 260, 40);
         var gr = c.At(new LevelMeter { Mode = MeterMode.GainReduction, ChannelCount = 1, InputUnit = LevelUnit.Decibels, Label = "GR" }, 150, 96, 44, 180);
         gr.SetLevels(6f);
         c.At(new Led { IsOn = true }, 210, 100, 16, 16);

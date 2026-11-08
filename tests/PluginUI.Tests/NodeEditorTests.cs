@@ -1,4 +1,4 @@
-// 2026/11/08 13:25:00 UTC - PluginUI
+// 2026/11/08 13:40:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -252,6 +252,31 @@ public class NodeEditorTests
         {
             Assert.That(late.Bounds.Contains(late.FromGraph(new Point(b.X, b.Y))), Is.True, "top left visible");
             Assert.That(late.Bounds.Contains(late.FromGraph(new Point(b.Right, b.Bottom))), Is.True, "bottom right visible");
+        });
+    }
+
+    [Test]
+    public void DraggingAnEmptyPlaceMovesTheViewWhenTheGraphDoesNotFit()
+    {
+        Node("Far", 1600, 900, [new("in", "In")], []);
+        Assert.That(_editor.IsScrollable, Is.EqualTo((true, true)));
+        var empty = new Point(400f, 400f);
+        var grabbed = _editor.ToGraph(empty);
+        Drag(empty, new Point(300f, 350f));
+        Assert.Multiple(() =>
+        {
+            Assert.That(_editor.ToGraph(new Point(300f, 350f)).X, Is.EqualTo(grabbed.X).Within(1e-3f), "the graph follows the mouse");
+            Assert.That(_editor.ToGraph(new Point(300f, 350f)).Y, Is.EqualTo(grabbed.Y).Within(1e-3f));
+            Assert.That(_editor.SelectedNodes, Is.Empty);
+        });
+
+        _editor.ViewOffset = default;
+        var keys = _editor.FromGraph(new Point(_keys.X + 20f, _keys.Y + 10f));
+        Drag(new Point(keys.X - 30f, keys.Y + 60f), new Point(keys.X + 10f, keys.Y), ModifierKeys.Shift);
+        Assert.Multiple(() =>
+        {
+            Assert.That(_editor.ViewOffset, Is.EqualTo(default(Point)), "Shift + drag does not move the view");
+            Assert.That(_editor.SelectedNodes, Is.EqualTo(new[] { _keys }), "it selects with a rectangle");
         });
     }
 

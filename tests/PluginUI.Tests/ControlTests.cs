@@ -1,4 +1,4 @@
-// 2026/10/18 16:20:00 UTC - PluginUI
+// 2026/11/08 13:40:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -262,5 +262,28 @@ public class ControlTests
         var meter = Add(new LevelMeter { ChannelCount = 1, DecibelConvention = convention }, 0f, 0f, 20f, 100f);
         meter.SetLevels(0.5f);
         Assert.That(meter.GetDisplayedLevel(0), Is.EqualTo(halfDb).Within(1e-3f));
+    }
+
+    [Test]
+    public void LevelMeterKeepsTheHighestPeakUntilClicked()
+    {
+        var peak = new PluginUI.Dsp.PeakValue();
+        var meter = Add(new LevelMeter { ChannelCount = 2, Orientation = Orientation.Horizontal, ShowPeakValue = true, DecibelConvention = DecibelConvention.SixLog2 }, 0f, 0f, 200f, 14f);
+        Assert.That(meter.PeakValueText, Is.EqualTo("-inf dB"), "no signal yet");
+        meter.SetLevels(0.5f, 0.25f);
+        meter.SetLevels(0.125f, 0.25f);
+        Assert.Multiple(() =>
+        {
+            Assert.That(meter.GetMaxLevel(0), Is.EqualTo(-6f).Within(1e-4f), "held after the level falls");
+            Assert.That(meter.GetMaxLevel(1), Is.EqualTo(-12f).Within(1e-4f));
+            Assert.That(meter.PeakValueText, Is.EqualTo("-6.0 dB"), "the highest of the channels, '.' as separator");
+        });
+        meter.Sources = [peak, new PluginUI.Dsp.PeakValue()];
+        peak.Push(2f);
+        _host.StepFrame(0.016);
+        Assert.That(meter.PeakValueText, Is.EqualTo("+6.0 dB"), "from the audio-thread sources too");
+        _host.DispatchMouseDown(new Point(50f, 7f), MouseButton.Left, 1, ModifierKeys.None);
+        _host.DispatchMouseUp(new Point(50f, 7f), MouseButton.Left, ModifierKeys.None);
+        Assert.That(meter.PeakValueText, Is.EqualTo("-inf dB"), "a click resets it");
     }
 }
