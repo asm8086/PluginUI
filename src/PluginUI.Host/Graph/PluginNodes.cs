@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:25:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -210,8 +210,14 @@ public sealed unsafe class PluginNode : GraphNode
         Bypass = GraphJson.Bool(json, "bypass", false);
         Mute = GraphJson.Bool(json, "mute", false);
         string? state = GraphJson.String(json, "state", null);
-        if (!string.IsNullOrEmpty(state)) Plugin.SetState(Convert.FromBase64String(state));
-        UpdatePorts();
+        try
+        {
+            if (!string.IsNullOrEmpty(state)) Plugin.SetState(Convert.FromBase64String(state));
+        }
+        finally
+        {
+            UpdatePorts();
+        }
     }
 }
 

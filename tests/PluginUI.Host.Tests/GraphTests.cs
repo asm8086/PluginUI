@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:25:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -95,7 +95,13 @@ namespace PluginUI.Host.Tests.Support
 
         public override byte[] GetState() => State;
 
-        public override void SetState(ReadOnlySpan<byte> state) => State = state.ToArray();
+        public override void SetState(ReadOnlySpan<byte> state)
+        {
+            if (RefusesState) throw new InvalidOperationException("state refused");
+            State = state.ToArray();
+        }
+
+        public bool RefusesState { get; set; }
 
         protected override void OnPrepare(double sampleRate, int maxBlockSize, bool realtime)
         {
@@ -654,6 +660,21 @@ namespace PluginUI.Host.Tests
                 using var third = new PluginGraph();
                 Assert.That(third.LoadJson(again, _ => reloaded), Is.Empty, "saved back unchanged");
                 Assert.That(reloaded.State, Is.EqualTo(new byte[] { 9, 8, 7 }));
+            }
+
+            // A plug-in that loads but refuses its saved state stays, with its own settings.
+            var refusing = new FakePlugin("Saved") { RefusesState = true };
+            using (var graph = new PluginGraph())
+            {
+                var warnings = graph.LoadJson(json, _ => refusing);
+                Assert.Multiple(() =>
+                {
+                    Assert.That(graph.Nodes.OfType<PluginNode>().Single().Plugin, Is.SameAs(refusing));
+                    Assert.That(graph.Nodes.OfType<MissingPluginNode>(), Is.Empty);
+                    Assert.That(warnings, Has.Count.EqualTo(1));
+                    Assert.That(warnings[0], Does.Contain("Saved").And.Contain("state refused").And.Contain("default settings"));
+                    Assert.That(graph.Connections, Has.Count.EqualTo(4));
+                });
             }
 
             using (var graph = new PluginGraph())

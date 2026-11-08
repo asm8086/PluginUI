@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 13:25:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -506,16 +506,27 @@ public sealed unsafe class PluginGraph : IAudioRenderer, IDisposable
             if (type == "plugin")
             {
                 var reference = GraphJson.ReadReference(o["plugin"]);
+                string name = reference?.Name is { Length: > 0 } n ? n : "?";
+                PluginInstance? plugin = null;
                 try
                 {
                     if (reference is null) throw new FormatException("the plug-in is not described");
-                    var plugin = loadPlugin(reference);
-                    node = new PluginNode(plugin, reference);
-                    node.ReadSettings(o);
+                    plugin = loadPlugin(reference);
+                    var pluginNode = new PluginNode(plugin, reference);
+                    try
+                    {
+                        pluginNode.ReadSettings(o);
+                    }
+                    catch (Exception ex) when (ex is not OutOfMemoryException)
+                    {
+                        // The plug-in works: it stays, with the settings it starts with.
+                        warnings.Add($"Plug-in '{name}': its saved settings could not be restored ({ex.Message}); it starts with its default settings.");
+                    }
+                    node = pluginNode;
                 }
                 catch (Exception ex)
                 {
-                    string name = reference?.Name is { Length: > 0 } n ? n : "?";
+                    plugin?.Dispose();
                     warnings.Add($"Plug-in '{name}' could not be loaded: {ex.Message}");
                     node = new MissingPluginNode(o, reference, ex.Message);
                 }
