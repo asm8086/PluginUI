@@ -1,4 +1,4 @@
-<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
+<!-- 2026/11/08 15:53:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -65,8 +65,8 @@ exist (`C:\Program Files\Common Files\VST3`, `%LOCALAPPDATA%\Programs\Common\VST
 the registry; on Linux `~/.vst3`, `/usr/lib/vst3`, `/usr/local/lib/vst3`, `~/.vst`, `/usr/lib/vst`, `/usr/local/lib/vst`).
 Every folder and its subfolders are searched for both formats: `.vst3` modules, and the libraries with a VST 2 entry
 point (the libraries the plug-ins use are left out without being loaded, and so are those inside `.vst3` bundles).
-Each plug-in of a shell module (Waves' WaveShell) is listed on its own; 32-bit plug-ins are listed as failed, with the
-reason. Settings of earlier versions, with separate VST3 and VST2 lists, are merged into the single list.
+Each plug-in of a shell module (Waves' WaveShell) is listed on its own; 32-bit plug-ins are listed without being loaded,
+with the status `Incompatible` and their architecture (`ModuleArchitecture.X86`): "32-bit" in Plug-in Host, in amber. Settings of earlier versions, with separate VST3 and VST2 lists, are merged into the single list.
 
 ```
 pluginhost folders                          # list the folders
@@ -252,7 +252,7 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   **Sort** list: name, vendor, category, format, input or output channels, latency, installation date, recently used,
   most used, favorites first, folder, status. Right click on the header (or **View > Columns**) shows or hides columns:
   favorite, name, vendor, type, categories, format, inputs, outputs, sidechain, MIDI, latency, parameters, editor,
-  version, installed, last used, uses, folder, status. Widths, columns, sort and filters are kept between runs.
+  version, installed, last used, uses, folder, architecture, status. Widths, columns, sort and filters are kept between runs.
 - **Details** (Ctrl+I): format and SDK, version, categories, buses, MIDI input, latency in samples and milliseconds,
   parameters, editor, module path, dates, use count, and the reason of a failure.
 - **Full screen** (F11, View menu; Esc to leave): the window covers the whole screen, without title bar.

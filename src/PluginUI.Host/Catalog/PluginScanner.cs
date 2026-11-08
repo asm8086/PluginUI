@@ -1,4 +1,4 @@
-// 2026/11/06 23:57:00 UTC - PluginUI
+// 2026/11/08 15:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +14,8 @@ namespace PluginUI.Host.Catalog;
 /// <param name="Unchanged">Modules taken from the cache.</param>
 /// <param name="Removed">Plug-ins whose module disappeared.</param>
 /// <param name="Failed">Modules that could not be loaded.</param>
-public sealed record ScanSummary(int Modules, int Scanned, int Unchanged, int Removed, int Failed);
+/// <param name="Incompatible">Modules built for another processor (32-bit plug-ins in a 64-bit host), not loaded.</param>
+public sealed record ScanSummary(int Modules, int Scanned, int Unchanged, int Removed, int Failed, int Incompatible = 0);
 
 /// <summary>Progress of a scan: the module being scanned and how many are done.</summary>
 /// <param name="Module">Module path.</param>
@@ -158,7 +159,7 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
         var byModule = catalog.Plugins.GroupBy(p => p.Path, comparer).ToDictionary(g => g.Key, g => g.ToList(), comparer);
 
         int removed = catalog.Plugins.RemoveAll(p => !present.Contains(p.Path));
-        int scanned = 0, unchanged = 0, failed = 0;
+        int scanned = 0, unchanged = 0, failed = 0, incompatible = 0;
         var timeout = TimeSpan.FromSeconds(Math.Max(1, settings.ScanTimeoutSeconds));
         for (int i = 0; i < modules.Count; i++)
         {
@@ -173,8 +174,19 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
                 continue;
             }
             progress?.Report(new ScanProgress(path, i, modules.Count));
+            var architecture = ModuleArchitectures.Of(path, format);
             List<PluginDescription> found;
-            try
+            if (!ModuleArchitectures.CanLoad(architecture))
+            {
+                // Not even started: the loader would only refuse it ("not a valid Win32 application").
+                incompatible++;
+                found = [new PluginDescription
+                {
+                    Format = format, Path = path, Name = Path.GetFileNameWithoutExtension(path), Status = PluginStatus.Incompatible,
+                    Error = ModuleArchitectures.IncompatibilityMessage(architecture), Category = string.Empty,
+                }];
+            }
+            else try
             {
                 found = moduleScanner.Scan(path, format, timeout).ToList();
                 if (found.Count == 0) throw new InvalidOperationException("The module contains no plug-in.");
@@ -191,6 +203,7 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
             foreach (var plugin in found)
             {
                 plugin.Path = path;
+                plugin.Architecture = architecture;
                 plugin.ModuleSize = size;
                 plugin.ModuleTimeUtc = time;
                 plugin.ScannedUtc = DateTime.UtcNow;
@@ -203,7 +216,7 @@ public sealed class PluginScanner(IModuleScanner moduleScanner)
         }
         catalog.LastScanUtc = DateTime.UtcNow;
         progress?.Report(new ScanProgress(string.Empty, modules.Count, modules.Count));
-        return new ScanSummary(modules.Count, scanned, unchanged, removed, failed);
+        return new ScanSummary(modules.Count, scanned, unchanged, removed, failed, incompatible);
     }
 
     private static (long Size, DateTime Time) FileStamp(string path)

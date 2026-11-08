@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 15:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -166,10 +166,13 @@ public static class Program
         var summary = scanner.Scan(settings, catalog, all, progress);
         catalog.Save(HostPaths.CatalogFile);
         int ok = catalog.Plugins.Count(p => p.Status == PluginStatus.Ok);
-        Console.WriteLine($"{summary.Modules} modules: {summary.Scanned} scanned, {summary.Unchanged} unchanged, {summary.Removed} plug-ins removed, {summary.Failed} failed.");
+        Console.WriteLine($"{summary.Modules} modules: {summary.Scanned} scanned, {summary.Unchanged} unchanged, {summary.Removed} plug-ins removed, {summary.Failed} failed"
+            + (summary.Incompatible > 0 ? $", {summary.Incompatible} built for another processor (32-bit)." : "."));
         Console.WriteLine($"{ok} plug-ins available. List: {HostPaths.CatalogFile}");
         foreach (var failed in catalog.Plugins.Where(p => p.Status == PluginStatus.Failed))
             Console.WriteLine($"  failed: {failed.Path}: {failed.Error}");
+        foreach (var other in catalog.Plugins.Where(p => p.Status == PluginStatus.Incompatible))
+            Console.WriteLine($"  not loadable: {other.Path}: {other.Error}");
         return 0;
     }
 

@@ -1,4 +1,4 @@
-// 2026/11/08 14:03:00 UTC - PluginUI
+// 2026/11/08 15:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -114,6 +114,61 @@ public class CatalogTests
             Assert.That(second.Removed, Is.EqualTo(1));
             Assert.That(catalog.Plugins.Single(p => p.Name == "Single").IsFavorite, Is.True, "user data survives a rescan");
         });
+    }
+
+    /// <summary>The first bytes of a Windows module built for <paramref name="machine"/> (enough to read its architecture).</summary>
+    private static byte[] PeHeader(ushort machine)
+    {
+        var bytes = new byte[128];
+        bytes[0] = (byte)'M';
+        bytes[1] = (byte)'Z';
+        BitConverter.TryWriteBytes(bytes.AsSpan(60), 64);
+        "PE\0\0"u8.CopyTo(bytes.AsSpan(64));
+        BitConverter.TryWriteBytes(bytes.AsSpan(68), machine);
+        return bytes;
+    }
+
+    [TestCase((ushort)0x014C, ModuleArchitecture.X86)]
+    [TestCase((ushort)0x8664, ModuleArchitecture.X64)]
+    [TestCase((ushort)0xAA64, ModuleArchitecture.Arm64)]
+    [TestCase((ushort)0x01C4, ModuleArchitecture.Arm)]
+    public void TheArchitectureOfAModuleIsReadFromItsFile(ushort machine, ModuleArchitecture expected)
+    {
+        string file = Path.Combine(_root, "Module.dll");
+        File.WriteAllBytes(file, PeHeader(machine));
+        Assert.That(ModuleArchitectures.ReadMachine(file), Is.EqualTo(expected));
+        File.WriteAllText(file, "not a module");
+        Assert.That(ModuleArchitectures.ReadMachine(file), Is.EqualTo(ModuleArchitecture.Unknown));
+    }
+
+    [Test]
+    public void ModulesBuiltForAnotherProcessorAreListedWithoutBeingLoaded()
+    {
+        Assume.That(ModuleArchitectures.Current, Is.EqualTo(ModuleArchitecture.X64), "64-bit Intel / AMD host");
+        string vst3 = Path.Combine(_root, "VST3");
+        Directory.CreateDirectory(Path.Combine(vst3, "Old.vst3", "Contents", "x86-win"));
+        File.WriteAllBytes(Path.Combine(vst3, "Old.vst3", "Contents", "x86-win", "Old.vst3"), PeHeader(0x014C));
+        File.WriteAllBytes(Path.Combine(vst3, "Legacy.vst3"), PeHeader(0x014C));
+        File.WriteAllBytes(Path.Combine(vst3, "Native.vst3"), PeHeader(0x8664));
+        var catalog = new PluginCatalog();
+        var fake = new FakeScanner();
+
+        var summary = new PluginScanner(fake).Scan(new HostSettings { Folders = [vst3] }, catalog);
+        var legacy = catalog.Plugins.Single(p => p.Name == "Legacy");
+        Assert.Multiple(() =>
+        {
+            Assert.That(fake.Scanned, Is.EqualTo(new[] { "Native.vst3" }), "a 32-bit module is not even started");
+            Assert.That(summary, Is.EqualTo(new ScanSummary(3, 3, 0, 0, 0, 2)));
+            Assert.That(legacy.Status, Is.EqualTo(PluginStatus.Incompatible));
+            Assert.That(legacy.Architecture, Is.EqualTo(ModuleArchitecture.X86));
+            Assert.That(legacy.Error, Does.StartWith("32-bit plug-in"));
+            Assert.That(catalog.Plugins.Single(p => p.Name == "Old").Status, Is.EqualTo(PluginStatus.Incompatible), "a bundle with an x86 binary only");
+            Assert.That(catalog.Plugins.Single(p => p.Name == "Native").Architecture, Is.EqualTo(ModuleArchitecture.X64));
+        });
+
+        string file = Path.Combine(_root, "plugins.json");
+        catalog.Save(file);
+        Assert.That(PluginCatalog.Load(file).Plugins.Single(p => p.Name == "Legacy").Architecture, Is.EqualTo(ModuleArchitecture.X86), "kept in the list");
     }
 
     [Test]

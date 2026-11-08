@@ -1,4 +1,4 @@
-<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
+<!-- 2026/11/08 15:53:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -38,6 +38,12 @@ Before 1.0, minor versions may contain breaking changes.
   with the documentation site) and as A4 PDF files: a tutorial, the main window, the plug-in list, scans, audio and
   MIDI, the graph and its modules, plug-in windows, the log, the keyboard shortcuts, troubleshooting, files.
   `docs/manual/build-pdf.py` prints the PDF files again from the web pages.
+
+- **32-bit plug-ins are recognized** at the scan, from their file, without being started: `PluginDescription.Architecture`
+  (`ModuleArchitecture`: x86, x64, ARM64, ARM; also for VST 3 bundles by their architecture folders),
+  `PluginStatus.Incompatible` with the reason, `ScanSummary.Incompatible`, `ModuleArchitectures` (`ReadMachine`, `Of`,
+  `CanLoad`). Plug-in Host shows them in amber with the status "32-bit", an Architecture column and line in the
+  details, a count in the status bar and the log; `pluginhost scan` lists them as not loadable.
 
 ### Changed
 

@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 15:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -132,7 +132,7 @@ public sealed record PluginReference(PluginFormat Format, string Path, string Cl
     {
         ArgumentNullException.ThrowIfNull(catalog);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        var usable = catalog.Plugins.Where(p => p.Status != PluginStatus.Failed && p.Format == Format).ToList();
+        var usable = catalog.Plugins.Where(p => p.Status is not (PluginStatus.Failed or PluginStatus.Incompatible) && p.Format == Format).ToList();
         return usable.FirstOrDefault(p => string.Equals(p.Path, Path, comparison) && (ClassId.Length == 0 || string.Equals(p.ClassId, ClassId, StringComparison.OrdinalIgnoreCase)))
             ?? usable.FirstOrDefault(p => ClassId.Length > 0 && string.Equals(p.ClassId, ClassId, StringComparison.OrdinalIgnoreCase))
             ?? usable.FirstOrDefault(p => string.Equals(p.Name, Name, StringComparison.OrdinalIgnoreCase) && string.Equals(p.Vendor, Vendor, StringComparison.OrdinalIgnoreCase));

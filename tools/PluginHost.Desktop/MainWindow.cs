@@ -1,4 +1,4 @@
-// 2026/11/08 13:55:00 UTC - PluginUI
+// 2026/11/08 15:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -297,7 +297,7 @@ internal sealed class MainWindow
 
         StatusBar = new StatusBar { Dock = Side.Bottom };
         StatusBar.Segments.Add(new StatusBarSegment(() => _scanText.Length > 0 ? _scanText : Host!.Strings.StatusReady, float.PositiveInfinity));
-        StatusBar.Segments.Add(new StatusBarSegment(CountText, 260f) { Align = HorizontalAlignment.Right });
+        StatusBar.Segments.Add(new StatusBarSegment(CountText, 300f) { Align = HorizontalAlignment.Right });
         StatusBar.Segments.Add(new StatusBarSegment(() => _audio?.Describe() ?? string.Empty, 360f) { Align = HorizontalAlignment.Right });
         StatusBar.Segments.Add(new StatusBarSegment(LastScanText, 220f) { Align = HorizontalAlignment.Right });
         StatusBar.Follow(MenuBar);
@@ -415,7 +415,7 @@ internal sealed class MainWindow
         };
         var name = Column("name", L.T("Name", "Nom"), p => p.Name, 200f);
         name.CanHide = false;
-        name.CellColor = o => ((PluginDescription)o).Status == PluginStatus.Ok ? null : Color.FromRgb(0xE57373);
+        name.CellColor = o => StatusColor((PluginDescription)o);
         Column("vendor", L.T("Vendor", "Marque"), p => p.Vendor, 130f);
         Column("category", L.T("Type", "Type"), p => p.IsInstrument ? L.T("Instrument", "Instrument") : p.Status == PluginStatus.Ok ? L.T("Effect", "Effet") : string.Empty, 80f);
         Column("subcategories", L.T("Categories", "Catégories"), p => p.SubCategories.Replace("|", ", ", StringComparison.Ordinal), float.NaN).MinWidth = 120f;
@@ -433,9 +433,35 @@ internal sealed class MainWindow
         Column("lastused", L.T("Last used", "Utilisé le"), p => Date(p.LastUsedUtc), 92f, (a, b) => Nullable.Compare(a.LastUsedUtc, b.LastUsedUtc), visible: false);
         Column("uses", L.T("Uses", "Utilisations"), p => Count(p.UseCount), 84f, (a, b) => a.UseCount.CompareTo(b.UseCount), HorizontalAlignment.Right, visible: false);
         Column("folder", L.T("Folder", "Dossier"), p => p.Folder, 220f, visible: false);
-        Column("status", L.T("Status", "État"), p => p.Status == PluginStatus.Ok ? string.Empty : L.T("Failed", "Échec"), 70f, (a, b) => a.Status.CompareTo(b.Status), visible: false);
-        Table.Columns.Find(c => c.Key == "status")!.CellColor = o => ((PluginDescription)o).Status == PluginStatus.Ok ? null : Color.FromRgb(0xE57373);
+        Column("architecture", L.T("Architecture", "Architecture"), p => ArchitectureText(p.Architecture), 96f, (a, b) => a.Architecture.CompareTo(b.Architecture), visible: false);
+        Column("status", L.T("Status", "État"), StatusText, 70f, (a, b) => a.Status.CompareTo(b.Status), visible: false);
+        Table.Columns.Find(c => c.Key == "status")!.CellColor = o => StatusColor((PluginDescription)o);
     }
+
+    // A plug-in built for another processor is not broken: amber rather than red.
+    private static Color? StatusColor(PluginDescription p) => p.Status switch
+    {
+        PluginStatus.Ok => null,
+        PluginStatus.Incompatible => Color.FromRgb(0xFFB74D),
+        _ => Color.FromRgb(0xE57373),
+    };
+
+    private static string StatusText(PluginDescription p) => p.Status switch
+    {
+        PluginStatus.Ok => string.Empty,
+        PluginStatus.Incompatible when p.Architecture is ModuleArchitecture.X86 or ModuleArchitecture.Arm => L.T("32-bit", "32 bits"),
+        PluginStatus.Incompatible => L.T("Incompatible", "Incompatible"),
+        _ => L.T("Failed", "Échec"),
+    };
+
+    private static string ArchitectureText(ModuleArchitecture architecture) => architecture switch
+    {
+        ModuleArchitecture.X86 => L.T("x86 (32-bit)", "x86 (32 bits)"),
+        ModuleArchitecture.X64 => L.T("x64 (64-bit)", "x64 (64 bits)"),
+        ModuleArchitecture.Arm64 => "ARM64",
+        ModuleArchitecture.Arm => L.T("ARM (32-bit)", "ARM (32 bits)"),
+        _ => string.Empty,
+    };
 
     private static void DrawStar(DrawingContext dc, Point center, float radius, Color color)
     {
@@ -514,15 +540,23 @@ internal sealed class MainWindow
     private string CountText()
     {
         int ok = _catalog.Plugins.Count(p => p.Status == PluginStatus.Ok);
-        int failed = _catalog.Plugins.Count - ok;
-        string shown = L.T($"{_rows.Count} shown of {ok}", $"{_rows.Count} affichés sur {ok}");
-        return failed > 0 ? shown + L.T($", {failed} failed", $", {failed} en échec") : shown;
+        int incompatible = _catalog.Plugins.Count(p => p.Status == PluginStatus.Incompatible);
+        int failed = _catalog.Plugins.Count - ok - incompatible;
+        string text = L.T($"{_rows.Count} shown of {ok}", $"{_rows.Count} affichés sur {ok}");
+        if (failed > 0) text += L.T($", {failed} failed", $", {failed} en échec");
+        if (incompatible > 0) text += L.T($", {incompatible} 32-bit", $", {incompatible} en 32 bits");
+        return text;
     }
 
     private string LastScanText()
         => _catalog.LastScanUtc is { } last
             ? L.T("Last scan ", "Dernière recherche ") + last.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
             : L.T("Never scanned", "Jamais recherché");
+
+    private static string IncompatibleText(PluginDescription p) => p.Architecture is ModuleArchitecture.X86 or ModuleArchitecture.Arm
+        ? L.T("A 32-bit plug-in: Plug-in Host is a 64-bit program and cannot load it.", "Un plug-in 32 bits : Plug-in Host est un programme 64 bits et ne peut pas le charger.")
+        : L.T($"Built for another processor ({ArchitectureText(p.Architecture)}): Plug-in Host cannot load it.",
+            $"Compilé pour un autre processeur ({ArchitectureText(p.Architecture)}) : Plug-in Host ne peut pas le charger.");
 
     private string DetailsText()
     {
@@ -542,6 +576,7 @@ internal sealed class MainWindow
         Line("Version", "Version", p.Version);
         Line("Type", "Type", p.IsInstrument ? L.T("instrument", "instrument") : L.T("effect", "effet"));
         Line("Categories", "Catégories", p.SubCategories.Replace("|", ", ", StringComparison.Ordinal));
+        Line("Architecture", "Architecture", ArchitectureText(p.Architecture));
         if (p.Status == PluginStatus.Ok)
         {
             Line("Audio", "Audio", L.T($"{p.InputChannels} in, {p.OutputChannels} out", $"{p.InputChannels} entrée(s), {p.OutputChannels} sortie(s)"));
@@ -557,7 +592,12 @@ internal sealed class MainWindow
         Line("Module", "Module", p.Path);
         if (p.ModuleTimeUtc > DateTime.MinValue) Line("Installed", "Installé", p.ModuleTimeUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture));
         if (p.LastUsedUtc is { } used) Line("Last used", "Dernière utilisation", used.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + L.T($" ({p.UseCount} times)", $" ({p.UseCount} fois)"));
-        if (p.Status != PluginStatus.Ok)
+        if (p.Status == PluginStatus.Incompatible)
+        {
+            sb.AppendLine();
+            sb.AppendLine(IncompatibleText(p));
+        }
+        else if (p.Status != PluginStatus.Ok)
         {
             sb.AppendLine();
             sb.AppendLine(L.T("Could not be loaded:", "N'a pas pu être chargé :"));
@@ -571,6 +611,11 @@ internal sealed class MainWindow
     /// <summary>Adds a plug-in of the list to the graph and shows the graph.</summary>
     private void AddToGraph(PluginDescription description)
     {
+        if (description.Status == PluginStatus.Incompatible)
+        {
+            Report(IncompatibleText(description), level: LogLevel.Warning, source: description.Name);
+            return;
+        }
         if (description.Status != PluginStatus.Ok)
         {
             Report(L.T($"{description.Name} could not be loaded during the scan.", $"{description.Name} n'a pas pu être chargé lors de la recherche."), level: LogLevel.Warning);
@@ -757,8 +802,11 @@ internal sealed class MainWindow
         var s = task.Result;
         foreach (var failed in work.Plugins.Where(p => p.Status == PluginStatus.Failed))
             _log.Warning(L.T("Scan", "Recherche"), $"{failed.Name} ({failed.Path}): " + (failed.Error ?? L.T("could not be loaded", "n'a pas pu être chargé")));
+        foreach (var other in work.Plugins.Where(p => p.Status == PluginStatus.Incompatible))
+            _log.Info(L.T("Scan", "Recherche"), $"{other.Name} ({other.Path}): " + IncompatibleText(other));
         Report(L.T($"{s.Modules} modules: {s.Scanned} scanned, {s.Unchanged} unchanged, {s.Removed} plug-ins removed, {s.Failed} failed.",
-            $"{s.Modules} modules : {s.Scanned} ouverts, {s.Unchanged} inchangés, {s.Removed} plug-ins retirés, {s.Failed} en échec."), 10.0);
+            $"{s.Modules} modules : {s.Scanned} ouverts, {s.Unchanged} inchangés, {s.Removed} plug-ins retirés, {s.Failed} en échec.")
+            + (s.Incompatible > 0 ? L.T($" {s.Incompatible} 32-bit modules not loaded.", $" {s.Incompatible} modules 32 bits non chargés.") : string.Empty), 10.0);
     }
 
     private static string[] SelfArguments()

@@ -1,4 +1,4 @@
-// 2026/11/08 13:55:00 UTC - PluginUI
+// 2026/11/08 15:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -83,13 +83,15 @@ internal static class Snapshots
     public static PluginCatalog SampleCatalog()
     {
         static PluginDescription P(string name, string vendor, string sub, int ins, int outs, int latency = 0, bool favorite = false, int uses = 0,
-            int aux = 0, bool midi = false, PluginStatus status = PluginStatus.Ok, string error = "", int days = 30, string folder = @"C:\Program Files\Common Files\VST3")
+            int aux = 0, bool midi = false, PluginStatus status = PluginStatus.Ok, string error = "", int days = 30, string folder = @"C:\Program Files\Common Files\VST3",
+            PluginFormat format = PluginFormat.Vst3, ModuleArchitecture architecture = ModuleArchitecture.X64)
             => new()
             {
-                Format = PluginFormat.Vst3, Name = name, Vendor = vendor, SubCategories = sub, Path = Path.Combine(folder, name + ".vst3"),
+                Format = format, Architecture = architecture, Name = name, Vendor = vendor, SubCategories = sub,
+                Path = Path.Combine(folder, name + (format == PluginFormat.Vst3 ? ".vst3" : ".dll")),
                 Category = sub.Contains("Instrument", StringComparison.Ordinal) ? "Instrument" : "Effect", InputChannels = ins, OutputChannels = outs,
                 AuxInputChannels = aux, HasMidiInput = midi, LatencySamples = latency, IsFavorite = favorite, UseCount = uses, Status = status, Error = error,
-                Version = "1.2.0", SdkVersion = "VST 3.7.12", ParameterCount = 12 + name.Length, HasEditor = status == PluginStatus.Ok,
+                Version = "1.2.0", SdkVersion = format == PluginFormat.Vst3 ? "VST 3.7.12" : "VST 2.4", ParameterCount = 12 + name.Length, HasEditor = status == PluginStatus.Ok,
                 ModuleTimeUtc = new DateTime(2026, 10, 1, 12, 0, 0, DateTimeKind.Utc).AddDays(-days),
                 LastUsedUtc = uses > 0 ? new DateTime(2026, 11, 6, 20, 0, 0, DateTimeKind.Utc).AddHours(-uses) : null,
                 ClassId = (name + vendor).GetHashCode(StringComparison.Ordinal).ToString("X8", System.Globalization.CultureInfo.InvariantCulture),
@@ -112,6 +114,8 @@ internal static class Snapshots
                 P("Breath Tamer", "Restoration Lab", "Fx|Restoration", 2, 2, latency: 26623, days: 400),
                 P("Mono Analyzer", "Measure Co", "Fx|Analyzer", 1, 1, days: 10),
                 P("Old Shell", "Unknown", "", 0, 0, status: PluginStatus.Failed, error: "The scanner stopped (code 0xC0000005: access violation in the plug-in)."),
+                P("Tape Chorus", "", "", 0, 0, status: PluginStatus.Incompatible, error: ModuleArchitectures.IncompatibilityMessage(ModuleArchitecture.X86),
+                    days: 3000, folder: @"C:\Program Files (x86)\VSTPlugins", format: PluginFormat.Vst2, architecture: ModuleArchitecture.X86),
             ],
             LastScanUtc = new DateTime(2026, 11, 6, 21, 30, 0, DateTimeKind.Utc),
         };

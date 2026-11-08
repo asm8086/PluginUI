@@ -1,4 +1,4 @@
-<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
+<!-- 2026/11/08 15:53:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -69,7 +69,8 @@ dossier inscrit par Steinberg dans le registre ; sous Linux `~/.vst3`, `/usr/lib
 `/usr/lib/vst`, `/usr/local/lib/vst`). Chaque dossier et ses sous-dossiers sont parcourus pour les deux formats : les
 modules `.vst3`, et les bibliothèques dotées d'un point d'entrée VST 2 (celles qu'utilisent les plug-ins sont écartées
 sans être chargées, de même que celles des paquets `.vst3`). Chaque plug-in d'un module shell (le WaveShell de Waves)
-est listé séparément ; les plug-ins 32 bits apparaissent en échec, avec la raison. Les réglages des versions
+est listé séparément ; les plug-ins 32 bits sont listés sans être chargés,
+avec l'état `Incompatible` et leur architecture (`ModuleArchitecture.X86`) : « 32 bits » dans Plug-in Host, en orange. Les réglages des versions
 précédentes, avec des listes VST3 et VST2 séparées, sont fusionnés en une seule liste.
 
 ```
@@ -262,7 +263,7 @@ dotnet publish tools/PluginHost.Desktop -c Release -r win-x64 -p:PublishAot=true
   date d'installation, utilisés récemment, les plus utilisés, favoris d'abord, dossier, état. Un clic droit sur
   l'en-tête (ou **Affichage > Colonnes**) affiche ou masque les colonnes : favori, nom, marque, type, catégories,
   format, entrées, sorties, sidechain, MIDI, latence, paramètres, éditeur, version, installé, utilisé le,
-  utilisations, dossier, état. Largeurs, colonnes, tri et filtres sont conservés d'un lancement à l'autre.
+  utilisations, dossier, architecture, état. Largeurs, colonnes, tri et filtres sont conservés d'un lancement à l'autre.
 - **Détails** (Ctrl+I) : format et SDK, version, catégories, bus, entrée MIDI, latence en échantillons et en
   millisecondes, paramètres, éditeur, chemin du module, dates, nombre d'utilisations, et la raison d'un échec.
 - **Plein écran** (F11, menu Affichage ; Échap pour en sortir) : la fenêtre couvre tout l'écran, sans barre de titre.

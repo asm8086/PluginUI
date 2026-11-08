@@ -1,4 +1,4 @@
-// 2026/11/06 22:50:00 UTC - PluginUI
+// 2026/11/08 15:53:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,8 @@ public enum PluginStatus
     Failed,
     /// <summary>Excluded by the user.</summary>
     Ignored,
+    /// <summary>Built for another processor (a 32-bit plug-in in a 64-bit host): not loaded, see <see cref="PluginDescription.Architecture"/>.</summary>
+    Incompatible,
 }
 
 /// <summary>A plug-in found on the computer, as remembered between sessions.</summary>
@@ -81,6 +83,9 @@ public sealed class PluginDescription
 
     /// <summary>Scan result.</summary>
     public PluginStatus Status { get; set; }
+
+    /// <summary>The processor the module is built for (read from the file at the scan).</summary>
+    public ModuleArchitecture Architecture { get; set; }
 
     /// <summary>Why the scan failed.</summary>
     public string? Error { get; set; }
