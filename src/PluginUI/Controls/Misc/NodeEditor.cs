@@ -1,4 +1,4 @@
-// 2026/11/08 13:42:00 UTC - PluginUI
+// 2026/11/08 13:46:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -207,7 +207,8 @@ public sealed class NodeEditorMenuEventArgs : EventArgs
 /// Ctrl+wheel zooms around the mouse; the middle button (or Alt with the left one) also pans. Double-click a node to open it; right-click for its menu.</para>
 /// <para><b>Keyboard.</b> Ctrl+Left / Ctrl+Right select the previous or next node (left to right), Ctrl+A all; arrows
 /// move the selection (Shift = farther); Enter opens the node; Delete removes the selection; Home fits the graph in the
-/// view, + and − zoom; Shift+F10 or the Menu key opens the menu of the selection.</para>
+/// view, + and − zoom, Ctrl+0 shows the actual size (also <see cref="ZoomIn"/>, <see cref="ZoomOut"/>,
+/// <see cref="ResetZoom"/> for zoom buttons); Shift+F10 or the Menu key opens the menu of the selection.</para>
 /// </remarks>
 /// <example>
 /// <code>
@@ -222,7 +223,7 @@ public class NodeEditor : Control
 {
     private const float HeaderHeight = 22f, SubtitleHeight = 13f, MeterHeight = 4f, RowHeight = 16f, BottomPadding = 7f;
     private const float PortRadius = 4.5f, NarrowestNode = 150f, WidestNode = 320f;
-    private const float MinZoom = 0.25f, MaxZoom = 2.5f;
+    private const float MinZoom = 0.1f, MaxZoom = 2.5f;
     private static readonly StrokeStyle FeedbackStroke = new(LineCap.Flat, LineCap.Flat, LineJoin.Round, [3f, 2.5f]);
 
     private readonly List<NodeEditorNode> _nodes = [];
@@ -294,7 +295,7 @@ public class NodeEditor : Control
     [Category("Appearance")]
     public string? EmptyText { get; set; }
 
-    /// <summary>Zoom factor (0.25 … 2.5).</summary>
+    /// <summary>Zoom factor (0.1 … 2.5).</summary>
     [Category("Layout")]
     public float Zoom
     {
@@ -305,6 +306,23 @@ public class NodeEditor : Control
             InvalidateVisual();
         }
     }
+
+    /// <summary>Zooms in by one step (25 %) around the center of the view (as the + key).</summary>
+    public void ZoomIn() => ZoomAround(View.Center, 1.25f);
+
+    /// <summary>Zooms out by one step around the center of the view (as the − key).</summary>
+    public void ZoomOut() => ZoomAround(View.Center, 0.8f);
+
+    /// <summary>Back to the actual size (zoom 1) around the center of the view.</summary>
+    public void ResetZoom() => ZoomAround(View.Center, 1f / _zoom);
+
+    /// <summary><c>true</c> while the view can zoom in further.</summary>
+    [Browsable(false)]
+    public bool CanZoomIn => _zoom < MaxZoom - 1e-4f;
+
+    /// <summary><c>true</c> while the view can zoom out further.</summary>
+    [Browsable(false)]
+    public bool CanZoomOut => _zoom > MinZoom + 1e-4f;
 
     /// <summary>Graph point at the top-left corner of the view.</summary>
     [Browsable(false)]
@@ -1242,10 +1260,13 @@ public class NodeEditor : Control
                 ZoomToFit();
                 break;
             case Key.Add or Key.OemPlus:
-                ZoomAround(View.Center, 1.25f);
+                ZoomIn();
                 break;
             case Key.Subtract or Key.OemMinus:
-                ZoomAround(View.Center, 0.8f);
+                ZoomOut();
+                break;
+            case Key.D0 or Key.NumPad0 when e.Control:
+                ResetZoom();
                 break;
             case Key.F10 when e.Shift:
             case Key.Apps:

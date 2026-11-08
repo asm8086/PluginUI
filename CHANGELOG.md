@@ -27,7 +27,7 @@ Before 1.0, minor versions may contain breaking changes.
   dimmed or failed nodes, live level meters; cables drawn from either end, ends pulled off to move or remove them,
   compatible connectors lit (`CanConnect`); moves on a grid that holds each node's first connector (straight cables between aligned nodes),
   dragging an empty place to move the view, Shift+drag rectangle selection, scroll bars, wheel scrolling,
-  Ctrl+wheel zoom around the mouse, middle-button pan, `ZoomToFit`; every change is a request (`CableRequested`, `CableRemoveRequested`, `DeleteRequested`,
+  Ctrl+wheel zoom around the mouse (10 % to 250 %; `ZoomIn`, `ZoomOut`, `ResetZoom`, Ctrl+0), middle-button pan, `ZoomToFit`; every change is a request (`CableRequested`, `CableRemoveRequested`, `DeleteRequested`,
   `NodeOpened`, `ContextMenuOpening`); full keyboard control and a screen reader peer. Registered in the designer and
   shown on the new Modular page of the gallery. Texts `UIStrings.AutomationNodeEditor`, `NodeInputsFormat`,
   `NodeOutputsFormat`, `NodeNotConnected`, `NodesSelectedFormat`, `NodeCountFormat`, `CableFormat`, `FeedbackCable`

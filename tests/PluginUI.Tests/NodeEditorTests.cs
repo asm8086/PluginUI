@@ -1,4 +1,4 @@
-// 2026/11/08 13:42:00 UTC - PluginUI
+// 2026/11/08 13:46:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -253,6 +253,28 @@ public class NodeEditorTests
             Assert.That(late.Bounds.Contains(late.FromGraph(new Point(b.X, b.Y))), Is.True, "top left visible");
             Assert.That(late.Bounds.Contains(late.FromGraph(new Point(b.Right, b.Bottom))), Is.True, "bottom right visible");
         });
+    }
+
+    [Test]
+    public void ZoomButtonsKeepTheCenterOfTheView()
+    {
+        var center = _editor.ToGraph(_editor.Bounds.Center);
+        _editor.ZoomIn();
+        Assert.That(_editor.Zoom, Is.EqualTo(1.25f).Within(1e-4f));
+        _editor.ZoomOut();
+        _editor.ZoomOut();
+        Assert.That(_editor.Zoom, Is.EqualTo(0.8f).Within(1e-4f));
+        Assert.That(_editor.ToGraph(_editor.Bounds.Center).X, Is.EqualTo(center.X).Within(1e-3f), "the center stays");
+        for (int i = 0; i < 40; i++) _editor.ZoomOut();
+        Assert.Multiple(() =>
+        {
+            Assert.That(_editor.Zoom, Is.EqualTo(0.1f).Within(1e-4f), "down to 10 %");
+            Assert.That(_editor.CanZoomOut, Is.False);
+            Assert.That(_editor.CanZoomIn, Is.True);
+        });
+        _editor.ResetZoom();
+        Assert.That(_editor.Zoom, Is.EqualTo(1f).Within(1e-4f));
+        Assert.That(_editor.ToGraph(_editor.Bounds.Center).Y, Is.EqualTo(center.Y).Within(1e-2f));
     }
 
     [Test]
