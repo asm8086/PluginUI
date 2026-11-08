@@ -1,4 +1,4 @@
-<!-- 2026/11/08 15:20:00 UTC - PluginUI -->
+<!-- 2026/11/08 20:51:00 UTC - PluginUI -->
 
 # PluginUI — interface Win32 + Direct2D pour plugins audio en C#
 
@@ -79,6 +79,7 @@ PluginUI/
 ├── tools/PluginUIEditor/           Concepteur visuel WinForms (boîte à outils, propriétés, aperçu, code, nouveaux projets)
 ├── tools/PluginHost.Cli/           pluginhost : hôte de plug-ins en ligne de commande (scan, liste, traitement, rendu, mesure, presets, graphes)
 ├── tools/PluginHost.Desktop/       Plug-in Host : hôte graphique construit avec PluginUI (liste de plug-ins triable, graphe modulaire, éditeurs, presets)
+├── tools/PluginHost.Bridge/        PluginHost.Bridge32.exe : pont 32 bits qui fait fonctionner les plug-ins VST 2 32 bits pour les hôtes 64 bits
 ├── samples/PluginUI.Gallery/       Application de démonstration (fenêtre autonome + mode capture PNG)
 ├── samples/PluginUI.DemoSynth/     Instrument VST3 d'exemple : synthé polyphonique avec entrée sidechain
 ├── samples/PluginUI.DesktopDemo/   Biquad Designer : application de bureau (IL ou NativeAOT) construite avec PluginUI.Desktop
@@ -113,8 +114,8 @@ Chaque [version](https://github.com/asm8086/PluginUI/releases) fournit :
 | `PluginUIEditor-<version>-win-x64.zip`, `…-win-arm64.zip` | Le concepteur visuel (nécessite le .NET 10 Desktop Runtime) |
 | `PluginUI.Gallery-<version>-win-x64.zip`, `…-win-arm64.zip` | La galerie, compilée en NativeAOT (aucun runtime nécessaire) |
 | `BiquadDesigner-<version>-win-x64.zip`, `…-win-arm64.zip` | L'application de bureau de démonstration, compilée en NativeAOT (aucun runtime nécessaire) |
-| `PluginHost-<version>-win-x64.zip`, `…-win-arm64.zip` | Plug-in Host, l'hôte graphique VST3 / VST 2 (ASIO, WASAPI, MIDI), NativeAOT (à partir de la 0.3.0) |
-| `pluginhost-cli-<version>-win-x64.zip`, `…-win-arm64.zip` | `pluginhost`, l'hôte en ligne de commande (recherche, traitement, rendu, mesure), NativeAOT (à partir de la 0.3.0) |
+| `PluginHost-<version>-win-x64.zip`, `…-win-arm64.zip` | Plug-in Host, l'hôte graphique VST3 / VST 2 (ASIO, WASAPI, MIDI), NativeAOT (à partir de la 0.3.0) ; plug-ins VST 2 32 bits par son dossier `bridge32` (à partir de la 0.5.0) |
+| `pluginhost-cli-<version>-win-x64.zip`, `…-win-arm64.zip` | `pluginhost`, l'hôte en ligne de commande (recherche, traitement, rendu, mesure), NativeAOT (à partir de la 0.3.0) ; plug-ins VST 2 32 bits par son dossier `bridge32` (à partir de la 0.5.0) |
 | `*.nupkg`, `SHA256SUMS.txt` | Paquets NuGet (aussi poussés sur nuget.org une fois la publication activée) et sommes de contrôle |
 
 `build/Build-Release.ps1` produit les mêmes fichiers en local ; voir [CONTRIBUTING_FR.md](CONTRIBUTING_FR.md#publication-des-versions).
@@ -135,7 +136,7 @@ NativeAOT) :
   <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- versions Debug chargées par le proxy NPlug -->
 </PropertyGroup>
 <ItemGroup>
-  <PackageReference Include="PluginUI.NPlug" Version="0.4.0" />
+  <PackageReference Include="PluginUI.NPlug" Version="0.5.0" />
 </ItemGroup>
 ```
 

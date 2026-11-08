@@ -1,4 +1,4 @@
-<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
+<!-- 2026/11/08 20:51:00 UTC - PluginUI -->
 
 # PluginUI — Win32 + Direct2D user interface for audio plug-ins in C#
 
@@ -114,8 +114,8 @@ Each [release](https://github.com/asm8086/PluginUI/releases) provides:
 | `PluginUIEditor-<version>-win-x64.zip`, `…-win-arm64.zip` | The visual designer (needs the .NET 10 Desktop Runtime) |
 | `PluginUI.Gallery-<version>-win-x64.zip`, `…-win-arm64.zip` | The gallery, compiled with NativeAOT (no runtime needed) |
 | `BiquadDesigner-<version>-win-x64.zip`, `…-win-arm64.zip` | The desktop demo application, compiled with NativeAOT (no runtime needed) |
-| `PluginHost-<version>-win-x64.zip`, `…-win-arm64.zip` | Plug-in Host, the graphical VST3 / VST 2 host (ASIO, WASAPI, MIDI), NativeAOT (from 0.3.0) |
-| `pluginhost-cli-<version>-win-x64.zip`, `…-win-arm64.zip` | `pluginhost`, the command line host (scan, process, render, measure), NativeAOT (from 0.3.0) |
+| `PluginHost-<version>-win-x64.zip`, `…-win-arm64.zip` | Plug-in Host, the graphical VST3 / VST 2 host (ASIO, WASAPI, MIDI), NativeAOT (from 0.3.0); 32-bit VST 2 plug-ins through its `bridge32` folder (from 0.5.0) |
+| `pluginhost-cli-<version>-win-x64.zip`, `…-win-arm64.zip` | `pluginhost`, the command line host (scan, process, render, measure), NativeAOT (from 0.3.0); 32-bit VST 2 plug-ins through its `bridge32` folder (from 0.5.0) |
 | `*.nupkg`, `SHA256SUMS.txt` | NuGet packages (also pushed to nuget.org once publishing is enabled) and checksums |
 
 `build/Build-Release.ps1` builds the same files locally; see [CONTRIBUTING.md](CONTRIBUTING.md#releases).
@@ -135,7 +135,7 @@ A plug-in is a class library with a Windows runtime identifier; the `PluginUI.NP
   <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Debug builds loaded through the NPlug proxy -->
 </PropertyGroup>
 <ItemGroup>
-  <PackageReference Include="PluginUI.NPlug" Version="0.4.0" />
+  <PackageReference Include="PluginUI.NPlug" Version="0.5.0" />
 </ItemGroup>
 ```
 
