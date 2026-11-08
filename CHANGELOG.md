@@ -1,4 +1,4 @@
-<!-- 2026/11/08 13:53:00 UTC - PluginUI -->
+<!-- 2026/11/08 14:03:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -27,7 +27,8 @@ Before 1.0, minor versions may contain breaking changes.
 
 - VST 3 state streams also offer `ISizeableStream` and `IStreamAttributes` (a graph state says `StateType` =
   `Project`, as DAWs do; a preset gives its file name), and a refused state now says what happened: the plug-in's
-  result, the bytes it read and the interfaces it asked for.
+  result, the bytes it read and the interfaces it asked for. A plug-in that reads the whole state and answers
+  `kResultFalse` (Waves shells do) is taken as having applied it, as DAWs do.
 - `PluginUI.NPlug` now requires `NPlug` 0.7.0 (VST 3 SDK 3.8.1: host transport requests, MIDI 2.0 orchestral
   articulation information and note expression identifiers, "randomize around current" parameter function), with
   `NPlug.Validator` 1.4.2 for the tests and the validation tool.

@@ -1,4 +1,4 @@
-// 2026/11/08 13:53:00 UTC - PluginUI
+// 2026/11/08 14:03:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -544,13 +544,20 @@ public sealed unsafe class Vst3Plugin : PluginInstance, IVst3HostCallbacks
             int hr = ((delegate* unmanaged[MemberFunction]<void*, void*, int>)Com.Slot(obj, slot))(obj, stream.Pointer);
             details = $"result 0x{hr:X8}, {stream.BytesRead} of {stream.Length} bytes read"
                 + (stream.MissingInterfaces.Count > 0 ? ", asked for " + string.Join(", ", stream.MissingInterfaces) : string.Empty);
-            return hr == Vst3Result.Ok;
+            return Accepted(hr, stream.BytesRead);
         }
         finally
         {
             stream.Release();
         }
     }
+
+    /// <summary>
+    /// Whether a plug-in took a state. Some plug-ins (Waves shells among them) read the whole state, apply it and still
+    /// answer <c>kResultFalse</c>; DAWs ignore that answer, so a "false" after reading is taken as a success. A plug-in
+    /// that reads nothing, or answers an error code, refuses the state.
+    /// </summary>
+    internal static bool Accepted(int result, long bytesRead) => result == Vst3Result.Ok || (result == Vst3Result.False && bytesRead > 0);
 
     /// <summary>State of the processor component (<c>IComponent::getState</c>).</summary>
     public byte[] GetComponentState() => ReadState(_component, 13);

@@ -1,4 +1,4 @@
-// 2026/11/08 13:53:00 UTC - PluginUI
+// 2026/11/08 14:03:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -196,6 +196,18 @@ public class CatalogTests
         var id = Tuid.From(0x12345678, 0x9ABCDEF0, 0x0F1E2D3C, 0x4B5A6978);
         Assert.That(Vst3Identifiers.ToFuidString(id), Is.EqualTo("123456789ABCDEF00F1E2D3C4B5A6978"), "the four words, whatever the platform");
         Assert.That(Vst3Identifiers.FromFuidString("123456789abcdef00f1e2d3c4b5a6978"), Is.EqualTo(id));
+    }
+
+    [Test]
+    public void AStateReadThenAnsweredFalseIsTakenAsDawsDo()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(Vst3Plugin.Accepted(Vst3Result.Ok, 0), Is.True);
+            Assert.That(Vst3Plugin.Accepted(Vst3Result.False, 3325), Is.True, "read, applied, answered false (Waves shells)");
+            Assert.That(Vst3Plugin.Accepted(Vst3Result.False, 0), Is.False, "nothing read: refused");
+            Assert.That(Vst3Plugin.Accepted(Vst3Result.InvalidArgument, 3325), Is.False, "an error code: refused");
+        });
     }
 
     [Test]
