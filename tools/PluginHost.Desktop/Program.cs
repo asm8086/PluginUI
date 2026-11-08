@@ -172,10 +172,16 @@ internal static class Snapshots
         host.RenderToPng(Path.Combine(dir, "pluginhost-graph-menu" + suffix + ".png"), 1f);
         host.CloseAllPopups();
 
-        main.Graph.Open(main.Graph.Graph.Nodes.OfType<TestSignalNode>().First());
-        Settle(host);
-        host.RenderToPng(Path.Combine(dir, "pluginhost-module" + suffix + ".png"), 1f);
-        host.CloseAllPopups();
+        // Windows of modules, rendered alone (no window is created).
+        foreach (var (module, name) in new (GraphNode, string)[] { (main.Graph.Graph.Nodes.OfType<GainNode>().First(), "pluginhost-gain"), (new KeyboardNode(), "pluginhost-keyboard") })
+        {
+            module.Meter.Read(new float[module.Meter.ChannelCount]);
+            var (content, size, meter) = ModuleWindow.Build(module, () => host, () => [0.35f, 0.28f], () => { });
+            using var window = new UIHost(content, size, SizingMode.Relayout);
+            meter?.SetLevels(0.35f, 0.28f);
+            Settle(window);
+            window.RenderToPng(Path.Combine(dir, name + suffix + ".png"), 1f);
+        }
 
         Console.WriteLine($"Snapshots written to {Path.GetFullPath(dir)}");
         return 0;

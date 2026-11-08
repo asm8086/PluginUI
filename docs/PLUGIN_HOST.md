@@ -291,7 +291,7 @@ window open or not.
   out), **Audio input** and **Audio output** (channels of the device: first channel and count), **Test signal** (sine,
   square, sawtooth, triangle, white or pink noise, sweep, impulses), **Audio file** (WAV in a loop, resampled to the
   device rate), **MIDI input** (the MIDI input port, all channels or one), **Keyboard** (an on-screen keyboard, in its
-  properties), **MIDI output** (to the MIDI output port), **Gain** (dB, polarity, mute), **Audio sum**, **MIDI merge**,
+  window), **MIDI output** (to the MIDI output port), **Gain** (dB, polarity, mute), **Audio sum**, **MIDI merge**,
   **Muxer** (mono cables joined into one of several channels: L and R into a stereo cable) and **Demuxer** (the
   reverse). Add them with **Add a module** (bar, Graph menu, or right click on an empty place: the module goes there).
 - **Cables**: drag from a connector to another one (from an output or from an input); only the compatible connectors
@@ -306,10 +306,12 @@ window open or not.
 - **Latency**: a sum delays its inputs so that paths through plug-ins of different latency arrive aligned (the delay
   added shows on the cable, `+64`); it can be turned off in its properties. The bar shows the latency up to the
   outputs.
-- **Opening a module** (double-click, Enter): a plug-in opens its window, the others their **properties**, which apply
-  at once (gain, channels, signal, file, number of inputs, gains of a sum…). **Rename** (F2) gives a module another
-  name.
-- **Menu of a module** (right click, Shift+F10): open or properties, bypass and mute (plug-ins), rename, **Connect**
+- **Opening a module** (double-click, Enter): a plug-in opens its window, the other modules open a **window of their
+  settings**, which apply at once (channels, signal, file, number of inputs, gains of a sum…) and stays open while the
+  graph plays — several at a time. The **Gain** window has a large knob and a meter; the **Keyboard** window a keyboard
+  that can be enlarged, played with the mouse or the computer keyboard, and an octave choice. **Rename** (F2) gives a
+  module another name.
+- **Menu of a module** (right click, Shift+F10): open, bypass and mute (plug-ins), rename, **Connect**
   (every compatible input, for the keyboard and screen readers), **Disconnect**, remove (Delete; the settings of a
   plug-in are lost, so the host asks first).
 - **View**: the wheel zooms around the mouse, the middle button (or Alt+drag) pans, **Show all** (Home) fits the graph.
@@ -323,7 +325,9 @@ window open or not.
 
 ![Menu of a module](images/pluginhost-graph-menu.png)
 
-![Properties of a module](images/pluginhost-module.png)
+![Window of a gain module](images/pluginhost-gain.png)
+
+![Window of a keyboard module](images/pluginhost-keyboard.png)
 
 ### Plug-in windows
 

@@ -303,7 +303,7 @@ est dans le graphe, que sa fenêtre soit ouverte ou non.
   et la sortie MIDI), **Entrée audio** et **Sortie audio** (canaux du périphérique : premier canal et nombre),
   **Signal de test** (sinus, carré, dent de scie, triangle, bruit blanc ou rose, balayage, impulsions), **Fichier
   audio** (WAV en boucle, rééchantillonné à la fréquence du périphérique), **Entrée MIDI** (le port d'entrée MIDI, tous
-  les canaux ou un seul), **Clavier** (un clavier à l'écran, dans ses propriétés), **Sortie MIDI** (vers le port de
+  les canaux ou un seul), **Clavier** (un clavier à l'écran, dans sa fenêtre), **Sortie MIDI** (vers le port de
   sortie MIDI), **Gain** (dB, polarité, muet), **Somme audio**, **Fusion MIDI**, **Muxer** (câbles mono réunis en un
   câble de plusieurs canaux : G et D en un câble stéréo) et **Demuxer** (l'inverse). Ajoutez-les avec **Ajouter un
   module** (barre, menu Graphe, ou clic droit sur un endroit vide : le module s'y place).
@@ -321,10 +321,12 @@ est dans le graphe, que sa fenêtre soit ouverte ou non.
 - **Latence** : une somme retarde ses entrées pour que des chemins passant par des plug-ins de latences différentes
   arrivent alignés (le retard ajouté s'affiche sur le câble, `+64`) ; cela se désactive dans ses propriétés. La barre
   indique la latence jusqu'aux sorties.
-- **Ouvrir un module** (double-clic, Entrée) : un plug-in ouvre sa fenêtre, les autres leurs **propriétés**, qui
-  s'appliquent aussitôt (gain, canaux, signal, fichier, nombre d'entrées, gains d'une somme…). **Renommer** (F2) donne
-  un autre nom à un module.
-- **Menu d'un module** (clic droit, Maj+F10) : ouvrir ou propriétés, contourner et muet (plug-ins), renommer,
+- **Ouvrir un module** (double-clic, Entrée) : un plug-in ouvre sa fenêtre, les autres modules une **fenêtre de leurs
+  réglages**, qui s'appliquent aussitôt (canaux, signal, fichier, nombre d'entrées, gains d'une somme…) et qui reste
+  ouverte pendant que le graphe joue — plusieurs à la fois. La fenêtre du **Gain** a un grand bouton rotatif et un
+  indicateur de niveau ; celle du **Clavier** un clavier agrandissable, joué à la souris ou au clavier de l'ordinateur,
+  et le choix de l'octave. **Renommer** (F2) donne un autre nom à un module.
+- **Menu d'un module** (clic droit, Maj+F10) : ouvrir, contourner et muet (plug-ins), renommer,
   **Relier** (toutes les entrées compatibles, pour le clavier et les lecteurs d'écran), **Débrancher**, supprimer
   (Suppr ; les réglages d'un plug-in sont perdus, l'hôte demande donc confirmation).
 - **Vue** : la molette zoome autour de la souris, le bouton du milieu (ou Alt+glisser) déplace la vue, **Tout
@@ -339,7 +341,9 @@ est dans le graphe, que sa fenêtre soit ouverte ou non.
 
 ![Menu d'un module](images/fr/pluginhost-graph-menu.png)
 
-![Propriétés d'un module](images/fr/pluginhost-module.png)
+![Fenêtre d'un module de gain](images/fr/pluginhost-gain.png)
+
+![Fenêtre d'un module clavier](images/fr/pluginhost-keyboard.png)
 
 ### Fenêtres des plug-ins
 

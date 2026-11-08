@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/08 12:57:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -24,6 +24,7 @@ internal sealed class GraphView : ITickable
     private readonly Dictionary<GraphNode, NodeEditorNode> _views = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<GraphNode, float[]> _levels = new(ReferenceEqualityComparer.Instance);
     private readonly List<PluginWindow> _windows = [];
+    private readonly List<ModuleWindow> _moduleWindows = [];
     private readonly DropDown _loop;
     private readonly Label _info;
     private bool _syncing;
@@ -449,6 +450,7 @@ internal sealed class GraphView : ITickable
         foreach (var node in nodes.ToList())
         {
             if (node is PluginNode p && _windows.Find(w => ReferenceEquals(w.Node, p)) is { } window) window.Window.Close();
+            if (_moduleWindows.Find(w => ReferenceEquals(w.Node, node)) is { } moduleWindow) moduleWindow.Window.Close();
             Graph.Remove(node);
             if (node is PluginNode plugin) plugin.Plugin.Dispose();
         }
@@ -456,7 +458,7 @@ internal sealed class GraphView : ITickable
         Sync();
     }
 
-    /// <summary>Opens a module: the window of a plug-in, the properties of the others.</summary>
+    /// <summary>Opens a module: the window of a plug-in, or the window of the module's settings.</summary>
     public void Open(GraphNode node)
     {
         switch (node)
@@ -469,14 +471,31 @@ internal sealed class GraphView : ITickable
                     $"{missing.DisplayTitle} n'a pas pu être chargé :\n{missing.Reason}\n\nIl reste muet ; ses câbles et ses réglages sont gardés dans le fichier du graphe."));
                 break;
             default:
-                ModuleProperties.Show(this, _host, node, () =>
-                {
-                    IsModified = true;
-                    Sync();
-                });
+                OpenModule(node);
                 break;
         }
     }
+
+    /// <summary>Opens the window of a module that is not a plug-in (not modal: it stays open while the graph plays).</summary>
+    private void OpenModule(GraphNode node)
+    {
+        if (_moduleWindows.Find(w => ReferenceEquals(w.Node, node)) is { } existing)
+        {
+            existing.Window.Activate();
+            return;
+        }
+        var window = new ModuleWindow(node, WindowTitle(node), _window, _lightTheme(), () => LevelsOf(node), () =>
+        {
+            IsModified = true;
+            Sync();
+        });
+        _moduleWindows.Add(window);
+        window.Window.Closed += _ => _moduleWindows.Remove(window);
+        window.Show();
+    }
+
+    private static string WindowTitle(GraphNode node)
+        => string.IsNullOrWhiteSpace(node.Title) ? Title(node) : $"{node.Title} — {TypeName(node)}";
 
     private void OpenPlugin(PluginNode node)
     {
@@ -508,11 +527,13 @@ internal sealed class GraphView : ITickable
     public void SetTheme(bool light)
     {
         foreach (var w in _windows) w.SetTheme(light);
+        foreach (var w in _moduleWindows) w.SetTheme(light);
     }
 
     public void CloseWindows()
     {
         foreach (var w in _windows.ToList()) w.Window.Close();
+        foreach (var w in _moduleWindows.ToList()) w.Window.Close();
     }
 
     internal IList<MenuItem> AddModuleItems(Point? at)
@@ -550,8 +571,7 @@ internal sealed class GraphView : ITickable
         }
         if (e.Node?.Tag is GraphNode node)
         {
-            bool isPlugin = node is PluginNode;
-            e.Items.Add(new MenuItem(isPlugin ? L.T("&Open", "&Ouvrir") : L.T("&Properties…", "&Propriétés…"), () => Open(node)) { ShortcutText = L.T("Enter", "Entrée") });
+                e.Items.Add(new MenuItem(L.T("&Open", "&Ouvrir"), () => Open(node)) { ShortcutText = L.T("Enter", "Entrée") });
             if (node is PluginNode plugin)
             {
                 e.Items.Add(new MenuItem(L.T("&Bypass", "&Contourner"), () => { plugin.Bypass = !plugin.Bypass; IsModified = true; Sync(); }) { IsChecked = plugin.Bypass });
@@ -610,6 +630,7 @@ internal sealed class GraphView : ITickable
             IsModified = true;
             Sync();
             if (_windows.Find(w => ReferenceEquals(w.Node, node)) is { } window) window.Window.Title = Title(node);
+            if (_moduleWindows.Find(w => ReferenceEquals(w.Node, node)) is { } moduleWindow) moduleWindow.Window.Title = WindowTitle(node);
         };
         _host.ShowPopup(dialog);
         box.Focus();

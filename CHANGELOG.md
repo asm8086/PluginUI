@@ -49,7 +49,8 @@ Before 1.0, minor versions may contain breaking changes.
 - **Plug-in Host plays a graph of modules.** The window has two tabs: the plug-in list and the **Graph**, a
   `NodeEditor` view of a `PluginGraph`. Double-clicking a plug-in of the list adds it as a module (connected to the
   MIDI input and to a free audio output) instead of opening its window; double-clicking a module opens the plug-in's
-  window (editor, generic parameters, presets, bypass, mute, keyboard), or the properties of the other modules. Audio
+  window (editor, generic parameters, presets, bypass, mute, keyboard), or the window of the other modules' settings
+  (not modal: a gain with a large knob and a meter, a keyboard that can be enlarged…). Audio
   and MIDI inputs and outputs, test signals, files, keyboards, gains, sums, merges, muxers and demuxers are modules;
   cables follow the engine's rules (one cable per input, loops delayed by one block or a sub-block, aligned sums).
   Graph files (New, Open, Save, Save as), the session's graph restored at start, a Graph menu (add a module, rename,
