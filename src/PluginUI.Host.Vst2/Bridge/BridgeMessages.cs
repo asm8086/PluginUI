@@ -1,4 +1,4 @@
-// 2026/11/08 17:00:00 UTC - PluginUI
+// 2026/11/08 18:01:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,9 @@ internal static class BridgeOperation
     public const int SetState = 8;
     public const int Idle = 9;
     public const int Close = 10;
+    public const int EditorCreate = 11;
+    public const int EditorOpen = 12;
+    public const int EditorClose = 13;
 }
 
 /// <summary>What a host learns about a plug-in loaded in a bridge.</summary>

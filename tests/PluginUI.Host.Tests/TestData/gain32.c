@@ -1,12 +1,13 @@
-/* 2026/11/08 17:00:00 UTC - PluginUI */
+/* 2026/11/08 18:01:00 UTC - PluginUI */
 /* SPDX-FileCopyrightText: 2026 asm8086 */
 /* SPDX-License-Identifier: MIT */
 /*
  * Gain32.dll: a minimal 32-bit VST 2 effect for the tests of the 32-bit bridge (gain, chunk state, MIDI echo an octave
- * up, latency 16). No C runtime and no Steinberg header: the interface is declared below from its public description.
- * Built with clang and lld (any platform):
+ * up, latency 16, an editor of 200 x 100 that asks for 240 x 120 at its first idle time). No C runtime and no Steinberg
+ * header: the interface is declared below from its public description. Built with clang and lld (any platform), with
+ * an import library of user32.dll (CreateWindowExA@48, DestroyWindow@4) made by llvm-dlltool -k -m i386 from a .def file:
  *   clang --target=i686-pc-windows-msvc -O2 -nostdlib -ffreestanding -fno-builtin -fuse-ld=lld -shared
- *         -Wl,/entry:_DllMainCRTStartup gain32.c -o Gain32.dll
+ *         -Wl,/entry:_DllMainCRTStartup gain32.c user32.lib -o Gain32.dll
  */
 typedef long long i64;
 typedef int (__cdecl *HostCb)(void*, int, int, int, void*, float); /* 32-bit: intptr = int */
@@ -20,11 +21,15 @@ struct AEffect { int magic; Disp dispatcher; Proc process; SetP setParameter; Ge
   void* object; void* user; int uniqueID, version; Proc processReplacing; void* processDoubleReplacing; char future[56]; };
 struct VstMidiEvent { int type, byteSize, deltaFrames, flags, noteLength, noteOffset; unsigned char midiData[4]; char detune, noteOffVelocity, r1, r2; };
 struct VstEvents { int numEvents; int reserved; void* events[2]; };
+struct ERect { short top, left, bottom, right; };
+__declspec(dllimport) void* __stdcall CreateWindowExA(unsigned, const char*, const char*, unsigned, int, int, int, int, void*, void*, void*, void*);
+__declspec(dllimport) int __stdcall DestroyWindow(void*);
 int _fltused = 0;
 void* __cdecl memset(void* d, int c, unsigned n) { unsigned char* p = d; while (n--) *p++ = (unsigned char)c; return d; }
 void* __cdecl memcpy(void* d, const void* s, unsigned n) { unsigned char* p = d; const unsigned char* q = s; while (n--) *p++ = *q++; return d; }
 static struct AEffect fx; static HostCb host; static float gain = 0.5f; static float chunk[1];
 static int pending; static struct VstMidiEvent echo[16]; static struct VstMidiEvent recv[16];
+static struct ERect rect = { 0, 0, 100, 200 }; static void* editor; static int resized;
 static void copy(char* d, const char* s, int max) { int i = 0; for (; s[i] && i < max - 1; i++) d[i] = s[i]; d[i] = 0; }
 static int eq(const char* a, const char* b) { while (*a && *a == *b) { a++; b++; } return *a == *b; }
 static void fmt(char* d, float v) { /* value with one decimal */ int neg = v < 0; if (neg) v = -v; int t = (int)(v * 10 + 0.5f); char buf[16]; int n = 0;
@@ -32,6 +37,11 @@ static void fmt(char* d, float v) { /* value with one decimal */ int neg = v < 0
 static int __cdecl dispatch(struct AEffect* e, int op, int index, int value, void* ptr, float opt) {
   switch (op) {
     case 6: copy(ptr, "x", 8); return 0;                              /* effGetParamLabel */
+    case 13: *(struct ERect**)ptr = &rect; return 1;                   /* effEditGetRect */
+    case 14: editor = CreateWindowExA(0, "STATIC", "Gain32", 0x50000000 /* WS_CHILD | WS_VISIBLE */, 0, 0, rect.right, rect.bottom, ptr, 0, 0, 0);
+             return editor != 0;                                       /* effEditOpen */
+    case 15: if (editor) DestroyWindow(editor); editor = 0; return 0;  /* effEditClose */
+    case 19: if (editor && !resized) { resized = 1; rect.right = 240; rect.bottom = 120; host(e, 15, 240, 120, 0, 0); } return 0; /* effEditIdle */
     case 7: fmt(ptr, gain * 2.0f); return 0;                           /* effGetParamDisplay */
     case 8: copy(ptr, "Gain", 8); return 0;                            /* effGetParamName */
     case 23: chunk[0] = gain; *(void**)ptr = chunk; return 4;           /* effGetChunk */
@@ -62,7 +72,7 @@ static void __cdecl replacing(struct AEffect* e, float** in, float** out, int n)
 }
 __declspec(dllexport) struct AEffect* __cdecl VSTPluginMain(HostCb cb) {
   host = cb; fx.magic = ('V' << 24) | ('s' << 16) | ('t' << 8) | 'P'; fx.dispatcher = dispatch; fx.setParameter = setp; fx.getParameter = getp;
-  fx.numPrograms = 1; fx.numParams = 1; fx.numInputs = 2; fx.numOutputs = 2; fx.flags = 16 | 32; /* canReplacing | programChunks */
+  fx.numPrograms = 1; fx.numParams = 1; fx.numInputs = 2; fx.numOutputs = 2; fx.flags = 1 | 16 | 32; /* hasEditor | canReplacing | programChunks */
   fx.initialDelay = 16; fx.uniqueID = ('G' << 24) | ('n' << 16) | ('3' << 8) | '2'; fx.version = 1; fx.processReplacing = replacing; fx.ioRatio = 1.0f;
   return &fx;
 }

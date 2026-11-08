@@ -1,7 +1,8 @@
-// 2026/11/08 17:47:00 UTC - PluginUI
+// 2026/11/08 18:01:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
+using System.Runtime.InteropServices;
 using PluginUI.Host.Catalog;
 using PluginUI.Host.Vst2;
 
@@ -61,7 +62,7 @@ public sealed class Vst2BridgeTests
             Assert.That(_plugin.Parameters.Select(p => p.Title), Is.EqualTo(new[] { "Gain", "Mode" }));
             Assert.That(_plugin.Parameters[1].ShortTitle, Is.EqualTo("Mod"));
             Assert.That(_plugin.PresetExtension, Is.EqualTo(".fxb"));
-            Assert.That(_plugin.HasEditor, Is.False, "the generic parameter table, until editors are bridged");
+            Assert.That(_plugin.HasEditor, Is.True);
         });
     }
 
@@ -119,6 +120,42 @@ public sealed class Vst2BridgeTests
             Assert.That(output[BridgeChannel.MaxFrames], Is.EqualTo(0.5f * BridgeChannel.MaxFrames / frames).Within(1e-6f));
             Assert.That(_plugin.OutputMidi.ToArray().Single().SampleOffset, Is.EqualTo(BridgeChannel.MaxFrames + 500));
         });
+    }
+
+    [Test]
+    public void TheEditorOpensInTheBridgeAndItsSizeRequestsReachTheHost()
+    {
+        var st = FakeVst2.Last!;
+        Assert.That(_plugin.HasEditor, Is.True);
+        using (var editor = _plugin.CreateEditor()!)
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(editor.Size, Is.EqualTo((300, 200)));
+                Assert.That(editor.CanResize, Is.False);
+                Assert.That(editor.IsPlatformSupported("HWND"), Is.True);
+                Assert.That(editor.Attach(0x1234), Is.True);
+                Assert.That(st.Parent, Is.EqualTo((nint)0x1234));
+            });
+            (int, int)? asked = null;
+            editor.ResizeRequested = (w, h) => { asked = (w, h); return true; };
+            st.WantResize = true;
+            // The bridge gives the editor its idle time by itself; the host learns the size at an idle call.
+            for (int i = 0; i < 50 && asked is null; i++)
+            {
+                _plugin.Idle();
+                if (asked is null) Thread.Sleep(20);
+            }
+            Assert.Multiple(() =>
+            {
+                Assert.That(asked, Is.EqualTo((400, 250)));
+                Assert.That(editor.Size, Is.EqualTo((400, 250)));
+                Assert.That(st.ResizeAnswer, Is.EqualTo(1));
+            });
+        }
+        Assert.That(st.EditCloses, Is.EqualTo(1));
+        // The plug-in still answers after its editor closed.
+        Assert.That(_plugin.FormatParameter(0, 0.5), Is.EqualTo("0.0 dB"));
     }
 
     [Test]
@@ -279,5 +316,57 @@ public sealed class Vst2Bridge32Tests
         plugin.SetState(state);
         Assert.That(plugin.GetParameter(0), Is.EqualTo(0.25).Within(1e-6));
     }
+
+    [Test]
+    public void A32BitPluginsEditorOpensInsideAWindowOfTheHost()
+    {
+        Assume.That(OperatingSystem.IsWindows() && Environment.Is64BitProcess, "64-bit Windows");
+        string? bridge = BuiltBridge();
+        Assume.That(bridge, Is.Not.Null, "the bridge is built with the solution");
+        using var plugin = Vst2BridgedPlugin.Start(bridge!, Gain32, null, "Bridge Tests", ModuleArchitecture.X86);
+        Assert.That(plugin.HasEditor, Is.True);
+        nint parent = CreateWindowExW(0, "STATIC", "Bridge test", 0x00CF0000 /* WS_OVERLAPPEDWINDOW */, 0, 0, 400, 300, 0, 0, 0, 0);
+        Assert.That(parent, Is.Not.Zero);
+        try
+        {
+            using (var editor = plugin.CreateEditor()!)
+            {
+                Assert.That(editor.Size, Is.EqualTo((200, 100)));
+                // The bridge creates the plug-in's window as a child of this one: this thread handles what it sends meanwhile.
+                Assert.That(editor.Attach(parent), Is.True);
+                nint child = GetWindow(parent, 5 /* GW_CHILD */);
+                Assert.That(child, Is.Not.Zero);
+                GetWindowThreadProcessId(child, out uint owner);
+                Assert.That(owner, Is.Not.EqualTo((uint)Environment.ProcessId), "the window belongs to the bridge");
+                (int, int)? asked = null;
+                editor.ResizeRequested = (w, h) => { asked = (w, h); return true; };
+                for (int i = 0; i < 100 && asked is null; i++)
+                {
+                    plugin.Idle();
+                    if (asked is null) Thread.Sleep(20);
+                }
+                Assert.That(asked, Is.EqualTo((240, 120)), "the bridge gives the editor its idle time");
+            }
+            Assert.That(GetWindow(parent, 5), Is.Zero, "the editor's window is closed with the editor");
+            Assert.That(plugin.FormatParameter(0, 0.25), Does.StartWith("0.5"));
+        }
+        finally
+        {
+            DestroyWindow(parent);
+        }
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern nint CreateWindowExW(uint exStyle, string className, string title, uint style, int x, int y, int width, int height,
+        nint parent, nint menu, nint instance, nint param);
+
+    [DllImport("user32.dll")]
+    private static extern nint GetWindow(nint window, uint command);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(nint window, out uint processId);
+
+    [DllImport("user32.dll")]
+    private static extern bool DestroyWindow(nint window);
 }
 

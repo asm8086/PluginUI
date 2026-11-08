@@ -1,4 +1,4 @@
-<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
+<!-- 2026/11/08 18:01:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -522,7 +522,9 @@ host through shared memory: one round trip per block (blocks of up to 4096 sampl
 values mirrored in the shared memory, text values, states and presets as control calls. The plug-in's own parameter
 changes reach the host with `Idle()`. A plug-in that crashes stops its bridge only: the host carries on, and the module
 fails as any plug-in that throws. Scans describe 32-bit modules in the bridge too, shell modules (32-bit WaveShell)
-included. The editors of bridged plug-ins are not shown yet: the generic parameter table stands in.
+included. A bridged plug-in's editor (`CreateEditor()`, a `Vst2BridgedEditor`) is the plug-in's own window, opened by
+the bridge as a child of the host's window: the bridge runs its message loop and its idle time, the host's waits handle
+the messages that window sends, and a new size the plug-in asks for reaches `ResizeRequested` at the next `Idle()`.
 
 ```csharp
 Vst2Hosting.Register();                                     // also enables the bridge when it is installed

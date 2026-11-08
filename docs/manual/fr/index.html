@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
+<!-- 2026/11/08 18:01:00 UTC - PluginUI -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -485,7 +485,8 @@ Il n'y a rien à faire : la recherche liste ces plug-ins normalement (avec l'ar
 s'ajoutent au graphe, jouent, s'enregistrent et se restaurent comme les autres.</p>
 <ul>
   <li>Dans le graphe, leur module indique <strong>32 bits</strong> après la marque ; le journal précise « dans le pont 32 bits » à leur chargement.</li>
-  <li>Leur fenêtre affiche la <strong>table générique des paramètres</strong> : leurs propres éditeurs ne s'affichent pas encore.</li>
+  <li>Leur fenêtre affiche <strong>leur propre éditeur</strong>, que le pont fait fonctionner dans la fenêtre de
+  Plug-in Host, ou la table générique avec le bouton <strong>Paramètres</strong>, comme pour les autres.</li>
   <li>Chacun tourne dans son propre processus de pont : s'il plante, Plug-in Host continue et le module est marqué en échec.</li>
   <li>Chaque bloc fait un aller-retour vers le pont : un peu plus de calcul qu'un plug-in 64 bits.</li>
   <li>Les plug-ins VST3 32 bits ne passent pas par le pont : ils restent listés en orange, avec l'état « 32 bits ».</li>

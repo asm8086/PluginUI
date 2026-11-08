@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
+<!-- 2026/11/08 18:01:00 UTC - PluginUI -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -480,7 +480,8 @@ others.</p>
 <ul>
   <li>In the graph, their module says <strong>32-bit</strong> after the vendor; the log says “in the 32-bit bridge” when they
   are loaded.</li>
-  <li>Their window shows the <strong>generic parameter table</strong>: their own editors are not shown yet.</li>
+  <li>Their window shows <strong>their own editor</strong>, run by the bridge inside the Plug-in Host window, or the
+  generic parameter table with the <strong>Parameters</strong> button, as for the others.</li>
   <li>Each one runs in its own bridge process: if it crashes, Plug-in Host carries on and the module is marked as failed.</li>
   <li>Each block makes a round trip to the bridge: a little more processing than a 64-bit plug-in.</li>
   <li>32-bit VST3 plug-ins are not bridged: they stay listed in amber, with the status “32-bit”.</li>

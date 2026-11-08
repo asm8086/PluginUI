@@ -1,4 +1,4 @@
-<!-- 2026/11/08 17:00:00 UTC - PluginUI -->
+<!-- 2026/11/08 18:01:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -548,7 +548,10 @@ grands passent en morceaux), les valeurs des paramètres recopiées dans la mém
 états et les presets en appels de contrôle. Les changements que le plug-in fait lui-même arrivent à l'hôte par `Idle()`.
 Un plug-in qui plante n'arrête que son pont : l'hôte continue, et le module échoue comme tout plug-in qui lève une
 exception. Les recherches décrivent aussi les modules 32 bits dans le pont, modules shell compris (WaveShell 32 bits).
-Les éditeurs des plug-ins du pont ne s'affichent pas encore : la table générique des paramètres les remplace.
+L'éditeur d'un plug-in du pont (`CreateEditor()`, un `Vst2BridgedEditor`) est la propre fenêtre du plug-in, ouverte par
+le pont comme fille de la fenêtre de l'hôte : le pont fait tourner sa boucle de messages et son temps d'inactivité, les
+attentes de l'hôte traitent les messages que cette fenêtre envoie, et une nouvelle taille demandée par le plug-in arrive
+à `ResizeRequested` au `Idle()` suivant.
 
 ```csharp
 Vst2Hosting.Register();                                     // active aussi le pont quand il est installé

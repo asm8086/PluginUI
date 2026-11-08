@@ -1,4 +1,4 @@
-// 2026/11/08 17:00:00 UTC - PluginUI
+// 2026/11/08 18:01:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -17,8 +17,8 @@ namespace PluginUI.Host.Vst2;
 /// them costs nothing; text values, states and the plug-in's own changes (<see cref="Idle"/>) are control calls.</para>
 /// <para>A plug-in that crashes stops its bridge only: the next call fails with a <see cref="Vst2BridgeException"/> (a
 /// block then leaves the outputs silent and the graph marks the module as failed).</para>
-/// <para>The plug-in's editor is not shown yet: <see cref="HasEditor"/> is <c>false</c>, hosts show the generic
-/// parameter table.</para>
+/// <para>The plug-in's editor (<see cref="CreateEditor"/>, a <see cref="Vst2BridgedEditor"/>) is opened by the bridge as
+/// a child of the host's window; the host's waits for the bridge handle the messages that window sends.</para>
 /// </remarks>
 public sealed unsafe class Vst2BridgedPlugin : PluginInstance
 {
@@ -35,6 +35,8 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
     private readonly Dictionary<uint, (double Value, string Text)> _formatted = [];
     private bool _prepared;
     private bool _failed;
+    private bool _calling;
+    private Vst2BridgedEditor? _editor;
 
     /// <summary>Time a block may take in the bridge before it is considered stopped.</summary>
     internal static TimeSpan BlockTimeout { get; set; } = TimeSpan.FromSeconds(2);
@@ -144,7 +146,7 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
     public override int TailSamples => _description.Tail;
 
     /// <inheritdoc />
-    public override bool HasEditor => false;
+    public override bool HasEditor => _description.HasEditor;
 
     /// <inheritdoc />
     public override string PresetExtension => _description.PresetExtension;
@@ -157,6 +159,9 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
         lock (_control)
         {
             if (_failed) throw new Vst2BridgeException("The bridge stopped.");
+            // A message handled while waiting (a bridged editor's window) must not start a second call on the same thread.
+            if (_calling) throw new Vst2BridgeException("The bridge is busy.");
+            _calling = true;
             try
             {
                 return _channel.Call(operation, payload, _alive, CallTimeout);
@@ -165,6 +170,10 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
             {
                 _failed = true;
                 throw;
+            }
+            finally
+            {
+                _calling = false;
             }
         }
     }
@@ -315,6 +324,35 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
     }
 
     /// <inheritdoc />
+    /// <remarks>One editor at a time: creating a new one closes the previous one.</remarks>
+    public override Vst2BridgedEditor? CreateEditor()
+    {
+        if (!HasEditor || _failed) return null;
+        _editor?.Dispose();
+        var size = BridgePayload.Read(Call(BridgeOperation.EditorCreate, []), r => (r.ReadInt32(), r.ReadInt32()));
+        _editor = new Vst2BridgedEditor(this, size);
+        return _editor;
+    }
+
+    internal (int Width, int Height) OpenEditor(nint parent)
+        => BridgePayload.Read(Call(BridgeOperation.EditorOpen, BridgePayload.Write(w => w.Write((long)parent))), r => (r.ReadInt32(), r.ReadInt32()));
+
+    internal void CloseEditor(Vst2BridgedEditor editor)
+    {
+        if (!ReferenceEquals(_editor, editor)) return;
+        _editor = null;
+        if (_failed) return;
+        try
+        {
+            Call(BridgeOperation.EditorClose, []);
+        }
+        catch (Vst2BridgeException)
+        {
+            // A bridge that stopped took its window with it.
+        }
+    }
+
+    /// <inheritdoc />
     public override byte[] GetState() => Call(BridgeOperation.GetState, []);
 
     /// <inheritdoc />
@@ -326,7 +364,8 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
     }
 
     /// <inheritdoc />
-    /// <remarks>One control call: the plug-in's own parameter changes, and a new description when it restarted.</remarks>
+    /// <remarks>One control call: the plug-in's own parameter changes, a new description when it restarted, and the size
+    /// its editor asked for.</remarks>
     public override void Idle()
     {
         if (_failed) return;
@@ -339,12 +378,14 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
         {
             return;
         }
-        var (changes, restarted) = BridgePayload.Read(reply, r =>
+        var (changes, restarted, editorSize) = BridgePayload.Read(reply, r =>
         {
             int count = r.ReadInt32();
             var list = new List<(uint, double)>(count);
             for (int i = 0; i < count; i++) list.Add((r.ReadUInt32(), r.ReadDouble()));
-            return (list, r.ReadBoolean() ? BridgeDescription.Read(r) : null);
+            var description = r.ReadBoolean() ? BridgeDescription.Read(r) : null;
+            (int, int)? size = r.ReadBoolean() ? (r.ReadInt32(), r.ReadInt32()) : null;
+            return (list, description, size);
         });
         foreach (var (id, value) in changes) RaiseParameterChanged(id, value);
         if (restarted is not null)
@@ -353,6 +394,7 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
             _description = restarted;
             RaiseRestarted();
         }
+        if (editorSize is var (width, height)) _editor?.OnResizeRequested(width, height);
     }
 
     /// <summary><c>true</c> once the bridge stopped (a crash of the plug-in, or a block it did not finish).</summary>
@@ -361,6 +403,9 @@ public sealed unsafe class Vst2BridgedPlugin : PluginInstance
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
+        // The bridge closes the editor with the plug-in.
+        _editor?.Detach();
+        _editor = null;
         lock (_control)
         {
             if (!_failed && _alive())

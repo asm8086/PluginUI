@@ -1,4 +1,4 @@
-<!-- 2026/11/08 17:47:00 UTC - PluginUI -->
+<!-- 2026/11/08 18:01:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -53,8 +53,11 @@ Before 1.0, minor versions may contain breaking changes.
   `PluginScanner.BridgeScanners` scans 32-bit VST 2 modules (shells included) in the bridge. An ordinary scan
   also scans again the unchanged 32-bit VST 2 modules that an earlier version recorded as not loadable. A plug-in that crashes stops
   only its bridge. Building or publishing Plug-in Host or `pluginhost` on Windows also builds the bridge into their
-  `bridge32` folder (`-p:BuildBridge32=false` skips it). Plug-in Host marks these plug-ins "32-bit" in the graph and
-  shows their generic parameter table (their own editors come later).
+  `bridge32` folder (`-p:BuildBridge32=false` skips it). Plug-in Host marks these plug-ins "32-bit" in the graph.
+- **Editors of bridged plug-ins**: `Vst2BridgedPlugin.CreateEditor()` gives a `Vst2BridgedEditor`; the bridge opens the
+  plug-in's own window as a child of the host's window, runs its message loop and idle time (also inside the plug-in's
+  dialog boxes), and sends the sizes it asks for with `Idle()`. While waiting for the bridge, the host handles the
+  messages that window sends. Plug-in Host shows the editors of 32-bit plug-ins like the others.
 
 ### Changed
 

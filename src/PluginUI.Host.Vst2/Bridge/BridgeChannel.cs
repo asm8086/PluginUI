@@ -1,4 +1,4 @@
-// 2026/11/08 17:00:00 UTC - PluginUI
+// 2026/11/08 18:01:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -218,7 +218,7 @@ internal sealed unsafe class BridgeChannel : IDisposable
         Thread.MemoryBarrier();
         ControlRequest.Set();
         long deadline = Environment.TickCount64 + (long)timeout.TotalMilliseconds;
-        while (!ControlReply.WaitOne(50))
+        while (!WaitForReply(50))
         {
             if (!alive()) throw new Vst2BridgeException("The bridge stopped.");
             if (Environment.TickCount64 > deadline) throw new Vst2BridgeException("The bridge does not answer.");
@@ -227,6 +227,10 @@ internal sealed unsafe class BridgeChannel : IDisposable
         int code = *(int*)area, length = *(int*)(area + 4);
         return (code, new Span<byte>(area + 8, Math.Clamp(length, 0, ControlCapacity)).ToArray());
     }
+
+    // A bridged editor's window is a child of a host window: while the host waits, it handles what the bridge sends it.
+    private bool WaitForReply(int milliseconds)
+        => OperatingSystem.IsWindows() ? BridgePump.WaitHandlingSentMessages(ControlReply, milliseconds) : ControlReply.WaitOne(milliseconds);
 
     private byte[] Finish((int Code, byte[] Payload) reply, Func<bool> alive, TimeSpan timeout)
     {
@@ -261,6 +265,13 @@ internal sealed unsafe class BridgeChannel : IDisposable
     public bool Serve(Func<int, ReadOnlySpan<byte>, byte[]> handler, int wait)
     {
         if (!ControlRequest.WaitOne(wait)) return false;
+        Answer(handler);
+        return true;
+    }
+
+    /// <summary>Answers a control call whose <see cref="ControlRequest"/> was already received (bridge side).</summary>
+    public void Answer(Func<int, ReadOnlySpan<byte>, byte[]> handler)
+    {
         Thread.MemoryBarrier();
         byte* area = _base + _controlOffset;
         int operation = *(int*)area, length = Math.Clamp(*(int*)(area + 4), 0, ControlCapacity);
@@ -311,7 +322,6 @@ internal sealed unsafe class BridgeChannel : IDisposable
         reply.CopyTo(new Span<byte>(area + 8, ControlCapacity));
         Thread.MemoryBarrier();
         ControlReply.Set();
-        return true;
     }
 
     /// <summary>Answers the host's first wait (bridge side): the plug-in is loaded, or it failed with <paramref name="error"/>.</summary>

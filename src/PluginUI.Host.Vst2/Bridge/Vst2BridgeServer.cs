@@ -1,4 +1,4 @@
-// 2026/11/08 17:00:00 UTC - PluginUI
+// 2026/11/08 18:01:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,8 @@ namespace PluginUI.Host.Vst2;
 /// </summary>
 /// <remarks>
 /// The plug-in is loaded and called on a single-threaded apartment thread, as in a DAW, which also answers the control
-/// calls; the blocks are processed on a second thread. The bridge stops when the host closes it or stops itself.
+/// calls and runs the message loop of the plug-in's editor (a child window of a host window); the blocks are processed
+/// on a second thread. The bridge stops when the host closes it or stops itself.
 /// </remarks>
 public static class Vst2BridgeServer
 {
@@ -73,16 +74,28 @@ public static class Vst2BridgeServer
         var session = new Session(channel, plugin);
         var audio = new Thread(() => session.ServeAudio(hostAlive)) { Name = "Bridge audio", IsBackground = true, Priority = ThreadPriority.Highest };
         audio.Start();
+        bool windows = OperatingSystem.IsWindows();
+        long nextIdle = 0;
         try
         {
             while (!session.Closed)
             {
-                if (!channel.Serve(session.Handle, 100) && !hostAlive()) return false;
+                // With an editor open, the loop also dispatches its messages and gives it its idle time (about 30 per second).
+                int wait = session.HasEditor ? 15 : 100;
+                bool request = windows ? BridgePump.WaitDispatching(channel.ControlRequest, wait) : channel.ControlRequest.WaitOne(wait);
+                if (request) session.Answer();
+                else if (!hostAlive()) return false;
+                if (session.HasEditor && Environment.TickCount64 >= nextIdle)
+                {
+                    nextIdle = Environment.TickCount64 + 30;
+                    session.EditorIdle();
+                }
             }
             return true;
         }
         finally
         {
+            session.CloseEditor();
             session.Closed = true;
             audio.Join(2000);
         }
@@ -96,6 +109,10 @@ public static class Vst2BridgeServer
         private readonly List<(uint Id, double Value)> _changes = [];
         private bool _restarted;
         private volatile bool _closed;
+        private Vst2Editor? _editor;
+        private (int Width, int Height)? _editorSize;
+        private nuint _timer;
+        private bool _answering;
 
         public Session(BridgeChannel channel, Vst2Plugin plugin)
         {
@@ -116,6 +133,64 @@ public static class Vst2BridgeServer
         {
             get => _closed;
             set => _closed = value;
+        }
+
+        /// <summary><c>true</c> while the plug-in's editor is open.</summary>
+        public bool HasEditor => _editor is { IsAttached: true };
+
+        /// <summary>Answers the control call that arrived (not again while one is being answered).</summary>
+        public void Answer()
+        {
+            if (_answering) return;
+            _answering = true;
+            try
+            {
+                _channel.Answer(Handle);
+            }
+            finally
+            {
+                _answering = false;
+            }
+        }
+
+        // The plug-in's dialog boxes and menus run their own message loops: the timer still answers the host then.
+        private void AnswerFromTimer()
+        {
+            if (!_answering && _channel.ControlRequest.WaitOne(0)) Answer();
+        }
+
+        /// <summary>Gives the open editor its idle time.</summary>
+        public void EditorIdle()
+        {
+            try
+            {
+                _plugin.Idle();
+            }
+            catch (Exception)
+            {
+                // A plug-in that fails here fails on the next call too.
+            }
+        }
+
+        public void CloseEditor()
+        {
+            if (_timer != 0)
+            {
+                BridgePump.StopTimer(_timer);
+                _timer = 0;
+            }
+            _editor?.Dispose();
+            _editor = null;
+        }
+
+        private byte[] EditorSize()
+        {
+            var (width, height) = _editor?.Size ?? (0, 0);
+            return BridgePayload.Write(w =>
+            {
+                w.Write(width);
+                w.Write(height);
+            });
         }
 
         private void RefreshValues()
@@ -175,12 +250,15 @@ public static class Vst2BridgeServer
                     RefreshValues();
                     List<(uint Id, double Value)> changes;
                     bool restarted;
+                    (int Width, int Height)? size;
                     lock (_gate)
                     {
                         changes = [.. _changes];
                         _changes.Clear();
                         restarted = _restarted;
                         _restarted = false;
+                        size = _editorSize;
+                        _editorSize = null;
                     }
                     return BridgePayload.Write(w =>
                     {
@@ -192,8 +270,36 @@ public static class Vst2BridgeServer
                         }
                         w.Write(restarted);
                         if (restarted) BridgeDescription.Of(_plugin).Write(w);
+                        w.Write(size.HasValue);
+                        if (size is var (width, height))
+                        {
+                            w.Write(width);
+                            w.Write(height);
+                        }
                     });
                 }
+                case BridgeOperation.EditorCreate:
+                    if (_editor is null)
+                    {
+                        _editor = _plugin.CreateEditor() ?? throw new Vst2BridgeException($"'{_plugin.Name}' has no editor.");
+                        // The host learns the new size at its next idle call; the plug-in resizes its own window.
+                        _editor.ResizeRequested = (width, height) =>
+                        {
+                            lock (_gate) _editorSize = (width, height);
+                            return true;
+                        };
+                    }
+                    return EditorSize();
+                case BridgeOperation.EditorOpen:
+                {
+                    long parent = BridgePayload.Read(payload, r => r.ReadInt64());
+                    if (_editor is null || !_editor.Attach((nint)parent)) throw new Vst2BridgeException("The editor could not be opened.");
+                    if (OperatingSystem.IsWindows() && _timer == 0) _timer = BridgePump.StartTimer(10, AnswerFromTimer);
+                    return EditorSize();
+                }
+                case BridgeOperation.EditorClose:
+                    CloseEditor();
+                    return [];
                 case BridgeOperation.Close:
                     _closed = true;
                     return [];
