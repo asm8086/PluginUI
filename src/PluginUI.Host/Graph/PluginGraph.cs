@@ -1,4 +1,4 @@
-// 2026/11/11 12:04:00 UTC - PluginUI
+// 2026/11/11 15:13:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -46,6 +46,8 @@ public sealed unsafe class PluginGraph : IAudioRenderer, IDisposable
         ["audio-sum"] = () => new AudioSumNode(),
         ["midi-merge"] = () => new MidiMergeNode(),
         ["midi-transpose"] = () => new MidiTransposeNode(),
+        ["midi-velocity"] = () => new MidiVelocityNode(),
+        ["midi-filter"] = () => new MidiFilterNode(),
         ["mux"] = () => new MuxNode(),
         ["demux"] = () => new DemuxNode(),
     };

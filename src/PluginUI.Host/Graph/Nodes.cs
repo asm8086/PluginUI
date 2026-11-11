@@ -1,4 +1,4 @@
-// 2026/11/11 12:04:00 UTC - PluginUI
+// 2026/11/11 15:13:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -805,6 +805,226 @@ public sealed class MidiTransposeNode : GraphNode
         Semitones = GraphJson.Int(json, "semitones", 0);
         Channel = GraphJson.Int(json, "channel", 0);
         FoldIntoRange = GraphJson.Bool(json, "foldIntoRange", false);
+    }
+}
+
+/// <summary>
+/// Gives every note the same velocity: the note ons (velocity above 0) get <see cref="Velocity"/>; note offs, a note on at
+/// velocity 0 (a note off) and the other messages pass unchanged. With <see cref="Channel"/>, only the notes of one
+/// channel change.
+/// </summary>
+public sealed class MidiVelocityNode : GraphNode
+{
+    /// <summary>Creates the module (velocity 100, every channel).</summary>
+    public MidiVelocityNode() => SetPorts([new PortDefinition("midi-in", "MIDI", PortKind.Midi)], [new PortDefinition("midi-out", "MIDI", PortKind.Midi)]);
+
+    /// <inheritdoc />
+    public override string TypeKey => "midi-velocity";
+
+    /// <inheritdoc />
+    public override string DefaultTitle => "MIDI velocity";
+
+    /// <summary>The velocity of the note ons (1 to 127; 0 would turn them into note offs).</summary>
+    public int Velocity
+    {
+        get;
+        set => field = Math.Clamp(value, 1, 127);
+    } = 100;
+
+    /// <summary>Only the notes of this channel (1 to 16) change, the others pass unchanged; 0 = every channel.</summary>
+    public int Channel
+    {
+        get;
+        set => field = Math.Clamp(value, 0, 16);
+    }
+
+    /// <inheritdoc />
+    protected internal override void Process(in NodeContext context)
+    {
+        int only = Channel - 1;
+        byte velocity = (byte)Velocity;
+        foreach (var e in context.ReadMidi(0))
+        {
+            bool noteOn = e.Type == 0x90 && e.Data2 > 0 && (only < 0 || e.Channel == only);
+            context.SendMidi(0, noteOn ? e with { Data2 = velocity } : e);
+        }
+    }
+
+    /// <inheritdoc />
+    protected internal override void WriteSettings(JsonObject json)
+    {
+        json["velocity"] = Velocity;
+        json["channel"] = Channel;
+    }
+
+    /// <inheritdoc />
+    protected internal override void ReadSettings(JsonObject json)
+    {
+        Velocity = GraphJson.Int(json, "velocity", 100);
+        Channel = GraphJson.Int(json, "channel", 0);
+    }
+}
+
+/// <summary>The kinds of MIDI messages of a <see cref="MidiFilterNode"/>.</summary>
+[Flags]
+public enum MidiMessageKinds
+{
+    /// <summary>No message.</summary>
+    None = 0,
+
+    /// <summary>Note on and note off.</summary>
+    Notes = 1,
+
+    /// <summary>Polyphonic aftertouch (pressure of one note).</summary>
+    PolyPressure = 2,
+
+    /// <summary>Control changes (controllers, sustain pedal, all notes off…).</summary>
+    ControlChange = 4,
+
+    /// <summary>Program changes.</summary>
+    ProgramChange = 8,
+
+    /// <summary>Channel aftertouch (pressure of the whole channel).</summary>
+    ChannelPressure = 16,
+
+    /// <summary>Pitch bend.</summary>
+    PitchBend = 32,
+
+    /// <summary>System messages (clock, start, stop…), which have no channel.</summary>
+    System = 64,
+
+    /// <summary>Every message.</summary>
+    All = 127,
+}
+
+/// <summary>
+/// Lets through only the MIDI messages of the chosen channels and kinds, and only the notes of a range (a keyboard
+/// split: two filters with complementary ranges, each to its instrument). System messages have no channel: only
+/// <see cref="Kinds"/> applies to them. The note off of a note let through always passes, even when the settings change
+/// while it is held, so no note hangs.
+/// </summary>
+public sealed class MidiFilterNode : GraphNode
+{
+    // The notes let through and still held, per channel and note number (audio thread only).
+    private readonly bool[] _held = new bool[16 * 128];
+
+    /// <summary>Creates the module (everything passes).</summary>
+    public MidiFilterNode() => SetPorts([new PortDefinition("midi-in", "MIDI", PortKind.Midi)], [new PortDefinition("midi-out", "MIDI", PortKind.Midi)]);
+
+    /// <inheritdoc />
+    public override string TypeKey => "midi-filter";
+
+    /// <inheritdoc />
+    public override string DefaultTitle => "MIDI filter";
+
+    /// <summary>The channels let through: bit 0 = channel 1 … bit 15 = channel 16 (default: all, 0xFFFF).</summary>
+    public int ChannelMask
+    {
+        get;
+        set => field = value & 0xFFFF;
+    } = 0xFFFF;
+
+    /// <summary>The kinds of messages let through (default: all).</summary>
+    public MidiMessageKinds Kinds
+    {
+        get;
+        set => field = value & MidiMessageKinds.All;
+    } = MidiMessageKinds.All;
+
+    /// <summary>Lowest note let through (0 to 127; notes and polyphonic aftertouch).</summary>
+    public int LowestNote
+    {
+        get;
+        set => field = Math.Clamp(value, 0, 127);
+    }
+
+    /// <summary>Highest note let through (0 to 127).</summary>
+    public int HighestNote
+    {
+        get;
+        set => field = Math.Clamp(value, 0, 127);
+    } = 127;
+
+    /// <summary><c>true</c> when channel <paramref name="channel"/> (1 to 16) is let through.</summary>
+    public bool PassesChannel(int channel) => channel is >= 1 and <= 16 && (ChannelMask & (1 << (channel - 1))) != 0;
+
+    /// <summary>Lets channel <paramref name="channel"/> (1 to 16) through, or not.</summary>
+    public void SetChannel(int channel, bool pass)
+    {
+        if (channel is < 1 or > 16) return;
+        ChannelMask = pass ? ChannelMask | (1 << (channel - 1)) : ChannelMask & ~(1 << (channel - 1));
+    }
+
+    /// <summary><c>true</c> when nothing is filtered out.</summary>
+    public bool PassesEverything => ChannelMask == 0xFFFF && Kinds == MidiMessageKinds.All && LowestNote == 0 && HighestNote == 127;
+
+    /// <summary>The kind of a message.</summary>
+    public static MidiMessageKinds KindOf(in MidiEvent e) => e.Type switch
+    {
+        0x80 or 0x90 => MidiMessageKinds.Notes,
+        0xA0 => MidiMessageKinds.PolyPressure,
+        0xB0 => MidiMessageKinds.ControlChange,
+        0xC0 => MidiMessageKinds.ProgramChange,
+        0xD0 => MidiMessageKinds.ChannelPressure,
+        0xE0 => MidiMessageKinds.PitchBend,
+        _ => MidiMessageKinds.System,
+    };
+
+    /// <summary><c>true</c> when the settings let <paramref name="e"/> through (ignoring the notes held).</summary>
+    public bool Passes(in MidiEvent e)
+    {
+        var kind = KindOf(e);
+        if ((Kinds & kind) == 0) return false;
+        if (kind == MidiMessageKinds.System) return true;
+        if ((ChannelMask & (1 << e.Channel)) == 0) return false;
+        return kind is not (MidiMessageKinds.Notes or MidiMessageKinds.PolyPressure) || (e.Data1 >= LowestNote && e.Data1 <= HighestNote);
+    }
+
+    /// <inheritdoc />
+    protected internal override void Process(in NodeContext context)
+    {
+        foreach (var e in context.ReadMidi(0))
+        {
+            bool pass = Passes(e);
+            if (e.Type is 0x80 or 0x90)
+            {
+                int index = e.Channel * 128 + (e.Data1 & 127);
+                if (e.Type == 0x90 && e.Data2 > 0)
+                {
+                    if (pass) _held[index] = true;
+                }
+                else
+                {
+                    // A note off follows its note on: it passes when its note on did, whatever the settings now.
+                    pass |= _held[index];
+                    _held[index] = false;
+                }
+            }
+            else if (pass && e.Type == 0xB0 && e.Data1 is 120 or 123)
+            {
+                // All notes off, all sound off reach the instrument: the channel's notes are no longer held.
+                Array.Fill(_held, false, e.Channel * 128, 128);
+            }
+            if (pass) context.SendMidi(0, e);
+        }
+    }
+
+    /// <inheritdoc />
+    protected internal override void WriteSettings(JsonObject json)
+    {
+        json["channels"] = ChannelMask;
+        json["kinds"] = (int)Kinds;
+        json["lowestNote"] = LowestNote;
+        json["highestNote"] = HighestNote;
+    }
+
+    /// <inheritdoc />
+    protected internal override void ReadSettings(JsonObject json)
+    {
+        ChannelMask = GraphJson.Int(json, "channels", 0xFFFF);
+        Kinds = (MidiMessageKinds)GraphJson.Int(json, "kinds", (int)MidiMessageKinds.All);
+        LowestNote = GraphJson.Int(json, "lowestNote", 0);
+        HighestNote = GraphJson.Int(json, "highestNote", 127);
     }
 }
 

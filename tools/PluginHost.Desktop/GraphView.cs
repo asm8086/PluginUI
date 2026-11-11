@@ -1,4 +1,4 @@
-// 2026/11/11 12:04:00 UTC - PluginUI
+// 2026/11/11 15:14:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -176,6 +176,8 @@ internal sealed class GraphView : ITickable
         AudioSumNode => L.T("Audio sum", "Somme audio"),
         MidiMergeNode => L.T("MIDI merge", "Fusion MIDI"),
         MidiTransposeNode => L.T("MIDI transpose", "Transposition MIDI"),
+        MidiVelocityNode => L.T("MIDI velocity", "Vélocité MIDI"),
+        MidiFilterNode => L.T("MIDI filter", "Filtre MIDI"),
         MuxNode => "Muxer",
         DemuxNode => "Demuxer",
         _ => node.TypeKey,
@@ -211,9 +213,50 @@ internal sealed class GraphView : ITickable
         AudioSumNode s => s.CompensateLatency ? null : L.T("no latency compensation", "sans compensation de latence"),
         MidiInputNode m => m.ChannelFilter == 0 ? null : L.T($"channel {m.ChannelFilter}", $"canal {m.ChannelFilter}"),
         KeyboardNode k => L.T($"channel {k.Channel}", $"canal {k.Channel}"),
-        MidiTransposeNode t => Semitones(t.Semitones) + (t.Channel == 0 ? string.Empty : L.T($" · channel {t.Channel}", $" · canal {t.Channel}")),
+        MidiTransposeNode t => Semitones(t.Semitones) + OnlyChannel(t.Channel),
+        MidiVelocityNode v => L.T($"velocity {v.Velocity}", $"vélocité {v.Velocity}") + OnlyChannel(v.Channel),
+        MidiFilterNode f => FilterText(f),
         _ => null,
     };
+
+    /// <summary>What a MIDI filter lets through, in a few words.</summary>
+    internal static string FilterText(MidiFilterNode filter)
+    {
+        if (filter.PassesEverything) return L.T("everything passes", "tout passe");
+        var parts = new List<string>();
+        if (filter.ChannelMask != 0xFFFF)
+        {
+            var ranges = new List<string>();
+            for (int c = 1; c <= 16; c++)
+            {
+                if (!filter.PassesChannel(c)) continue;
+                int end = c;
+                while (end < 16 && filter.PassesChannel(end + 1)) end++;
+                ranges.Add(end == c ? $"{c}" : end == c + 1 ? $"{c}, {end}" : $"{c}–{end}");
+                c = end;
+            }
+            bool single = System.Numerics.BitOperations.PopCount((uint)filter.ChannelMask) == 1;
+            parts.Add(ranges.Count == 0 ? L.T("no channel", "aucun canal") : (single ? L.T("channel ", "canal ") : L.T("channels ", "canaux ")) + string.Join(", ", ranges));
+        }
+        if (filter.LowestNote != 0 || filter.HighestNote != 127)
+            parts.Add($"notes {filter.LowestNote}–{filter.HighestNote}");
+        if (filter.Kinds != MidiMessageKinds.All)
+        {
+            int kinds = System.Numerics.BitOperations.PopCount((uint)filter.Kinds);
+            parts.Add(L.T($"{kinds} of 7 kinds", $"{kinds} types sur 7"));
+        }
+        return string.Join(" · ", parts);
+    }
+
+    /// <summary>Name of a MIDI note: middle C (60) is C4 in English, Do3 in French (the French convention).</summary>
+    internal static string NoteName(int note)
+        => L.T(EnglishNotes[note % 12] + (note / 12 - 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            FrenchNotes[note % 12] + (note / 12 - 2).ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    private static readonly string[] EnglishNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    private static readonly string[] FrenchNotes = ["Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
+
+    private static string OnlyChannel(int channel) => channel == 0 ? string.Empty : L.T($" · channel {channel}", $" · canal {channel}");
 
     internal static string Semitones(int semitones) => semitones switch
     {
@@ -262,7 +305,7 @@ internal sealed class GraphView : ITickable
             {
                 view = new NodeEditorNode(Title(node)) { Tag = node };
                 var captured = node;
-                if (node is not (MidiInputNode or KeyboardNode or MidiOutputNode or MidiMergeNode or MidiTransposeNode or MissingPluginNode))
+                if (node is not (MidiInputNode or KeyboardNode or MidiOutputNode or MidiMergeNode or MidiTransposeNode or MidiVelocityNode or MidiFilterNode or MissingPluginNode))
                     view.Level = () => _levels.TryGetValue(captured, out var l) && l.Length > 0 ? l.Max() : 0f;
                 _views[node] = view;
                 Editor.Nodes.Add(view);
@@ -592,11 +635,19 @@ internal sealed class GraphView : ITickable
             Item(L.T("&MIDI input", "Entrée &MIDI"), () => new MidiInputNode()),
             Item(L.T("&Keyboard", "&Clavier"), () => new KeyboardNode()),
             Item(L.T("MIDI o&utput", "Sortie MI&DI"), () => new MidiOutputNode()),
+            new MenuItem(L.T("MIDI pro&cessing", "T&raitement MIDI"))
+            {
+                Items =
+                {
+                    Item(L.T("&Transpose", "&Transposition"), () => new MidiTransposeNode()),
+                    Item(L.T("&Velocity", "&Vélocité"), () => new MidiVelocityNode()),
+                    Item(L.T("&Filter", "&Filtre"), () => new MidiFilterNode()),
+                },
+            },
             MenuItem.Separator(),
             Item("&Gain", () => new GainNode()),
             Item(L.T("Audio &sum", "Somme a&udio"), () => new AudioSumNode()),
             Item(L.T("MIDI m&erge", "Fusion MID&I"), () => new MidiMergeNode()),
-            Item(L.T("MIDI t&ranspose", "Tra&nsposition MIDI"), () => new MidiTransposeNode()),
             Item("Mu&xer", () => new MuxNode()),
             Item("&Demuxer", () => new DemuxNode()),
             MenuItem.Separator(),

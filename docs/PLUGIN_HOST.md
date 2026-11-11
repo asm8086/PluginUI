@@ -1,4 +1,4 @@
-<!-- 2026/11/11 12:04:00 UTC - PluginUI -->
+<!-- 2026/11/11 15:14:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -300,8 +300,10 @@ window open or not.
   square, sawtooth, triangle, white or pink noise, sweep, impulses), **Audio file** (WAV in a loop, resampled to the
   device rate), **MIDI input** (the MIDI input port, all channels or one), **Keyboard** (an on-screen keyboard, in its
   window), **MIDI output** (to the MIDI output port), **Gain** (dB, polarity, mute), **Audio sum**, **MIDI merge**,
-  **MIDI transpose** (notes moved by semitones, all channels or one; a held note keeps its transposition), **Muxer** (mono cables joined into one of several channels: L and R into a stereo cable) and **Demuxer** (the
-  reverse). Add them with **Add a module** (bar, Graph menu, or right click on an empty place: the module goes there).
+  **Muxer** (mono cables joined into one of several channels: L and R into a stereo cable) and **Demuxer** (the
+  reverse). The **MIDI processing** submenu holds **Transpose** (notes moved by semitones, all channels or one; a held
+  note keeps its transposition), **Velocity** (the same velocity for every note, all channels or one) and **Filter**
+  (only the chosen channels, kinds of messages and range of notes pass: two filters split a keyboard). Add them with **Add a module** (bar, Graph menu, or right click on an empty place: the module goes there).
 - **Cables**: drag from a connector to another one (from an output or from an input); only the compatible connectors
   light up (audio to audio, MIDI to MIDI). An output feeds as many cables as wanted; **an input takes one cable**: a
   new one replaces it, and signals are added only by an **Audio sum** or a **MIDI merge** module. Drag the end of a
@@ -344,6 +346,8 @@ window open or not.
 ![Window of a keyboard module](images/pluginhost-keyboard.png)
 
 ![Window of a MIDI transpose module](images/pluginhost-transpose.png)
+
+![Window of a MIDI filter module](images/pluginhost-midi-filter.png)
 
 ### The log
 

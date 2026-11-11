@@ -1,4 +1,4 @@
-// 2026/11/11 12:04:00 UTC - PluginUI
+// 2026/11/11 15:14:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -193,7 +193,7 @@ internal static class Snapshots
         host.RenderToPng(Path.Combine(dir, "pluginhost-log" + suffix + ".png"), 1f);
 
         // Windows of modules, rendered alone (no window is created).
-        foreach (var (module, name) in new (GraphNode, string)[] { (main.Graph.Graph.Nodes.OfType<GainNode>().First(), "pluginhost-gain"), (new KeyboardNode(), "pluginhost-keyboard"), (new MidiTransposeNode { Semitones = 12 }, "pluginhost-transpose") })
+        foreach (var (module, name) in new (GraphNode, string)[] { (main.Graph.Graph.Nodes.OfType<GainNode>().First(), "pluginhost-gain"), (new KeyboardNode(), "pluginhost-keyboard"), (new MidiTransposeNode { Semitones = 12 }, "pluginhost-transpose"), (new MidiFilterNode { ChannelMask = 0x00FF, Kinds = MidiMessageKinds.All & ~MidiMessageKinds.ProgramChange, LowestNote = 36, HighestNote = 59 }, "pluginhost-midi-filter") })
         {
             module.Meter.Read(new float[module.Meter.ChannelCount]);
             var (content, size, meter) = ModuleWindow.Build(module, () => host, () => [0.35f, 0.28f], () => { });

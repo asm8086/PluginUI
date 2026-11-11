@@ -1,4 +1,4 @@
-<!-- 2026/11/11 12:04:00 UTC - PluginUI -->
+<!-- 2026/11/11 15:14:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -15,6 +15,14 @@ Before 1.0, minor versions may contain breaking changes.
   of 0..127 are dropped, or folded back by octaves (`FoldIntoRange`). A held note keeps the transposition it started
   with, so changing it while playing leaves no note hanging; all notes off / all sound off forget the channel's notes.
   Plug-in Host adds it from **Add a module**, with its settings window and the transposition shown under its title.
+- **MIDI velocity** module (`MidiVelocityNode`, `"midi-velocity"`): every note on (velocity above 0) gets the same
+  velocity (1 to 127), on every channel or one; note offs and the other messages pass unchanged.
+- **MIDI filter** module (`MidiFilterNode`, `"midi-filter"`): lets through only the chosen channels (`ChannelMask`),
+  kinds of messages (`MidiMessageKinds`: notes, polyphonic aftertouch, controllers, program changes, channel
+  aftertouch, pitch bend, system messages) and notes (`LowestNote`, `HighestNote`: a keyboard split with two filters).
+  The note off of a note let through always passes, even after the settings change.
+- Plug-in Host gathers the three in an **Add a module > MIDI processing** submenu; under their title, the module
+  shows its setting (*velocity 100*, *channels 1–8 · notes 36–59*…).
 
 ## [0.5.0] - 2026-11-08
 

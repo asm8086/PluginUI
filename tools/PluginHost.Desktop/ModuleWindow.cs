@@ -1,4 +1,4 @@
-// 2026/11/11 12:04:00 UTC - PluginUI
+// 2026/11/11 15:13:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -279,6 +279,76 @@ internal sealed class ModuleWindow : ITickable
                 Note(L.T("12 semitones = one octave. A held note keeps its transposition until it is released; the other messages pass unchanged.",
                     "12 demi-tons = une octave. Une note tenue garde sa transposition jusqu'à son relâchement ; les autres messages passent tels quels."));
                 break;
+            case MidiVelocityNode velocity:
+                Number(L.T("Velocity of the notes", "Vélocité des notes"), 1, 127, velocity.Velocity, string.Empty, 0, v => velocity.Velocity = (int)v);
+                Choice(L.T("Notes changed", "Notes modifiées"), [L.T("All channels", "Tous les canaux"), .. Enumerable.Range(1, 16).Select(i => L.T($"Channel {i} only", $"Canal {i} seulement"))],
+                    velocity.Channel, i => velocity.Channel = i);
+                Note(L.T("Every note played gets this velocity (1 to 127); note offs and the other messages pass unchanged.",
+                    "Chaque note jouée prend cette vélocité (1 à 127) ; les relâchements de notes et les autres messages passent tels quels."));
+                break;
+            case MidiFilterNode filter:
+            {
+                // The channels: sixteen boxes in two lines, with All and None.
+                var boxes = new List<CheckBox>();
+                var lines = new StackPanel { Spacing = 4f };
+                for (int line = 0; line < 2; line++)
+                {
+                    var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2f, Height = 24f };
+                    for (int i = 1; i <= 8; i++)
+                    {
+                        int channel = line * 8 + i;
+                        var box = Check(channel.ToString(CultureInfo.InvariantCulture), filter.PassesChannel(channel), v => filter.SetChannel(channel, v), show: false);
+                        box.Width = 40f;
+                        boxes.Add(box);
+                        row.Add(box);
+                    }
+                    lines.Add(row);
+                }
+                var allOrNone = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6f, Height = 24f };
+                allOrNone.Add(
+                    new Button(L.T("All", "Tous"), () => boxes.ForEach(b => b.IsChecked = true)) { Width = 80f, Height = 24f },
+                    new Button(L.T("None", "Aucun"), () => boxes.ForEach(b => b.IsChecked = false)) { Width = 80f, Height = 24f });
+                lines.Add(allOrNone);
+                var channelPanel = new DockPanel { Height = 80f };
+                channelPanel.Children.Add(new Label(L.T("Channels let through", "Canaux qui passent")) { Width = 200f, Dock = Side.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0f, 3f, 0f, 0f) });
+                channelPanel.Children.Add(lines);
+                body.Add(channelPanel);
+                extra += 88f;
+
+                // The kinds of messages, in two columns.
+                (MidiMessageKinds Kind, string Text)[] kinds =
+                [
+                    (MidiMessageKinds.Notes, L.T("Notes", "Notes")),
+                    (MidiMessageKinds.ControlChange, L.T("Controllers", "Contrôleurs")),
+                    (MidiMessageKinds.PitchBend, L.T("Pitch bend", "Pitch bend")),
+                    (MidiMessageKinds.ProgramChange, L.T("Program changes", "Changements de programme")),
+                    (MidiMessageKinds.ChannelPressure, L.T("Channel aftertouch", "Aftertouch de canal")),
+                    (MidiMessageKinds.PolyPressure, L.T("Polyphonic aftertouch", "Aftertouch polyphonique")),
+                    (MidiMessageKinds.System, L.T("System messages (clock…)", "Messages système (horloge…)")),
+                ];
+                body.Add(new Label(L.T("Messages let through", "Messages qui passent")) { Height = 20f });
+                extra += 28f;
+                for (int i = 0; i < kinds.Length; i += 2)
+                {
+                    var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8f, Height = 24f };
+                    foreach (var (kind, text) in kinds.Skip(i).Take(2))
+                    {
+                        var box = Check(text, (filter.Kinds & kind) != 0, v => filter.Kinds = v ? filter.Kinds | kind : filter.Kinds & ~kind, show: false);
+                        box.Width = 250f;
+                        row.Add(box);
+                    }
+                    body.Add(row);
+                    rows++;
+                }
+
+                string NoteText(double v) => $"{(int)Math.Round(v)} ({GraphView.NoteName((int)Math.Round(v))})";
+                Number(L.T("Lowest note", "Note la plus basse"), 0, 127, filter.LowestNote, "", 0, v => filter.LowestNote = (int)v).Formatter = NoteText;
+                Number(L.T("Highest note", "Note la plus haute"), 0, 127, filter.HighestNote, "", 0, v => filter.HighestNote = (int)v).Formatter = NoteText;
+                width = 600f;
+                Note(L.T("Two filters with complementary note ranges split a keyboard between two instruments. The note off of a note let through always passes.",
+                    "Deux filtres aux plages de notes complémentaires partagent un clavier entre deux instruments. Le relâchement d'une note qui est passée passe toujours."));
+                break;
+            }
             case MuxNode mux:
                 Number(L.T("Mono inputs (channels of the output)", "Entrées mono (canaux de la sortie)"), 2, 32, mux.Channels, "", 0, v => mux.Channels = (int)v);
                 break;

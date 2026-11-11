@@ -1,4 +1,4 @@
-<!-- 2026/11/11 12:04:00 UTC - PluginUI -->
+<!-- 2026/11/11 15:14:00 UTC - PluginUI -->
 
 # Hôte de plug-ins : PluginUI.Host et pluginhost
 
@@ -313,9 +313,11 @@ est dans le graphe, que sa fenêtre soit ouverte ou non.
   **Signal de test** (sinus, carré, dent de scie, triangle, bruit blanc ou rose, balayage, impulsions), **Fichier
   audio** (WAV en boucle, rééchantillonné à la fréquence du périphérique), **Entrée MIDI** (le port d'entrée MIDI, tous
   les canaux ou un seul), **Clavier** (un clavier à l'écran, dans sa fenêtre), **Sortie MIDI** (vers le port de
-  sortie MIDI), **Gain** (dB, polarité, muet), **Somme audio**, **Fusion MIDI**, **Transposition MIDI** (notes
-  déplacées de quelques demi-tons, tous les canaux ou un seul ; une note tenue garde sa transposition), **Muxer**
-  (câbles mono réunis en un câble de plusieurs canaux : G et D en un câble stéréo) et **Demuxer** (l'inverse).
+  sortie MIDI), **Gain** (dB, polarité, muet), **Somme audio**, **Fusion MIDI**, **Muxer** (câbles mono réunis en un
+  câble de plusieurs canaux : G et D en un câble stéréo) et **Demuxer** (l'inverse). Le sous-menu **Traitement MIDI**
+  contient **Transposition** (notes déplacées de quelques demi-tons, tous les canaux ou un seul ; une note tenue garde
+  sa transposition), **Vélocité** (la même vélocité pour toutes les notes, tous les canaux ou un seul) et **Filtre**
+  (seuls les canaux, types de messages et notes choisis passent : deux filtres partagent un clavier).
   Ajoutez-les avec **Ajouter un module** (barre, menu Graphe, ou clic droit sur un endroit vide : le module s'y place).
 - **Câbles** : glissez d'un connecteur à un autre (depuis une sortie ou depuis une entrée) ; seuls les connecteurs
   compatibles s'allument (audio vers audio, MIDI vers MIDI). Une sortie alimente autant de câbles que voulu ; **une
@@ -362,6 +364,8 @@ est dans le graphe, que sa fenêtre soit ouverte ou non.
 ![Fenêtre d'un module clavier](images/fr/pluginhost-keyboard.png)
 
 ![Fenêtre d'un module de transposition MIDI](images/fr/pluginhost-transpose.png)
+
+![Fenêtre d'un module de filtre MIDI](images/fr/pluginhost-midi-filter.png)
 
 ### Le journal
 

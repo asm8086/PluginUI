@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 2026/11/11 12:04:00 UTC - PluginUI -->
+<!-- 2026/11/11 15:14:00 UTC - PluginUI -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -432,10 +432,16 @@ aussitôt, et la fenêtre peut rester ouverte pendant que le graphe joue, à cô
   premières entrées, alignement des entrées sur la latence de leurs chemins.</td></tr>
   <tr><td>Fusion MIDI</td><td class="wrap">Réunit plusieurs flux MIDI dans l'ordre du temps : nombre d'entrées, alignement sur
   la latence.</td></tr>
-  <tr><td>Transposition MIDI</td><td class="wrap">Déplace les notes de −48 à +48 demi-tons (12 = une octave) : tous les
+  <tr><td>Traitement MIDI &gt;<br>Transposition</td><td class="wrap">Déplace les notes de −48 à +48 demi-tons (12 = une octave) : tous les
   canaux ou un seul, les autres passant tels quels ; notes hors limites supprimées ou ramenées par octaves. Une note
   tenue garde sa transposition jusqu'à son relâchement, si bien que la changer en jouant ne laisse aucune note bloquée ;
   les autres messages passent tels quels.</td></tr>
+  <tr><td>Traitement MIDI &gt;<br>Vélocité</td><td class="wrap">Donne la même vélocité (1 à 127) à chaque note jouée :
+  tous les canaux ou un seul. Les relâchements de notes et les autres messages passent tels quels.</td></tr>
+  <tr><td>Traitement MIDI &gt;<br>Filtre</td><td class="wrap">Ne laisse passer que les canaux, les types de messages
+  (notes, contrôleurs, pitch bend, changements de programme, aftertouch de canal ou polyphonique, messages système) et
+  les notes choisis (la plus basse et la plus haute ; 60 = Do3). Deux filtres aux plages de notes complémentaires
+  partagent un clavier entre deux instruments ; le relâchement d'une note qui est passée passe toujours.</td></tr>
   <tr><td>Muxer</td><td class="wrap">Réunit plusieurs câbles mono en un câble de plusieurs canaux (G et D en stéréo) : nombre
   d'entrées.</td></tr>
   <tr><td>Demuxer</td><td class="wrap">L'inverse : sépare les canaux d'un câble en sorties mono.</td></tr>
@@ -454,6 +460,11 @@ aussitôt, et la fenêtre peut rester ouverte pendant que le graphe joue, à cô
 <figure class="small">
   <img src="../../images/fr/pluginhost-transpose.png" alt="La fenêtre d'un module de transposition MIDI">
   <figcaption>La fenêtre d'un module Transposition MIDI : une octave plus haut.</figcaption>
+</figure>
+
+<figure>
+  <img src="../../images/fr/pluginhost-midi-filter.png" alt="La fenêtre d'un module de filtre MIDI">
+  <figcaption>La fenêtre d'un module Filtre MIDI : canaux 1 à 8, sans changements de programme, notes 36 à 59.</figcaption>
 </figure>
 
 <!-- ============================================================== 10 -->

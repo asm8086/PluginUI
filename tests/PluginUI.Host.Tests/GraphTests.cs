@@ -1,4 +1,4 @@
-// 2026/11/11 12:04:00 UTC - PluginUI
+// 2026/11/11 15:14:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -492,6 +492,99 @@ namespace PluginUI.Host.Tests
             var restored = copy.Nodes.OfType<MidiTransposeNode>().Single();
             Assert.That((restored.Semitones, restored.Channel, restored.FoldIntoRange), Is.EqualTo((7, 0, false)));
             Assert.That(new MidiTransposeNode { Semitones = 100, Channel = 40 }, Has.Property("Semitones").EqualTo(48).And.Property("Channel").EqualTo(16));
+        }
+
+        // A MIDI input → module → MIDI output graph, and a way to play events through it.
+        private static Func<MidiEvent[], List<(int Status, int Data1, int Data2)>> MidiChain(PluginGraph graph, GraphNode module)
+        {
+            var sink = new MidiCollector();
+            graph.MidiOutput = sink;
+            var port = graph.Add(new MidiInputNode());
+            graph.Add(module);
+            var midiOut = graph.Add(new MidiOutputNode());
+            graph.Connect(port.Outputs[0], module.Inputs[0]);
+            graph.Connect(module.Outputs[0], midiOut.Inputs[0]);
+            return events =>
+            {
+                sink.Events.Clear();
+                foreach (var e in events) graph.PostMidiInput(e);
+                Run(graph, 1);
+                return [.. sink.Events.Select(e => ((int)e.Status, (int)e.Data1, (int)e.Data2))];
+            };
+        }
+
+        [Test]
+        public void TheMidiVelocityModuleGivesEveryNoteTheSameVelocity()
+        {
+            using var graph = Prepared();
+            var velocity = new MidiVelocityNode();
+            var play = MidiChain(graph, velocity);
+            Assert.That(velocity.Velocity, Is.EqualTo(100));
+
+            Assert.That(play([MidiEvent.NoteOn(0, 0, 60, 12), MidiEvent.NoteOn(0, 1, 62, 127), MidiEvent.NoteOff(0, 0, 60, 40), MidiEvent.NoteOn(0, 1, 62, 0),
+                    MidiEvent.ControlChange(0, 0, 7, 90), new MidiEvent(0, 0xA0, 60, 30)]),
+                Is.EqualTo(new[] { (0x90, 60, 100), (0x91, 62, 100), (0x80, 60, 40), (0x91, 62, 0), (0xB0, 7, 90), (0xA0, 60, 30) }),
+                "note ons only; a note on at velocity 0 stays a note off");
+
+            velocity.Velocity = 64;
+            velocity.Channel = 2;
+            Assert.That(play([MidiEvent.NoteOn(0, 0, 60, 12), MidiEvent.NoteOn(0, 1, 62, 127)]), Is.EqualTo(new[] { (0x90, 60, 12), (0x91, 62, 64) }));
+
+            string json = graph.ToJson();
+            using var copy = new PluginGraph();
+            Assert.That(copy.LoadJson(json, _ => throw new InvalidOperationException()), Is.Empty);
+            var restored = copy.Nodes.OfType<MidiVelocityNode>().Single();
+            Assert.That((restored.Velocity, restored.Channel), Is.EqualTo((64, 2)));
+            Assert.That(new MidiVelocityNode { Velocity = 0 }.Velocity, Is.EqualTo(1), "0 would make note offs");
+            Assert.That(new MidiVelocityNode { Velocity = 300 }.Velocity, Is.EqualTo(127));
+        }
+
+        [Test]
+        public void TheMidiFilterLetsThroughTheChosenChannelsKindsAndNotes()
+        {
+            using var graph = Prepared();
+            var filter = new MidiFilterNode();
+            var play = MidiChain(graph, filter);
+            MidiEvent[] mixed =
+            [
+                MidiEvent.NoteOn(0, 0, 60, 100), MidiEvent.NoteOn(0, 9, 36, 100), MidiEvent.ControlChange(0, 0, 64, 127), MidiEvent.PitchBend(0, 1, 9000),
+                new MidiEvent(0, 0xC0, 5, 0), new MidiEvent(0, 0xD0, 40, 0), new MidiEvent(0, 0xF8, 0, 0),
+            ];
+            Assert.That(filter.PassesEverything, Is.True);
+            Assert.That(play(mixed), Has.Count.EqualTo(7));
+
+            filter.SetChannel(10, false);
+            Assert.That(filter.PassesChannel(10), Is.False);
+            Assert.That(play(mixed).Select(e => e.Status), Is.EqualTo(new[] { 0x90, 0xB0, 0xE1, 0xC0, 0xD0, 0xF8 }), "the drums of channel 10 are out");
+
+            filter.Kinds = MidiMessageKinds.Notes | MidiMessageKinds.System;
+            Assert.That(play(mixed).Select(e => e.Status), Is.EqualTo(new[] { 0x90, 0xF8 }), "the clock has no channel");
+
+            // A note range splits the keyboard; the note off of a note let through passes after any change.
+            filter.ChannelMask = 0xFFFF;
+            filter.Kinds = MidiMessageKinds.All;
+            filter.LowestNote = 60;
+            Assert.That(play([MidiEvent.NoteOn(0, 0, 59, 100), MidiEvent.NoteOn(0, 0, 60, 100), MidiEvent.NoteOn(0, 0, 72, 100)]).Select(e => e.Data1),
+                Is.EqualTo(new[] { 60, 72 }));
+            filter.HighestNote = 64;
+            filter.SetChannel(1, false);
+            Assert.That(play([MidiEvent.NoteOff(0, 0, 72), MidiEvent.NoteOn(0, 0, 72, 0), MidiEvent.NoteOff(0, 0, 59), MidiEvent.NoteOff(0, 0, 60)]),
+                Is.EqualTo(new[] { (0x80, 72, 64), (0x80, 60, 64) }), "only the notes it let through, once each");
+
+            filter.SetChannel(1, true);
+            Assert.That(play([MidiEvent.NoteOn(0, 0, 61, 100)]), Has.Count.EqualTo(1));
+            Assert.That(play([MidiEvent.ControlChange(0, 0, 123, 0)]), Has.Count.EqualTo(1));
+            filter.LowestNote = 0;
+            filter.HighestNote = 0;
+            Assert.That(play([MidiEvent.NoteOff(0, 0, 61)]), Is.Empty, "all notes off forgot the note");
+
+            filter.ChannelMask = 0b101;
+            filter.Kinds = MidiMessageKinds.ControlChange;
+            string json = graph.ToJson();
+            using var copy = new PluginGraph();
+            Assert.That(copy.LoadJson(json, _ => throw new InvalidOperationException()), Is.Empty);
+            var restored = copy.Nodes.OfType<MidiFilterNode>().Single();
+            Assert.That((restored.ChannelMask, restored.Kinds, restored.LowestNote, restored.HighestNote), Is.EqualTo((0b101, MidiMessageKinds.ControlChange, 0, 0)));
         }
 
         [Test]
