@@ -1,4 +1,4 @@
-// 2026/11/08 13:55:00 UTC - PluginUI
+// 2026/11/11 12:04:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -268,6 +268,16 @@ internal sealed class ModuleWindow : ITickable
             case MidiMergeNode merge:
                 Number(L.T("Inputs", "Entrées"), 2, 32, merge.InputCount, "", 0, v => merge.InputCount = (int)v);
                 Check(L.T("Align the inputs on the latency of their paths", "Aligner les entrées sur la latence de leurs chemins"), merge.CompensateLatency, v => merge.CompensateLatency = v);
+                break;
+            case MidiTransposeNode transpose:
+                Number(L.T("Transposition (semitones)", "Transposition (demi-tons)"), -MidiTransposeNode.MaxSemitones, MidiTransposeNode.MaxSemitones,
+                    transpose.Semitones, L.T("st", "dt"), 0, v => transpose.Semitones = (int)v);
+                Choice(L.T("Notes transposed", "Notes transposées"), [L.T("All channels", "Tous les canaux"), .. Enumerable.Range(1, 16).Select(i => L.T($"Channel {i} only", $"Canal {i} seulement"))],
+                    transpose.Channel, i => transpose.Channel = i);
+                Check(L.T("Fold the notes out of range back by octaves (otherwise they are dropped)", "Ramener par octaves les notes hors limites (sinon elles sont supprimées)"),
+                    transpose.FoldIntoRange, v => transpose.FoldIntoRange = v);
+                Note(L.T("12 semitones = one octave. A held note keeps its transposition until it is released; the other messages pass unchanged.",
+                    "12 demi-tons = une octave. Une note tenue garde sa transposition jusqu'à son relâchement ; les autres messages passent tels quels."));
                 break;
             case MuxNode mux:
                 Number(L.T("Mono inputs (channels of the output)", "Entrées mono (canaux de la sortie)"), 2, 32, mux.Channels, "", 0, v => mux.Channels = (int)v);

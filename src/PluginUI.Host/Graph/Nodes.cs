@@ -1,4 +1,4 @@
-// 2026/11/08 12:00:00 UTC - PluginUI
+// 2026/11/11 12:04:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -695,6 +695,116 @@ public sealed class MidiMergeNode : GraphNode
         _inputs = Math.Clamp(GraphJson.Int(json, "inputs", 2), 2, 32);
         CompensateLatency = GraphJson.Bool(json, "compensateLatency", true);
         UpdatePorts();
+    }
+}
+
+/// <summary>
+/// Transposes MIDI notes by a number of semitones: note on, note off and polyphonic aftertouch; the other messages pass
+/// unchanged. With <see cref="Channel"/>, only the notes of one channel are transposed. A note keeps the transposition it
+/// started with, so changing the settings while notes are held leaves none hanging. A note moved out of 0..127 is dropped
+/// (its note off too), or folded back by octaves with <see cref="FoldIntoRange"/>.
+/// </summary>
+public sealed class MidiTransposeNode : GraphNode
+{
+    /// <summary>Largest transposition, in semitones (both ways).</summary>
+    public const int MaxSemitones = 48;
+
+    private const short NotHeld = -2;
+    private const short Dropped = -1;
+
+    // The note sent for each held note, per channel and note number (audio thread only).
+    private readonly short[] _held = new short[16 * 128];
+
+    /// <summary>Creates the module (no transposition, every channel).</summary>
+    public MidiTransposeNode()
+    {
+        Array.Fill(_held, NotHeld);
+        SetPorts([new PortDefinition("midi-in", "MIDI", PortKind.Midi)], [new PortDefinition("midi-out", "MIDI", PortKind.Midi)]);
+    }
+
+    /// <inheritdoc />
+    public override string TypeKey => "midi-transpose";
+
+    /// <inheritdoc />
+    public override string DefaultTitle => "MIDI transpose";
+
+    /// <summary>Transposition in semitones (-48 to +48; 12 = one octave up).</summary>
+    public int Semitones
+    {
+        get;
+        set => field = Math.Clamp(value, -MaxSemitones, MaxSemitones);
+    }
+
+    /// <summary>Only the notes of this channel (1 to 16) are transposed, the others pass unchanged; 0 = every channel.</summary>
+    public int Channel
+    {
+        get;
+        set => field = Math.Clamp(value, 0, 16);
+    }
+
+    /// <summary>
+    /// <c>true</c>: a note moved out of 0..127 is brought back by octaves; <c>false</c> (default): it is dropped.
+    /// </summary>
+    public bool FoldIntoRange { get; set; }
+
+    /// <summary>The note that <paramref name="note"/> becomes with the current settings, or -1 when it is dropped.</summary>
+    public int Transpose(int note)
+    {
+        int moved = note + Semitones;
+        if (moved is >= 0 and <= 127) return moved;
+        if (!FoldIntoRange) return Dropped;
+        while (moved < 0) moved += 12;
+        while (moved > 127) moved -= 12;
+        return moved;
+    }
+
+    /// <inheritdoc />
+    protected internal override void Process(in NodeContext context)
+    {
+        int only = Channel - 1;
+        foreach (var e in context.ReadMidi(0))
+        {
+            int type = e.Type;
+            if (type is not (0x80 or 0x90 or 0xA0))
+            {
+                // All notes off, all sound off: the channel's notes are no longer held.
+                if (type == 0xB0 && e.Data1 is 120 or 123) Array.Fill(_held, NotHeld, e.Channel * 128, 128);
+                context.SendMidi(0, e);
+                continue;
+            }
+            bool applies = only < 0 || e.Channel == only;
+            int index = e.Channel * 128 + (e.Data1 & 127);
+            int note;
+            if (type == 0x90 && e.Data2 > 0)
+            {
+                note = applies ? Transpose(e.Data1 & 127) : e.Data1 & 127;
+                _held[index] = (short)note;
+            }
+            else
+            {
+                // Note off (or note on at velocity 0) and aftertouch follow their note on, whatever the settings now.
+                int held = _held[index];
+                note = held != NotHeld ? held : applies ? Transpose(e.Data1 & 127) : e.Data1 & 127;
+                if (type != 0xA0) _held[index] = NotHeld;
+            }
+            if (note >= 0) context.SendMidi(0, e with { Data1 = (byte)note });
+        }
+    }
+
+    /// <inheritdoc />
+    protected internal override void WriteSettings(JsonObject json)
+    {
+        json["semitones"] = Semitones;
+        json["channel"] = Channel;
+        json["foldIntoRange"] = FoldIntoRange;
+    }
+
+    /// <inheritdoc />
+    protected internal override void ReadSettings(JsonObject json)
+    {
+        Semitones = GraphJson.Int(json, "semitones", 0);
+        Channel = GraphJson.Int(json, "channel", 0);
+        FoldIntoRange = GraphJson.Bool(json, "foldIntoRange", false);
     }
 }
 

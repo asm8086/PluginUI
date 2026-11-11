@@ -1,4 +1,4 @@
-<!-- 2026/11/08 19:03:00 UTC - PluginUI -->
+<!-- 2026/11/11 12:04:00 UTC - PluginUI -->
 
 # Plug-in host: PluginUI.Host and pluginhost
 
@@ -300,7 +300,7 @@ window open or not.
   square, sawtooth, triangle, white or pink noise, sweep, impulses), **Audio file** (WAV in a loop, resampled to the
   device rate), **MIDI input** (the MIDI input port, all channels or one), **Keyboard** (an on-screen keyboard, in its
   window), **MIDI output** (to the MIDI output port), **Gain** (dB, polarity, mute), **Audio sum**, **MIDI merge**,
-  **Muxer** (mono cables joined into one of several channels: L and R into a stereo cable) and **Demuxer** (the
+  **MIDI transpose** (notes moved by semitones, all channels or one; a held note keeps its transposition), **Muxer** (mono cables joined into one of several channels: L and R into a stereo cable) and **Demuxer** (the
   reverse). Add them with **Add a module** (bar, Graph menu, or right click on an empty place: the module goes there).
 - **Cables**: drag from a connector to another one (from an output or from an input); only the compatible connectors
   light up (audio to audio, MIDI to MIDI). An output feeds as many cables as wanted; **an input takes one cable**: a
@@ -342,6 +342,8 @@ window open or not.
 ![Window of a gain module](images/pluginhost-gain.png)
 
 ![Window of a keyboard module](images/pluginhost-keyboard.png)
+
+![Window of a MIDI transpose module](images/pluginhost-transpose.png)
 
 ### The log
 

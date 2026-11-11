@@ -1,4 +1,4 @@
-<!-- 2026/11/08 20:51:00 UTC - PluginUI -->
+<!-- 2026/11/11 12:04:00 UTC - PluginUI -->
 
 # Changelog
 
@@ -7,6 +7,14 @@ All notable changes to this project are documented in this file. The format foll
 Before 1.0, minor versions may contain breaking changes.
 
 ## [Unreleased]
+
+### Added
+
+- **MIDI transpose** module (`MidiTransposeNode`, `"midi-transpose"` in graph files): moves note on, note off and
+  polyphonic aftertouch by -48 to +48 semitones, on every channel or one (the others pass unchanged); notes moved out
+  of 0..127 are dropped, or folded back by octaves (`FoldIntoRange`). A held note keeps the transposition it started
+  with, so changing it while playing leaves no note hanging; all notes off / all sound off forget the channel's notes.
+  Plug-in Host adds it from **Add a module**, with its settings window and the transposition shown under its title.
 
 ## [0.5.0] - 2026-11-08
 

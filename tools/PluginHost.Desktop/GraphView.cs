@@ -1,4 +1,4 @@
-// 2026/11/08 17:00:00 UTC - PluginUI
+// 2026/11/11 12:04:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -175,6 +175,7 @@ internal sealed class GraphView : ITickable
         GainNode => "Gain",
         AudioSumNode => L.T("Audio sum", "Somme audio"),
         MidiMergeNode => L.T("MIDI merge", "Fusion MIDI"),
+        MidiTransposeNode => L.T("MIDI transpose", "Transposition MIDI"),
         MuxNode => "Muxer",
         DemuxNode => "Demuxer",
         _ => node.TypeKey,
@@ -210,7 +211,15 @@ internal sealed class GraphView : ITickable
         AudioSumNode s => s.CompensateLatency ? null : L.T("no latency compensation", "sans compensation de latence"),
         MidiInputNode m => m.ChannelFilter == 0 ? null : L.T($"channel {m.ChannelFilter}", $"canal {m.ChannelFilter}"),
         KeyboardNode k => L.T($"channel {k.Channel}", $"canal {k.Channel}"),
+        MidiTransposeNode t => Semitones(t.Semitones) + (t.Channel == 0 ? string.Empty : L.T($" · channel {t.Channel}", $" · canal {t.Channel}")),
         _ => null,
+    };
+
+    internal static string Semitones(int semitones) => semitones switch
+    {
+        0 => L.T("no transposition", "sans transposition"),
+        1 or -1 => L.T($"{semitones:+0;-0} semitone", $"{semitones:+0;-0} demi-ton"),
+        _ => L.T($"{semitones:+0;-0} semitones", $"{semitones:+0;-0} demi-tons"),
     };
 
     internal static string SignalName(TestSignal signal) => signal switch
@@ -253,7 +262,7 @@ internal sealed class GraphView : ITickable
             {
                 view = new NodeEditorNode(Title(node)) { Tag = node };
                 var captured = node;
-                if (node is not (MidiInputNode or KeyboardNode or MidiOutputNode or MidiMergeNode or MissingPluginNode))
+                if (node is not (MidiInputNode or KeyboardNode or MidiOutputNode or MidiMergeNode or MidiTransposeNode or MissingPluginNode))
                     view.Level = () => _levels.TryGetValue(captured, out var l) && l.Length > 0 ? l.Max() : 0f;
                 _views[node] = view;
                 Editor.Nodes.Add(view);
@@ -587,6 +596,7 @@ internal sealed class GraphView : ITickable
             Item("&Gain", () => new GainNode()),
             Item(L.T("Audio &sum", "Somme a&udio"), () => new AudioSumNode()),
             Item(L.T("MIDI m&erge", "Fusion MID&I"), () => new MidiMergeNode()),
+            Item(L.T("MIDI t&ranspose", "Tra&nsposition MIDI"), () => new MidiTransposeNode()),
             Item("Mu&xer", () => new MuxNode()),
             Item("&Demuxer", () => new DemuxNode()),
             MenuItem.Separator(),

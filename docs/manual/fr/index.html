@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 2026/11/08 20:51:00 UTC - PluginUI -->
+<!-- 2026/11/11 12:04:00 UTC - PluginUI -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -432,6 +432,10 @@ aussitôt, et la fenêtre peut rester ouverte pendant que le graphe joue, à cô
   premières entrées, alignement des entrées sur la latence de leurs chemins.</td></tr>
   <tr><td>Fusion MIDI</td><td class="wrap">Réunit plusieurs flux MIDI dans l'ordre du temps : nombre d'entrées, alignement sur
   la latence.</td></tr>
+  <tr><td>Transposition MIDI</td><td class="wrap">Déplace les notes de −48 à +48 demi-tons (12 = une octave) : tous les
+  canaux ou un seul, les autres passant tels quels ; notes hors limites supprimées ou ramenées par octaves. Une note
+  tenue garde sa transposition jusqu'à son relâchement, si bien que la changer en jouant ne laisse aucune note bloquée ;
+  les autres messages passent tels quels.</td></tr>
   <tr><td>Muxer</td><td class="wrap">Réunit plusieurs câbles mono en un câble de plusieurs canaux (G et D en stéréo) : nombre
   d'entrées.</td></tr>
   <tr><td>Demuxer</td><td class="wrap">L'inverse : sépare les canaux d'un câble en sorties mono.</td></tr>
@@ -445,6 +449,11 @@ aussitôt, et la fenêtre peut rester ouverte pendant que le graphe joue, à cô
 <figure>
   <img src="../../images/fr/pluginhost-keyboard.png" alt="La fenêtre d'un module clavier">
   <figcaption>La fenêtre d'un module Clavier.</figcaption>
+</figure>
+
+<figure class="small">
+  <img src="../../images/fr/pluginhost-transpose.png" alt="La fenêtre d'un module de transposition MIDI">
+  <figcaption>La fenêtre d'un module Transposition MIDI : une octave plus haut.</figcaption>
 </figure>
 
 <!-- ============================================================== 10 -->

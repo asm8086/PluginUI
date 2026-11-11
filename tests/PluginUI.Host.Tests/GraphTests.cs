@@ -1,4 +1,4 @@
-// 2026/11/08 13:25:00 UTC - PluginUI
+// 2026/11/11 12:04:00 UTC - PluginUI
 // SPDX-FileCopyrightText: 2026 asm8086
 // SPDX-License-Identifier: MIT
 
@@ -432,6 +432,66 @@ namespace PluginUI.Host.Tests
                 Assert.That(fake.Received.Select(e => (e.Status, e.Data1)), Is.EquivalentTo(new[] { ((byte)0x91, (byte)60), ((byte)0x90, (byte)64) }));
                 Assert.That(sink.Events.Select(e => e.Data1), Is.EquivalentTo(new[] { (byte)72, (byte)76 }), "transposed by the plug-in, sent to the port");
             });
+        }
+
+        [Test]
+        public void TheMidiTransposeModuleMovesNotesAndLetsTheRestPass()
+        {
+            using var graph = Prepared();
+            var sink = new MidiCollector();
+            graph.MidiOutput = sink;
+            var port = graph.Add(new MidiInputNode());
+            var transpose = graph.Add(new MidiTransposeNode { Semitones = 12 });
+            var midiOut = graph.Add(new MidiOutputNode());
+            graph.Connect(port.Outputs[0], transpose.Inputs[0]);
+            graph.Connect(transpose.Outputs[0], midiOut.Inputs[0]);
+            List<(int Status, int Data1, int Data2)> Play(params MidiEvent[] events)
+            {
+                sink.Events.Clear();
+                foreach (var e in events) graph.PostMidiInput(e);
+                Run(graph, 1);
+                return [.. sink.Events.Select(e => ((int)e.Status, (int)e.Data1, (int)e.Data2))];
+            }
+
+            Assert.That(Play(MidiEvent.NoteOn(0, 0, 60, 100), MidiEvent.ControlChange(0, 0, 1, 64), new MidiEvent(0, 0xA0, 60, 30)),
+                Is.EqualTo(new[] { (0x90, 72, 100), (0xB0, 1, 64), (0xA0, 72, 30) }), "the note and its aftertouch move, the controller does not");
+
+            // Changed while the note is held: its note off still goes to the note that sounds.
+            transpose.Semitones = -5;
+            Assert.That(Play(MidiEvent.NoteOff(0, 0, 60), MidiEvent.NoteOn(0, 0, 64, 90), MidiEvent.NoteOn(0, 0, 64, 0)),
+                Is.EqualTo(new[] { (0x80, 72, 64), (0x90, 59, 90), (0x90, 59, 0) }), "a note on at velocity 0 is a note off");
+
+            // Out of range: dropped with its note off, or folded back by octaves.
+            transpose.Semitones = 12;
+            Assert.That(Play(MidiEvent.NoteOn(0, 0, 120, 100)), Is.Empty);
+            transpose.FoldIntoRange = true;
+            Assert.That(Play(MidiEvent.NoteOff(0, 0, 120), MidiEvent.NoteOn(0, 1, 120, 100)), Is.EqualTo(new[] { (0x91, 120, 100) }),
+                "the dropped note's note off is dropped too; 132 folds back to 120");
+            Assert.That(transpose.Transpose(127), Is.EqualTo(127));
+            transpose.Semitones = -48;
+            Assert.That(transpose.Transpose(2), Is.EqualTo(2), "-46 is folded up by four octaves");
+            transpose.FoldIntoRange = false;
+            Assert.That(transpose.Transpose(2), Is.EqualTo(-1));
+
+            // One channel only; the notes of the others pass unchanged.
+            transpose.Semitones = 2;
+            transpose.Channel = 3;
+            Assert.That(Play(MidiEvent.NoteOn(0, 2, 60, 100), MidiEvent.NoteOn(0, 0, 60, 100)), Is.EqualTo(new[] { (0x92, 62, 100), (0x90, 60, 100) }));
+            transpose.Channel = 0;
+            Assert.That(Play(MidiEvent.NoteOff(0, 2, 60), MidiEvent.NoteOff(0, 0, 60)), Is.EqualTo(new[] { (0x82, 62, 64), (0x80, 60, 64) }),
+                "each note off follows its own note on");
+
+            // All notes off forgets the held notes of its channel.
+            Play(MidiEvent.NoteOn(0, 0, 60, 100));
+            transpose.Semitones = 7;
+            Assert.That(Play(MidiEvent.ControlChange(0, 0, 123, 0), MidiEvent.NoteOff(0, 0, 60)), Is.EqualTo(new[] { (0xB0, 123, 0), (0x80, 67, 64) }));
+
+            string json = graph.ToJson();
+            using var copy = new PluginGraph();
+            Assert.That(copy.LoadJson(json, _ => throw new InvalidOperationException()), Is.Empty);
+            var restored = copy.Nodes.OfType<MidiTransposeNode>().Single();
+            Assert.That((restored.Semitones, restored.Channel, restored.FoldIntoRange), Is.EqualTo((7, 0, false)));
+            Assert.That(new MidiTransposeNode { Semitones = 100, Channel = 40 }, Has.Property("Semitones").EqualTo(48).And.Property("Channel").EqualTo(16));
         }
 
         [Test]
