@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <!-- Blittable, NativeAOT-compatible bindings for Win32, Direct2D, DirectWrite and WIC. -->
-    <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.6" />
+    <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.28000" />
   </ItemGroup>
 
   <ItemGroup>
